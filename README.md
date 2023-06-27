@@ -11,5 +11,6 @@ this is made for windows and some parts of the script use python's os.system() m
 while this does edit save files , the script offloads the task to uesave , found at this repo https://github.com/trumank/uesave-rs
 it is made in rust and so if you want to edit save files then you will need to install rust and install uesave , make sure to add it to path as the script assumes it is
 
+i did use ChatGPT for some code and to add comments to the code
 
 i think i covered everything about this , put in an issue if there are any questions
