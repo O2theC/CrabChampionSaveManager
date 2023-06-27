@@ -62,11 +62,11 @@ def backupSave():
                 confirm = True
             else:
                 print("Not restoring any backup")
-                time.sleep(2)
+                time.sleep(1)
                 return
     if(saveName == "None"):
         print("Not restoring any backup")
-        time.sleep(2)
+        time.sleep(1)
         return
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, saveName)
@@ -74,7 +74,7 @@ def backupSave():
         shutil.rmtree(backupName,ignore_errors=True)
         shutil.copytree(saveGame, backupName)
         print("Backup Made - ",saveName)
-        time.sleep(2)
+        time.sleep(1)
     except Exception as error:
         print("Could not make backup. Error below:\n")
         print(error)
@@ -115,7 +115,7 @@ def restoreBackup():
         choice = input("")
     if(extract_numbers(choice) == 0):
         print("Not restoring any backup")
-        time.sleep(2)
+        time.sleep(1)
         return
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
@@ -123,7 +123,7 @@ def restoreBackup():
         shutil.rmtree(saveGame,ignore_errors=True)
         shutil.copytree(backupName, saveGame)
         print("Backup Restored - ",folders[extract_numbers(choice)-1])
-        time.sleep(2)
+        time.sleep(1)
     except Exception as error:
         print("Could not restore backup. Error below:\n")
         print(error)
@@ -163,7 +163,7 @@ def editBackup():
         choice = input("")
     if(extract_numbers(choice) == 0):
         print("Not editing any backup")
-        time.sleep(2)
+        time.sleep(1)
         return
     saveFile = os.path.join(current_directory,str(folders[extract_numbers(choice)-1]))
     saveFile = os.path.join(saveFile,"SaveSlot.sav")
@@ -213,13 +213,13 @@ def deleteBackup():
         choice = input("")
     if(extract_numbers(choice) == 0):
         print("Not deleting any backup")
-        time.sleep(2)
+        time.sleep(1)
         return
     backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
     try:
         shutil.rmtree(backupName)
         print("Deleted Backup - ",folders[extract_numbers(choice)-1])
-        time.sleep(2)
+        time.sleep(1)
     except Exception as error:
         print("Could not delete backup. Error below:\n")
         print(error)
