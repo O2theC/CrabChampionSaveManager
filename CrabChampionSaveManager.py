@@ -248,6 +248,7 @@ def deleteBackup():
         input("Press Enter to continue . . .")
 
 print("Welcome to Crab Champion Save Manager")
+print("Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager")
 while(True):
     choice = input("What do you want to do\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed)\n2 - Backup save\n3 - Restore save from backup (Warning : Deletes current save)\n4 - Delete backup\n5 - Info/How to use\n6 - Exit\n")
     choice = extract_numbers(choice)
@@ -268,6 +269,7 @@ while(True):
         print("\n")
     elif(choice == 5):
         print("Crab Champion Save Manager\n")
+        print("Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager")
         print("This program helps you manage your save files for the game Crab Champion.\n")
         print("1. Edit Save Game:")
         print("   - This option allows you to edit your save game using the uesave tool.")
