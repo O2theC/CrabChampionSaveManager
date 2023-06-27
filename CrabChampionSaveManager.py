@@ -29,29 +29,6 @@ def is_valid_folder_name(folder_name):
 
     # Check if the folder name matches the pattern and is not empty or made of only spaces/periods
     return bool(re.match(pattern, folder_name)) and not folder_name.strip(" .") == "" and not folder_name == "SaveGames" and not folder_name == "Logs" and not folder_name == "Config"
-
-def copy_folder(original_folder_path, new_folder_name):
-    """
-    Copies a folder to a new location.
-
-    Args:
-    - original_folder_path (str): The path of the original folder
-    - new_folder_name (str): The name of the new folder
-
-    Returns:
-    - None
-    """
-    # Get the current directory
-    current_directory = os.getcwd()
-
-    # Create the full path for the original folder
-    original_folder_full_path = os.path.join(current_directory, original_folder_path)
-
-    # Create the full path for the new folder
-    new_folder_full_path = os.path.join(current_directory, new_folder_name)
-
-    # Copy the original folder to the new folder
-    shutil.copytree(original_folder_full_path, new_folder_full_path)
     
 def backupSave():
     """
@@ -94,6 +71,7 @@ def backupSave():
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, saveName)
     try:
+        shutil.rmtree(backupName,ignore_errors=True)
         shutil.copytree(saveGame, backupName)
         print("Backup Made - ",saveName)
         time.sleep(2)
@@ -142,7 +120,7 @@ def restoreBackup():
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
     try:
-        shutil.rmtree(saveGame)
+        shutil.rmtree(saveGame,ignore_errors=True)
         shutil.copytree(backupName, saveGame)
         print("Backup Restored - ",folders[extract_numbers(choice)-1])
         time.sleep(2)
