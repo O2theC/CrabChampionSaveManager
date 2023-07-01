@@ -23,6 +23,8 @@ I used auto py to exe to turn the script to an exe, https://pypi.org/project/aut
 
 
 i might have found out some useful tricks
+
 ideas to be done 
+
 use coding tricky to try to package the save game editor with the exe and get that to work
 get an updater that can auto download and update it self
