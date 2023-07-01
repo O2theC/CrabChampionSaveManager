@@ -20,3 +20,9 @@ I did use ChatGPT for some code and to add comments to the code
 I think I covered everything about this, put in an issue if there are any questions
 
 I used auto py to exe to turn the script to an exe, https://pypi.org/project/auto-py-to-exe/, nice and easy to use, I recommend it for small things like this, not sure if it would work for bigger or more complicated projects
+
+
+i might have found out some useful tricks
+ideas to be done 
+use coding tricky to try to package the save game editor with the exe and get that to work
+get an updater that can auto download and update it self
