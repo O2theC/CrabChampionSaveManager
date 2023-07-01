@@ -238,6 +238,37 @@ def currentDirCheck():
             return True
     return False      
             
+
+def updateBackup():
+    current_directory = os.getcwd()
+    folders = getBackups()
+    print("Choose Backup to update")
+    print("0 - don't update any backup")
+    for i in range(len(folders)):
+        print((i+1),"-",folders[i])
+    choice = input("")
+    choice = extract_numbers(choice)
+    while(int(choice)<0 or int(choice)>len(folders)):
+        print("\nInvalid choice. Valid choices are")
+        print("0 - don't update any backup")
+        for i in range(len(folders)):
+            print((i+1),"-",folders[i])
+        choice = input("")
+    if(extract_numbers(choice) == 0):
+        print("Not updating any backup")
+        time.sleep(1)
+        return
+    saveGame = os.path.join(current_directory, "SaveGames")
+    backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
+    try:
+        shutil.rmtree(backupName,ignore_errors=True)
+        shutil.copytree(saveGame, backupName)
+        print("Backup Updated - ",folders[extract_numbers(choice)-1])
+        time.sleep(1)
+    except Exception as error:
+        print("Could not update backup. Error below:\n")
+        print(error)
+        input("Press Enter to continue . . .")
             
 if(currentDirCheck()):
     
@@ -247,10 +278,10 @@ if(currentDirCheck()):
 print("Welcome to Crab Champion Save Manager")
 print("Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager")
 while(True):
-    choice = input("What do you want to do\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed)\n2 - Backup save\n3 - Restore save from backup (Warning : Deletes current save)\n4 - Delete backup\n5 - List Backups\n6 - Info/How to use\n7 - Exit\n")
+    choice = input("What do you want to do\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
     choice = extract_numbers(choice)
-    while(extract_numbers(choice)<1 or extract_numbers(choice)>7):
-        choice = input("Invalid choice. Valid choices are\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed\n2 - Backup Save\n3 - Restore Save from backup (Warning : Deletes current save)\n4 - Delete backup\n5 - List Backups\n6 - Info/How to use\n7 - Exit\n")
+    while(extract_numbers(choice)<1 or extract_numbers(choice)>8):
+        choice = input("Invalid choice. Valid choices are\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
     choice = extract_numbers(choice)
     if(choice == 1):
         editBackup()
@@ -259,15 +290,18 @@ while(True):
         backupSave()
         print("\n")
     elif(choice == 3):
-        restoreBackup()
+        updateBackup()
         print("\n")
     elif(choice == 4):
-        deleteBackup()
+        restoreBackup()
         print("\n")
     elif(choice == 5):
-        listBackups()
+        deleteBackup()
         print("\n")
     elif(choice == 6):
+        listBackups()
+        print("\n")
+    elif(choice == 7):
         print("Crab Champion Save Manager\n")
         print("Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.")
         print("Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager")
@@ -286,33 +320,37 @@ while(True):
         print("   - The backup name must be a valid folder name and should not already exist.")
         print("   - If a valid backup name is provided, the SaveGames folder will be copied to the backup location.")
 
-        print("\n3. Restore Save from Backup:")
+        print("\n3. Update backup:")
+        print("   - This option allows you to update a backup using your current save game.")
+        print("   - When prompted, choose a backup to be updated.")
+
+        print("\n4. Restore Save from Backup:")
         print("   - This option allows you to restore a backup of your save game.")
         print("   - Select a backup from the available options.")
         print("   - The current SaveGames folder will be deleted, and the selected backup will be copied to the SaveGames location.")
         print("   - Caution: Restoring a backup will overwrite your current save game, so choose the backup carefully.")
 
-        print("\n4. Delete Backup:")
+        print("\n5. Delete Backup:")
         print("   - This option allows you to delete a backup of your save game.")
         print("   - Select a backup from the available options.")
         print("   - The selected backup folder will be permanently deleted.")
         print("   - Note: Deleting a backup cannot be undone, so be careful when removing backups.")
 
-        print("\n5. List Backups:")
+        print("\n6. List Backups:")
         print("   - This option displays the available backups of your save game.")
         print("   - It shows the names of the backup folders and the total count of backups.")
 
-        print("\n6. Info/How to use:")
+        print("\n7. Info/How to use:")
         print("   - This option provides a brief description of each functionality and how to use them.")
         print("   - It gives an overview of the script's purpose and directs you to the GitHub repository for reporting issues and suggestions.")
 
-        print("\n7. Exit:")
+        print("\n8. Exit:")
         print("   - This option allows you to exit the program.")
         
         print("Note that for this script to edit save files it need uesave from https://github.com/trumank/uesave-rs\n it is written in rust so you will need to get that")
         print("Report issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager")
         print("Note that this info section and most of the code comments were made by chatgpt , if it did something wrong, make an issue at https://github.com/O2theC/CrabChampionSaveManager")
         print("\nPress Enter to continue . . .")
-    elif(choice == 7):
+    elif(choice == 8):
         print("Exiting...")
         break
