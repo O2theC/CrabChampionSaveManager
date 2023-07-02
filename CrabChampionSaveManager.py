@@ -279,17 +279,20 @@ def versionToValue(version):
 
 def updateScript(isExe):
     print("There is a newer version available")
-    perm = input("would you like to update to the latest version?(Y/N)")
+    perm = input("would you like to update to the latest version?(Y/N)\n")
     if("y" in perm.lower()):
         if(isExe):
-            downloadLatestURL = "http://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe"
+            downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe"
         else:
-            downloadLatestURL = "http://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
+            downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
         try:
+            print(downloadLatestURL)
             response = requests.get(downloadLatestURL)
-            with open(os.getcwd(), 'wb') as file:
+            path = os.path.join(os.getcwd(),downloadLatestURL[downloadLatestURL.rindex("/")+1:])
+            with open(path, 'wb') as file:
                 file.write(response.content)
-        except:
+        except Exception as e:
+            print(e)
             print("Could not download latest version, exiting script")
             input("Press Enter to continue . . .")
             exit(1)
@@ -303,14 +306,14 @@ def updateScript(isExe):
         return
             
 
-Version = "1.2.0"
+Version = "1.2.1"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
     isExe = True
     
 LatestVersion = None
-latestReleaseURL = "http://github.com/O2theC/CrabChampionSaveManager/releases/latest"
+latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
 try:
     response = requests.get(latestReleaseURL)
     final_url = response.url
