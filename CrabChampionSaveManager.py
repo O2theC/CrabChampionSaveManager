@@ -319,7 +319,7 @@ def updateScript(isExe):
         return
             
 
-Version = "1.1.1"
+Version = "1.2.2"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
