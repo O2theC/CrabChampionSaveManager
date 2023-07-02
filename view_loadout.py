@@ -12,7 +12,11 @@ def get_inventory_data_frame_from_json(x):
               {'key1':'Perks', 'key2':'PerkDA'}]
     out = list()
     for thing in things:
-        tmp = x['root']['properties']['AutoSave']['Struct']['value']['Struct'][thing['key1']]['Array']['value']['Struct']['value']
+        try:
+            tmp = x['root']['properties']['AutoSave']['Struct']['value']['Struct'][thing['key1']]['Array']['value']['Struct']['value']
+        except:
+            print("No save found")
+            return ""
         for idx in range(0, len(tmp)):
             # get status and name
             parse_tmp = tmp[idx]['Struct'][thing['key2']]['Object']['value'].split("/")
@@ -37,17 +41,22 @@ if __name__=="__main__":
     appdata_roaming_dir = os.getenv("LOCALAPPDATA")
     crab_locale = os.path.normpath(appdata_roaming_dir + "/CrabChampions/Saved/")
     
-    input_file = filedialog.askopenfilename(initialdir= crab_locale)
-    output_file = "blah.json"
-    my_command = "uesave.exe to-json -i " + input_file + " -o " + output_file
-
-    with open('blah.json') as f:
+    input_file = filedialog.askopenfilename(initialdir=crab_locale)
+    output_file = "save.json"
+    my_command = "uesave.exe to-json -i \"" + input_file + "\" -o " + output_file
+    os.system(my_command)
+    
+    with open('save.json') as f:
         x = json.load(f)
 
     # remove blah.json
-    os.remove("blah.json")
+    os.remove("save.json")
     df = get_inventory_data_frame_from_json(x)
-    print(df)
+    pd.set_option('display.max_rows', None)  # Display all rows
+    pd.set_option('display.max_columns', None)  # Display all columns
+    pd.set_option('display.width', None)  # Disable column width restriction
+    pd.set_option('display.max_colwidth', None)  # Disable column content truncation   
+    print(df.to_string(index=False))
 
     
         
