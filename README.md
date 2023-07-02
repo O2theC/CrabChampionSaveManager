@@ -21,10 +21,13 @@ I think I covered everything about this, put in an issue if there are any questi
 
 I used auto py to exe to turn the script to an exe, https://pypi.org/project/auto-py-to-exe/, nice and easy to use, I recommend it for small things like this, not sure if it would work for bigger or more complicated projects
 
-
 i might have found out some useful tricks
 
 ideas to be done 
 
 use coding tricky to try to package the save game editor with the exe and get that to work
 get an updater that can auto download and update it self
+
+
+
+a friend made a small script to print what items you have in a save , i fixed it up a bit and is in a seperate file, i will incorpeate it in future versions 
