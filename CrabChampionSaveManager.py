@@ -2,6 +2,8 @@ import os
 import re
 import shutil
 import time
+import sys
+import requests
 
 def extract_numbers(input_string):
     """Converts the input string to an integer if possible, otherwise returns -1."""
@@ -65,7 +67,6 @@ def backupSave():
         print(error)
         input("Press Enter to continue . . .")
     
-
 def restoreBackup():
     """Restores a backup of the save game.
     
@@ -202,7 +203,6 @@ def listBackups():
     print(len(folders),"Backups stored")
     input("Press Enter to continue . . .")
 
-
 def getBackups():
     """Retrieves the list of backup folders.
     
@@ -236,8 +236,7 @@ def currentDirCheck():
             None
         else:
             return True
-    return False      
-            
+    return False              
 
 def updateBackup():
     current_directory = os.getcwd()
@@ -269,6 +268,67 @@ def updateBackup():
         print("Could not update backup. Error below:\n")
         print(error)
         input("Press Enter to continue . . .")
+
+def versionToValue(version):
+    value = 0
+    points = version.split(".")
+    value = int(points[0])*1000000
+    value += int(points[1])*1000
+    value += int(points[2])
+    return int(value)
+
+def updateScript(isExe):
+    print("There is a newer version available")
+    perm = input("would you like to update to the latest version?(Y/N)")
+    if("y" in perm.lower()):
+        if(isExe):
+            downloadLatestURL = "http://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe"
+        else:
+            downloadLatestURL = "http://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
+        try:
+            response = requests.get(downloadLatestURL)
+            with open(os.getcwd(), 'wb') as file:
+                file.write(response.content)
+        except:
+            print("Could not download latest version, exiting script")
+            input("Press Enter to continue . . .")
+            exit(1)
+        print("Latest Version succesfully downloaded")
+        print("Please restart script for changes to show")
+        input("Press Enter to continue . . .")
+        exit(0)
+    else:
+        print("no permission given")
+        input("Press Enter to continue . . .")
+        return
+            
+
+Version = "1.2.0"
+isExe = False
+
+if (getattr(sys, 'frozen', False)):
+    isExe = True
+    
+LatestVersion = None
+latestReleaseURL = "http://github.com/O2theC/CrabChampionSaveManager/releases/latest"
+try:
+    response = requests.get(latestReleaseURL)
+    final_url = response.url
+    final_url = final_url.removeprefix("https://github.com/O2theC/CrabChampionSaveManager/releases/tag/")
+    LatestVersion = final_url
+except:
+    None
+print("Current Version : ",Version)
+print("Latest Version : ",LatestVersion)
+VersionValue = versionToValue(Version)
+LatestValue = versionToValue(LatestVersion)
+print()
+if(VersionValue < LatestValue):
+    updateScript(isExe)
+elif(VersionValue > LatestValue):
+    print("ooohh , you have a version that isn't released yet, nice")
+else:
+    print("You have the latest version")
             
 if(currentDirCheck()):
     
@@ -350,7 +410,8 @@ while(True):
         print("Note that for this script to edit save files it need uesave from https://github.com/trumank/uesave-rs\n it is written in rust so you will need to get that")
         print("Report issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager")
         print("Note that this info section and most of the code comments were made by chatgpt , if it did something wrong, make an issue at https://github.com/O2theC/CrabChampionSaveManager")
-        print("\nPress Enter to continue . . .")
+        print("\nthis script does have a version checker and auto updater that requires internet to work, the rest of the script will still work without internet")
+        input("\nPress Enter to continue . . .")
     elif(choice == 8):
         print("Exiting...")
         break
