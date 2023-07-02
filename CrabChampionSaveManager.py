@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import time
+import subprocess
 import sys
 import requests
 
@@ -286,11 +287,23 @@ def updateScript(isExe):
         else:
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
         try:
+            updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
             print(downloadLatestURL)
             response = requests.get(downloadLatestURL)
             path = os.path.join(os.getcwd(),downloadLatestURL[downloadLatestURL.rindex("/")+1:])
+            path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
             with open(path, 'wb') as file:
                 file.write(response.content)
+            if(isExe):
+                response = requests.get(updaterURL)
+                path = os.path.join(os.getcwd(),updaterURL[updaterURL.rindex("/")+1:])
+                with open(path, 'wb') as file:
+                    file.write(response.content)
+                print("due to this being a exe , a seperate program will update this")
+                print("when ready press enter")
+                input("Press Enter to continue . . .")
+                subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
+                exit(0)
         except Exception as e:
             print(e)
             print("Could not download latest version, exiting script")
@@ -306,7 +319,7 @@ def updateScript(isExe):
         return
             
 
-Version = "1.2.1"
+Version = "1.1.1"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
