@@ -303,9 +303,8 @@ def updateScript(isExe):
                 print("when ready press enter")
                 input("Press Enter to continue . . .")
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
-                exit(0)
-        except Exception as e:
-            print(e)
+                return
+        except:
             print("Could not download latest version, exiting script")
             input("Press Enter to continue . . .")
             exit(1)
@@ -319,7 +318,7 @@ def updateScript(isExe):
         return
             
 
-Version = "1.2.2"
+Version = "1.2.1"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
@@ -341,6 +340,7 @@ LatestValue = versionToValue(LatestVersion)
 print()
 if(VersionValue < LatestValue):
     updateScript(isExe)
+    exit(0)
 elif(VersionValue > LatestValue):
     print("ooohh , you have a version that isn't released yet, nice")
 else:
