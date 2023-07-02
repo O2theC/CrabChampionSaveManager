@@ -288,7 +288,7 @@ def updateScript(isExe):
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
         try:
             updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
-            print(downloadLatestURL)
+            
             response = requests.get(downloadLatestURL)
             path = os.path.join(os.getcwd(),downloadLatestURL[downloadLatestURL.rindex("/")+1:])
             path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
