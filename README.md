@@ -4,7 +4,7 @@ a save manager for Crab Champions, made in Python
 made this for a group of friends to manage saves easier 
 feel free to use it yourself, it is text-based, just run the file
 
-Main Credits:
+Main Credits:<br>
 Pyinstaller - used to make .exe versions of the script so that it can be run without having to get python or uesave<br>
 uesave - https://github.com/trumank/uesave-rs, all credit for this goes to trumank, this is a program made in rust but compiled to .exe , allows translating Unreal Engine .sav files to json and back again<br>
 ChatGPT - used for some comments and code snippets , i am still learning about python after all<br>
