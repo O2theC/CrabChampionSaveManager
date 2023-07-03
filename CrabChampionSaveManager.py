@@ -5,6 +5,8 @@ import time
 import subprocess
 import sys
 import requests
+from os import path
+
 
 def extract_numbers(input_string):
     """Converts the input string to an integer if possible, otherwise returns -1."""
@@ -106,7 +108,8 @@ def restoreBackup():
         print(error)
         input("Press Enter to continue . . .")
 
-def editBackup():
+def editBackup(isExe):
+
     """Edits a backup of the save game.
     
     Displays the available backups and prompts the user to choose one.
@@ -145,7 +148,35 @@ def editBackup():
     saveBackB = saveFile.replace("SaveSlot.sav","SaveSlotBackupB.sav")
     sf = saveFile
     saveFile = "\""+saveFile+"\""
-    os.system("uesave edit "+saveFile)
+    if(isExe):
+        file = __file__
+        bundle_dir = path.abspath(path.dirname(file)) 
+        path_to_dat = path.join(bundle_dir, 'uesave.exe')
+        subprocess.run(str(path_to_dat)+" edit "+str(saveFile))
+    else:
+        #%APPDATA%/../../.cargo/bin
+        uesaveExe = os.path.expandvars("%APPDATA%/../../.cargo/bin")
+        
+        if(os.path.exists(os.path.join(uesaveExe,"uesave.exe"))):
+            uesaveExe = os.path.join(uesaveExe,"uesave.exe")
+        elif(os.path.exists("uesave.exe")):
+            uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
+        else:
+            print("no copy of uesave.exe could be found")
+            print("either place your copy of it in the same place as this script/exe")
+            perm = input("or allow for it to be downloaded(Y - allow download/N - don't allow download)\n")
+            if("y" in perm.lower()):
+                downURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
+                response = requests.get(downURL)
+                with open(__file__[:__file__.rindex("\\")+1]+"uesave.exe", 'wb') as file:
+                    file.write(response.content)
+                uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
+            else:
+                print("no permission given to download uesave, no uesave found\nreturning to main menu")
+                input("Press Enter to continue . . .")
+                return
+        subprocess.run(str(uesaveExe)+" edit "+str(saveFile))
+
     try:
         os.remove(saveBackA)
         os.remove(saveBackB)
@@ -271,12 +302,15 @@ def updateBackup():
         input("Press Enter to continue . . .")
 
 def versionToValue(version):
-    value = 0
-    points = version.split(".")
-    value = int(points[0])*1000000
-    value += int(points[1])*1000
-    value += int(points[2])
-    return int(value)
+    try:
+        value = 0
+        points = version.split(".")
+        value = int(points[0])*1000000
+        value += int(points[1])*1000
+        value += int(points[2])
+        return int(value)
+    except:
+        return -1
 
 def updateScript(isExe):
     print("There is a newer version available")
@@ -316,15 +350,23 @@ def updateScript(isExe):
         print("no permission given")
         input("Press Enter to continue . . .")
         return
+ 
+def uesaveCheck(isEXE):
+    if(isExe):
+        return ""
+    else:
+        return "(requires uesave.exe)"
+
+
             
 
-Version = "1.2.2"
+Version = "1.2.3"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
     isExe = True
     
-LatestVersion = None
+LatestVersion = Version
 latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
 try:
     response = requests.get(latestReleaseURL)
@@ -333,34 +375,51 @@ try:
     LatestVersion = final_url
 except:
     None
+    
+    
 print("Current Version : ",Version)
 print("Latest Version : ",LatestVersion)
 VersionValue = versionToValue(Version)
 LatestValue = versionToValue(LatestVersion)
+
 print()
-if(VersionValue < LatestValue):
+if(LatestValue == -1):
+    print("Could not get latest version")
+elif(VersionValue < LatestValue):
     updateScript(isExe)
     exit(0)
 elif(VersionValue > LatestValue):
     print("ooohh , you have a version that isn't released yet, nice")
 else:
     print("You have the latest version")
+
+
+
+
             
 if(currentDirCheck()):
-    
-    new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
-    os.chdir(new_dir)
+    try:
+        new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
+        os.chdir(new_dir)
+    except:
+        print("Could not find save game directory")
+        print("You either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved")
+
+
+
+
+
 
 print("Welcome to Crab Champion Save Manager")
 print("Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager")
 while(True):
-    choice = input("What do you want to do\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
+    choice = input("What do you want to do\n1 - Edit save game "+uesaveCheck(isExe)+"\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
     choice = extract_numbers(choice)
     while(extract_numbers(choice)<1 or extract_numbers(choice)>8):
-        choice = input("Invalid choice. Valid choices are\n1 - Edit save game (requires https://github.com/trumank/uesave-rs with Rust installed\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
+        choice = input("Invalid choice. Valid choices are\n1 - Edit save game "+uesaveCheck(isExe)+"\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
     choice = extract_numbers(choice)
     if(choice == 1):
-        editBackup()
+        editBackup(isExe)
         print("\n")
     elif(choice == 2):
         backupSave()
@@ -385,7 +444,7 @@ while(True):
         
         print("1. Edit Save Game:")
         print("   - This option allows you to edit your save game using the uesave tool.")
-        print("   - Before choosing this option, make sure you have the uesave tool (https://github.com/trumank/uesave-rs) and Rust installed.")
+        print("   - Before choosing this option, make sure you have the uesave tool (https://github.com/trumank/uesave-rs)")
         print("   - Select a backup to edit, and the tool will open the SaveSlot.sav file for editing.")
         print("   - Two backup copies (SaveSlotBackupA.sav and SaveSlotBackupB.sav) will be created before editing.")
         print("   - Note: Editing the save game can lead to unexpected behavior or corrupt saves, so proceed with caution.")
