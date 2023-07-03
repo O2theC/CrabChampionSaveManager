@@ -2,32 +2,24 @@
 a save manager for Crab Champions, made in Python 
 
 made this for a group of friends to manage saves easier 
-feel free to use it yourself, it is text-based, just run the file ~~in the correct location~~
+feel free to use it yourself, it is text-based, just run the file
 
-~~put the script in C:\\Users\\\*USER*\\AppData\Local\\CrabChampions\\Saved
-or the equivalent folder if saves are stored elsewhere, easy way to get to it is by starting the Run program , use your search bar , then in the field doing %APPDATA%\\..\\Local\\CrabChampions\\Saved and then running that, you can do it in the location bar in file explorer and it should direct you to the correct folder, make sure though , this is only for the default location that the game is installed in~~
+Main Credits:
+Pyinstaller - used to make .exe versions of the script so that it can be run without having to get python or uesave
+uesave - https://github.com/trumank/uesave-rs, all credit for this goes to trumank, this is a program made in rust but compiled to .exe , allows translating Unreal Engine .sav files to json and back again
+ChatGPT - used for some comments and code snippets , i am still learning about python after all
 
-you should be able to run the script from anywhere and it should work, as long the game is installed in the default location, otherwise put it 1 folder away from the SaveSlot.sav file
-example, save is at folderA/Folderb/CrabChampions/Saved/SaveGames/SaveSlot.sav, put the script in Saved folder
+install:
+  if you have crab champions installed at the default location then you don't need to do anything
+  if crab champions is installed in a different location then you need to put the script in the save game location
+  you would put it at %APPDATA%\..\\Local\CrabChampions\Saved for the default location , use that to try to determine what the location is for you if it is a custom location 
 
-this is made for windows and some parts of the script use python's os.system() method to do os cmds , this for editing save files, as such I am unsure if this works on linux, if it does yay, if it doesn't then well, oh well, if someone else wants to fork and make it work for linux go ahead, you can also put in a pull request to make it work on linux
-
-while this does edit save files, the script offloads the task to uesave, found at this repo https://github.com/trumank/uesave-rs
-it is made in Rust and so if you want to edit save files then you will need to install Rust and install uesave, make sure to add it to path as the script assumes it is
-
-I did use ChatGPT for some code and to add comments to the code
-
-I think I covered everything about this, put in an issue if there are any questions
-
-I used auto py to exe to turn the script to an exe, https://pypi.org/project/auto-py-to-exe/, nice and easy to use, I recommend it for small things like this, not sure if it would work for bigger or more complicated projects
-
-i might have found out some useful tricks
-
-ideas to be done 
-
-use coding tricky to try to package the save game editor with the exe and get that to work
-get an updater that can auto download and update it self
+use: 
+  just start the program and it should open a cmd window
+  this program is cmd line based so just type in the number that links to the option you want and then press enter
+  both the .py and .exe versions work very similar 
 
 
+FAQ:
 
-a friend made a small script to print what items you have in a save , i fixed it up a bit and is in a seperate file, i will incorpeate it in future versions 
+no questions yet, ask them in issues 
