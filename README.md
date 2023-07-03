@@ -12,7 +12,7 @@ ChatGPT - used for some comments and code snippets , i am still learning about p
 install:<br>
   if you have crab champions installed at the default location then you don't need to do anything<br>
   if crab champions is installed in a different location then you need to put the script in the save game location<br>
-  you would put it at %APPDATA%\..\\Local\CrabChampions\Saved for the default location , use that to try to determine what the location is for you if it is a custom location <br>
+  you would put it at %LOCALAPPDATA%\CrabChampions\Saved for the default location , use that to try to determine what the location is for you if it is a custom location <br>
 
 use:<br>
   just start the program and it should open a cmd window<br>
