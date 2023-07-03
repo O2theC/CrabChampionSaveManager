@@ -152,14 +152,14 @@ def restoreBackup():
     try:
         autoSaveJson = copy.deepcopy(backupJSON["root"]["properties"]["AutoSave"])
     except:
-        print("Backup Selected has no save game\nreturning to main menu")
+        print("\rBackup Selected has no save game\nreturning to main menu")
         input("Press Enter to continue . . .")
         return
     print("\r4/8",end="    ")
     try:
         saveJSON["root"]["properties"]["AutoSave"] = autoSaveJson
     except:
-        print("Error when replacing autosave on current save, corrupted .sav file?")
+        print("\rError when replacing autosave on current save, corrupted .sav file?")
         print("returning to main menu")
         input("Press Enter to continue . . .")
         return
