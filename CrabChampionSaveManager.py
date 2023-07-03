@@ -1,3 +1,4 @@
+import copy
 import os
 import re
 import shutil
@@ -5,6 +6,7 @@ import time
 import subprocess
 import sys
 import requests
+import json
 from os import path
 
 
@@ -96,17 +98,88 @@ def restoreBackup():
         print("Not restoring any backup")
         time.sleep(1)
         return
+    start = time.time()
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
+    uesavePath = ""
+    if(isExe):
+        file = __file__
+        bundle_dir = path.abspath(path.dirname(file)) 
+        path_to_dat = path.join(bundle_dir, 'uesave.exe')
+        uesavePath = path_to_dat
+    else:
+        #%APPDATA%/../../.cargo/bin
+        uesaveExe = os.path.expandvars("%APPDATA%/../../.cargo/bin")
+        
+        if(os.path.exists(os.path.join(uesaveExe,"uesave.exe"))):
+            uesaveExe = os.path.join(uesaveExe,"uesave.exe")
+        elif(os.path.exists("uesave.exe")):
+            uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
+        else:
+            print("no copy of uesave.exe could be found")
+            print("either place your copy of it in the same place as this script/exe")
+            perm = input("or allow for it to be downloaded(Y - allow download/N - don't allow download)\n")
+            if("y" in perm.lower()):
+                downURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
+                response = requests.get(downURL)
+                with open(__file__[:__file__.rindex("\\")+1]+"uesave.exe", 'wb') as file:
+                    file.write(response.content)
+                uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
+            else:
+                print("no permission given to download uesave, no uesave found\nreturning to main menu")
+                input("Press Enter to continue . . .")
+                return
+        uesavePath = uesaveExe
+    None
+    saveGame+="\\SaveSlot.sav"
+    backupName+="\\SaveSlot.sav"
+    saveGame = "\""+saveGame+"\""
+    backupName = "\""+backupName+"\""
+    print("\r0/8",end="    ")
+    proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json")
+    print("\r1/8",end="    ")
+    proc1.wait()
+    with open("currentSave.json") as JSON_File:
+        saveJSON = json.load(JSON_File)
+    os.remove("currentSave.json")
+    print("\r2/8",end="    ")
+    proc2 = subprocess.Popen(uesavePath+" to-json -i "+backupName+" -o backupSave.json")    
+    proc2.wait()
+    with open("backupSave.json") as JSON_File:
+        backupJSON = json.load(JSON_File)
+    os.remove("backupSave.json")   
+    print("\r3/8",end="    ") 
     try:
-        shutil.rmtree(saveGame,ignore_errors=True)
-        shutil.copytree(backupName, saveGame)
-        print("Backup Restored - ",folders[extract_numbers(choice)-1])
-        time.sleep(1)
-    except Exception as error:
-        print("Could not restore backup. Error below:\n")
-        print(error)
+        autoSaveJson = copy.deepcopy(backupJSON["root"]["properties"]["AutoSave"])
+    except:
+        print("Backup Selected has no save game\nreturning to main menu")
         input("Press Enter to continue . . .")
+        return
+    print("\r4/8",end="    ")
+    try:
+        saveJSON["root"]["properties"]["AutoSave"] = autoSaveJson
+    except:
+        print("Error when replacing autosave on current save, corrupted .sav file?")
+        print("returning to main menu")
+        input("Press Enter to continue . . .")
+        return
+    print("\r5/8",end="    ")
+    with open("restoredSave.json","w") as JSON_File:
+        JSON_File.write(json.dumps(saveJSON, indent=4))
+    print("\r6/8",end="    ")
+    proc1 = subprocess.Popen(uesavePath+" from-json -i restoredSave.json -o SaveGames/SaveSlot.sav")
+    #proc2 = subprocess.Popen(uesavePath+" from-json -i restoredSave.json -o test/SaveSlot.sav")
+    proc1.wait()
+    os.remove("restoredSave.json")
+    print("\r7/8",end="    ")
+    #proc2.wait()
+    shutil.copyfile("SaveGames/SaveSlot.sav","SaveGames/SaveSlotBackupA.sav")
+    shutil.copyfile("SaveGames/SaveSlot.sav","SaveGames/SaveSlotBackupB.sav")
+    print("\r8/8",end="    ")
+    print("\rBackup Restored - ",folders[extract_numbers(choice)-1])
+    stop = time.time()
+    #print("it took",round(stop-start,3)," seconds")
+    return
 
 def editBackup(isExe):
 
@@ -360,7 +433,7 @@ def uesaveCheck(isEXE):
 
             
 
-Version = "1.2.3"
+Version = "1.2.4"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
@@ -404,13 +477,15 @@ if(currentDirCheck()):
     except:
         print("Could not find save game directory")
         print("You either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved")
+        input("Press Enter to continue . . .")
+        exit(0)
 
 
 
 
 
 
-print("Welcome to Crab Champion Save Manager")
+print("\nWelcome to Crab Champion Save Manager")
 print("Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager")
 while(True):
     choice = input("What do you want to do\n1 - Edit save game "+uesaveCheck(isExe)+"\n2 - Backup Save\n3 - Update backup\n4 - Restore Save from backup (Warning : Deletes current save)\n5 - Delete backup\n6 - List Backups\n7 - Info/How to use\n8 - Exit\n")
@@ -444,11 +519,11 @@ while(True):
         
         print("1. Edit Save Game:")
         print("   - This option allows you to edit your save game using the uesave tool.")
-        print("   - Before choosing this option, make sure you have the uesave tool (https://github.com/trumank/uesave-rs)")
-        print("   - Select a backup to edit, and the tool will open the SaveSlot.sav file for editing.")
-        print("   - Two backup copies (SaveSlotBackupA.sav and SaveSlotBackupB.sav) will be created before editing.")
-        print("   - Note: Editing the save game can lead to unexpected behavior or corrupt saves, so proceed with caution.")
-
+        print("   - The uesave tool can be found at https://github.com/trumank/uesave-rs, all credit for the tool goes to trumank")
+        print("   - This option uses the uesave tool for editing the .sav file, the selection of the backup is done by the script")
+        print("   - .exe Version : this options uses the uesave tool that is bundled with the EXE meaning that you don't have to do anything to use this option")
+        print("   - .py Version : you will have to have a copy of the uesave tool, if no copy is detected then a copy will be downloaded if permission is given")
+        
         print("\n2. Backup Save:")
         print("   - This option allows you to create a backup of your current save game.")
         print("   - When prompted, enter a name for the backup folder.")
@@ -462,7 +537,9 @@ while(True):
         print("\n4. Restore Save from Backup:")
         print("   - This option allows you to restore a backup of your save game.")
         print("   - Select a backup from the available options.")
-        print("   - The current SaveGames folder will be deleted, and the selected backup will be copied to the SaveGames location.")
+        print("   - The uesave tool will be used to turn both the backup .sav file and the current save's .sav file into json")
+        print("   - This program then takes in the json and takes the autosave from the backup and copys it over to the current save json")
+        print("   - The json with the restored save is then saved to a file and the uesave tool turns that back to .sav and the backup copys are made")
         print("   - Caution: Restoring a backup will overwrite your current save game, so choose the backup carefully.")
 
         print("\n5. Delete Backup:")
@@ -482,10 +559,10 @@ while(True):
         print("\n8. Exit:")
         print("   - This option allows you to exit the program.")
         
-        print("Note that for this script to edit save files it need uesave from https://github.com/trumank/uesave-rs\n it is written in rust so you will need to get that")
+        print("\nThis script uses uesave.exe from https://github.com/trumank/uesave-rs, all credit for this goes to trumank,their program is imo very well made and works very well")
         print("Report issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager")
         print("Note that this info section and most of the code comments were made by chatgpt , if it did something wrong, make an issue at https://github.com/O2theC/CrabChampionSaveManager")
-        print("\nthis script does have a version checker and auto updater that requires internet to work, the rest of the script will still work without internet")
+        print("\nThis script has some elements that require access to the internet, this includes:\nVersion Checking\nDownloading .exe updater\nDownloading uesave.exe")
         input("\nPress Enter to continue . . .")
     elif(choice == 8):
         print("Exiting...")
