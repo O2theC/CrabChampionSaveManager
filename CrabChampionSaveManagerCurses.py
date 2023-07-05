@@ -27,7 +27,7 @@ try:
     import curses
 except:
     print("Not all libraries are installed")
-    perm = input("Permission to download libraries?(Y/N)\n")
+    perm = input("Permission to download libraries? [y/N]\n")
     if("y" in perm.lower()):
         os.system("pip install requests windows-curses")
         import requests
