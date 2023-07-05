@@ -5,9 +5,20 @@ import shutil
 import time
 import subprocess
 import sys
-import requests
 import json
 from os import path
+
+try:
+    import requests
+except:
+    print("Not all libraries are installed")
+    perm = input("Permission to download libraries? [y/N]\n")
+    if("y" in perm.lower()):
+        os.system("pip install requests")
+        import requests
+    else:
+        print("no permission given, script can't start")
+        exiting(0)
 
 
 def extract_numbers(input_string):
