@@ -37,7 +37,7 @@ LatestValue = helper.versionToValue(LatestVersion)
 if(LatestValue == -1):
     mainMenuPrompt += "\n\nCould not get latest version"
 elif(VersionValue < LatestValue):
-    helper.updateScript(is_exe)
+    helper.updateScript(helper.isExe())
     helper.exit_helper(0)
 elif(VersionValue > LatestValue):
     mainMenuPrompt += "\n\n***BETA WARNING***"
@@ -49,7 +49,10 @@ else:
             
 if(helper.currentDirCheck()):
     try:
-        new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
+        if not helper.isLinux:
+            new_dir = os.path.expandvars("%APPDATA%/../Local/CrabChampions/Saved")
+        else:
+            new_dir = os.path.expandvars("$HOME/.local/share/Steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved")
         os.chdir(new_dir)
     except:
         helper.infoScreen("Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . .")
