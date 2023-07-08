@@ -9,7 +9,6 @@ import json
 import platform
 import curses
 import requests
-import helper
 from os import path
             
 def isLinux():
@@ -482,19 +481,19 @@ def updateScript(screen):
         else:
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
         try:
-            updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
+            updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/updater.exe"
             
             response = requests.get(downloadLatestURL)
             path = os.path.join(os.getcwd(),downloadLatestURL[downloadLatestURL.rindex("/")+1:])
-            path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
             with open(path, 'wb') as file:
                 file.write(response.content)
+
             if(is_exe):
                 response = requests.get(updaterURL)
                 path = os.path.join(os.getcwd(),updaterURL[updaterURL.rindex("/")+1:])
                 with open(path, 'wb') as file:
                     file.write(response.content)
-                subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
+                subprocess.Popen(["updater.exe"], shell=True)
                 return
         except:
             infoScreen("Could not download latest version\nThis program may be corrupted\npress any key to continue")
@@ -667,7 +666,7 @@ def infoScreen(info):
     screen.refresh()
     curses.curs_set(curstate)
 
-screen = helper.makeScreen()
+screen = makeScreen()
             
 # 30 x 120
 Version = "1.3.0"
@@ -686,14 +685,14 @@ except:
 
 mainMenuPrompt = "Current Version : "+str(Version)
 mainMenuPrompt += "\nLatest Version : "+str(LatestVersion)
-VersionValue = helper.versionToValue(Version)
-LatestValue = helper.versionToValue(LatestVersion)
+VersionValue = versionToValue(Version)
+LatestValue = versionToValue(LatestVersion)
 
 if(LatestValue == -1):
     mainMenuPrompt += "\n\nCould not get latest version"
 elif(VersionValue < LatestValue):
-    helper.updateScript(helper.isExe())
-    helper.exit_helper(0)
+    updateScript(isExe())
+    exit_helper(0)
 elif(VersionValue > LatestValue):
     mainMenuPrompt += "\n\n***BETA WARNING***"
 else:
@@ -702,17 +701,17 @@ else:
 
 
             
-if(helper.currentDirCheck()):
+if(currentDirCheck()):
     try:
-        if not helper.isLinux:
+        if not isLinux:
             new_dir = os.path.expandvars("%APPDATA%/../Local/CrabChampions/Saved")
         else:
             new_dir = os.path.expandvars("$HOME/.local/share/Steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved")
         os.chdir(new_dir)
     except:
-        helper.infoScreen("Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . .")
+        infoScreen("Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . .")
         screen.getch()
-        helper.exit_helper(0)
+        exit_helper(0)
 
 
 
@@ -720,7 +719,7 @@ if(helper.currentDirCheck()):
 mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
 mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
 while(True):
-    options = f"""Edit save game {helper.uesaveCheck()}
+    options = f"""Edit save game {uesaveCheck()}
     Backup Save
     Update backup
     Restore Save from backup (Warning : Deletes current save)
@@ -728,19 +727,19 @@ while(True):
     Info/How to use
     Exit"""
 
-    choice = helper.scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
+    choice = scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
     if(choice == 1):
-        helper.editBackup() # turned to curse
+        editBackup() # turned to curse
     elif(choice == 2):
-        helper.backupSave()
+        backupSave()
     elif(choice == 3):
-        helper.updateBackup() # turned to curse
+        updateBackup() # turned to curse
     elif(choice == 4):
-        helper.restoreBackup()# turned to curse
+        restoreBackup()# turned to curse
     elif(choice == 5):
-        helper.deleteBackup() # turned to curse
+        deleteBackup() # turned to curse
     elif(choice == 6):
-        helper.listBackups()
+        listBackups()
     elif(choice == 7):
         infolist = """
         ____ ____ ____  __  __ 
@@ -797,8 +796,8 @@ while(True):
         ***CREDITS***
         This script uses uesave-rs, a project made by Trumank. (https://github.com/trumank/uesave-rs)"""
 
-        helper.scrollInfoMenu(helper.infoList,-1)
+        scrollInfoMenu(infoList,-1)
     elif(choice == 8):
         break
     
-helper.exit_helper(0)
+exit_helper(0)
