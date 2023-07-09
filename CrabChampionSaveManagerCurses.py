@@ -197,6 +197,8 @@ def restoreBackup():
     saveGame+="\\SaveSlot.sav"
     backupName+="\\SaveSlot.sav"
     saveGame = "\""+saveGame+"\""
+    saveGame.replace("\\","/")
+    backupName.replace("\\","/")
     backupName = "\""+backupName+"\""
     infoScreen("0/8")
     proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json")
@@ -831,6 +833,7 @@ def genBackupData(backupName):
     #print(savFile)
     #print(savFile.replace("SaveSlot.sav","data.json"))
     uesavePath = getUesavePath()
+    saveFile.replace("\\","/")
     proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
     proc.wait()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
