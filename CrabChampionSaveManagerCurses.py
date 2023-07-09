@@ -429,7 +429,7 @@ def updateScript():
                 with open(path, 'wb') as file:
                     file.write(response.content)
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
-                return
+                exiting(0)
         except:
             infoScreen("Could not download latest version\nThis program may be corrupted\npress any key to continue")
             screen.getch()
