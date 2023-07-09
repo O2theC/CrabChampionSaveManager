@@ -21,4 +21,6 @@ use:<br>
 
 
 FAQ:<br>
-no questions yet, ask them in issues 
+Q: Can I help write and commit code?<br>
+
+A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome<br>
