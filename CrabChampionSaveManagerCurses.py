@@ -1,12 +1,13 @@
 import copy
+import hashlib
 import os
-import re
 import shutil
 import time
 import subprocess
 import sys
 import json
 from os import path
+import threading
 
 def closeScreen():
     global screen
@@ -18,6 +19,7 @@ def closeScreen():
 def exiting(var):
     try:
         closeScreen()
+        saveSettings()
     except:
         None
     exit(var)
@@ -44,8 +46,6 @@ def extract_numbers(input_string):
         return int(input_string)
     except:
         return -1
-    
-import re
 
 def is_valid_folder_name(folder_name):
     """Checks if the folder name is valid based on certain criteria.
@@ -339,21 +339,27 @@ def deleteBackup():
         scrollInfoMenu("Could not delete backup. Error below:\n"+str(error),-1)
 
 def listBackups():
+    global screen
     """Lists all the available backups of the save game.
     
     Retrieves the list of backup folders and displays them to the user.
     """
     
+    # current time in seconds - ["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]["CurrentTime"]["Int"]["value"]
+    
+    loadCache()
     current_directory = os.getcwd()
-    items = os.listdir(current_directory)
     folders = getBackups()
     prompt = str(len(folders))+" Backups Stored\nCurrent Backups\n"
     backups = "Go back to main menu\n"
+    maxLength = 0
+    for i in range(len(folders)):
+       maxLength = max(maxLength,len(folders[i]))
     for i,name in enumerate(folders):
         if(i == 0):
-            backups += str(name)
+            backups += str(name)+backupListInfo(name,maxLength)
         else:
-            backups += "\n"+str(name)
+            backups += "\n"+str(name)+backupListInfo(name,maxLength)
             
     scrollSelectMenu(prompt,backups)
 
@@ -616,11 +622,323 @@ def infoScreen(info):
     screen.addstr(1,0,info)
     screen.refresh()
     curses.curs_set(curstate)
+
+def userInputMenuNum(prompt,errorMessage,lowLimit = -2000000000,highLimit = 2000000000):
+    global screen
+
+    if(type(prompt) == type("")):
+        prompt = prompt.split("\n")
+
+    curstate = curses.curs_set(1)
+    num = ""
+    while True:
+        screen.clear()
+        for i , prom in enumerate(prompt):
+            screen.addstr(i, 0, prom)
+        screen.addstr(len(prompt)-1, 0, prompt[len(prompt)-1]+": "+num)
+        screen.refresh()
+        key = screen.getch()
+
+        if key == curses.KEY_BACKSPACE or key in [127, 8]:
+            num = num[:-1]
+        elif key == curses.KEY_ENTER or key in [10, 13]:
+            curses.curs_set(curstate)
+            if (int(num)<highLimit and int(num)>lowLimit):
+                return int(num)
+            else:
+                infoScreen(errorMessage)
+                screen.refresh()
+                curses.napms(2000)  # Display the error message for 2 seconds
+                folder_name = ""
+        else:
+            if(key in range(48,58)):
+                num += chr(key)
+ 
+def settings():
+    global configJSON
+    global TermHeight
+    global TermWidth
+    defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
+    relative_path = "CrabChampionSaveManager/config.json"
+
+    # Create the directory if it doesn't exist
+    directory = os.path.dirname(relative_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    file = open("CrabChampionSaveManager/config.json","r+")
+    try:
+        configJSON = json.loads(file.read())
+    except:
+        configJSON = json.loads(defaultJSON)
+        
+    prompt = "Select setting to edit"
+    options = "Back to main menu\nStart Up Settings"
+    while True:
+        choice = scrollSelectMenu(prompt,options)
+        if(choice == 0):
+            break
+        elif(choice == 1):
+            promptSUS = "Select setting to edit"
+            optionsSUS = "Back\nTerminal Size"
+            while True:
+                choice = scrollSelectMenu(promptSUS,optionsSUS)
+                if(choice == 0):
+                    break
+                elif(choice == 1):
+                    promptTS = "Select setting to edit"
+                    optionsTS = "Back\nHeight\nWidth"  
+                    while True:
+                        choice = scrollSelectMenu(promptTS,optionsTS)
+                        if(choice == 0):
+                            break
+                        elif(choice == 1):
+                            prompt = "Enter new height for terminal at start up (Currently at "+str(TermHeight)+")"
+                            configJSON["Start_Up"]["Terminal_Size"]["Height"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 30",29)
+                            saveSettings()
+                        elif(choice == 2):
+                            prompt = "Enter new width for terminal at start up (Currently at "+str(TermWidth)+")"
+                            configJSON["Start_Up"]["Terminal_Size"]["Width"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 120",119)
+                            saveSettings()
+                        
+def loadSettings():
+    global configJSON
+    global TermHeight
+    global TermWidth
+    defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
+    relative_path = "CrabChampionSaveManager/config.json"
+
+    # Create the directory if it doesn't exist
+    directory = os.path.dirname(relative_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    # while(not os.path.exists(directory)):
+    #     time.sleep(.1)
+    
+    try:
+        file = open("CrabChampionSaveManager/config.json","r+")
+    except:
+        file = open("CrabChampionSaveManager/config.json","w")
+        file.close()
+        file = open("CrabChampionSaveManager/config.json","r+")
+    try:
+        configJSON = json.loads(file.read())
+    except Exception as e:
+        configJSON = json.loads(defaultJSON)
+        
+    try:
+        TermHeight = configJSON["Start_Up"]["Terminal_Size"]["Height"]
+        TermHeight = max(TermHeight,15)
+    except:
+        configJSON["Start_Up"]["Terminal_Size"]["Height"] = 30
+        TermHeight = 30
+        
+    try:
+        TermWidth = configJSON["Start_Up"]["Terminal_Size"]["Width"]
+        TermWidth = max(TermWidth,120)
+    except:
+        configJSON["Start_Up"]["Terminal_Size"]["Width"] = 120  
+        TermWidth = 120
+    file.seek(0)
+    file.write(json.dumps(configJSON,indent=4))
+    file.truncate()
+    file.close()
+
+def saveSettings():
+    relative_path = "CrabChampionSaveManager/config.json"
+    global configJSON
+    directory = os.path.dirname(relative_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    file = open("CrabChampionSaveManager/config.json","w")
+    file.write(json.dumps(configJSON,indent=4))
+
+def getChecksum(file_path):
+    # Get the absolute path of the file
+    absolute_path = os.path.abspath(file_path)
+
+    # Open the file in binary mode and read it in chunks
+    with open(absolute_path, 'rb') as file:
+        # Create a SHA-512 hash object
+        sha512_hash = hashlib.sha512()
+
+        # Read the file in chunks to avoid loading the entire file into memory
+        for chunk in iter(lambda: file.read(4096), b''):
+            # Update the hash object with the current chunk
+            sha512_hash.update(chunk)
+
+    # Get the hexadecimal representation of the hash
+    checksum = sha512_hash.hexdigest()
+
+    return checksum
+
+def loadCache():
+    global lock
+    lock = threading.Lock()
+    global cacheJSON
+    backups = getBackups()
+    cachePath = "CrabChampionSaveManager/backupDataCache.json"
+    
+    # Create the directory if it doesn't exist
+    directory = os.path.dirname(cachePath)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    # while(not os.path.exists(directory)):
+    #     time.sleep(.1)
+    
+    try:
+        file = open("CrabChampionSaveManager/backupDataCache.json","r+")
+    except:
+        file = open("CrabChampionSaveManager/backupDataCache.json","w")
+        file.close()
+        file = open("CrabChampionSaveManager/backupDataCache.json","r+")
+    try:
+        cacheJSON = json.loads(file.read())
+    except:
+        cacheJSON = json.loads("{}")
+    threads = []
+    for backup in backups:
+        currentCS = getChecksum(backup+"/SaveSlot.sav")
+        try:
+            cacheCS = cacheJSON["BackupData"][backup]["CheckSum"]
+        except:
+            cacheCS = ""
+        if(currentCS != cacheCS):
+            t = threading.Thread(target=genBackupData, args=(backup,))
+            t.start()
+            threads.append(t)
+    for t in threads:
+        t.join()
+    file.seek(0)
+    file.write(json.dumps(cacheJSON,indent=4))
+        
+def spaceBeforeUpper(string):
+    result = string[0]  # The first uppercase letter should not have a space before it
+    for char in string[1:]:
+        if char.isupper():
+            result += ' ' + char  # Insert a space before the uppercase letter
+        else:
+            result += char  # Append lowercase letters as they are
+    return result
+ 
+def parseDiffMods(mods):
+    for i in range(len(mods)):
+        mods[i] = spaceBeforeUpper(str(mods[i][25:]))
+    return mods
             
+def genBackupData(backupName):
+    global lock
+    global cacheJSON
+    savFilePath = ""+backupName+"/SaveSlot.sav"
+    savFile = savFilePath
+    #print(savFile)
+    #print(savFile.replace("SaveSlot.sav","data.json"))
+    proc = subprocess.Popen("uesave to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
+    proc.wait()
+    saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
+    saveJSON = json.loads(saveFile.read())
+    saveFile.close()
+    os.remove(savFile.replace("SaveSlot.sav","data.json"))
+    try:
+        saveJSON = saveJSON["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]
+    except:
+        lock.acquire()
+        cacheJSON["BackupData"][backupName] = {}
+        cacheJSON["BackupData"][backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
+        cacheJSON["BackupData"][backupName]["NoSave"] = True
+        lock.release()
+        return
+    backupJSON = json.loads("{}")
+    #saveJSON = saveJSON["AutoSave"]
+    #run time in seconds (int) ["CurrentTime"]["Int"]["value"]
+    #score                     ["Points"]["Int"]["value"]
+    #difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override 
+    #island num                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
+    # diff mods                ["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
+    backupJSON[backupName] = {}
+    backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
+    backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
+    try:
+        diff = saveJSON["Difficulty"]["Enum"]["value"]
+        diff = diff[diff.index("::")+2:]
+    except:
+        diff = "Normal"
+    backupJSON[backupName]["Diff"] = diff
+    backupJSON[backupName]["IslandNum"] = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
+    try:
+        backupJSON[backupName]["DiffMods"] = parseDiffMods(saveJSON["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"])
+    except:
+        backupJSON[backupName]["DiffMods"] = []
+    backupJSON[backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
+    backupJSON[backupName]["NoSave"] = False
+    lock.acquire()
+    try:
+        cacheJSON["BackupData"][backupName] = backupJSON[backupName]
+    except:
+        cacheJSON["BackupData"] = {}
+        cacheJSON["BackupData"][backupName] = backupJSON[backupName]
+    lock.release()
+
+def formatTime(s):
+    if(s%60<10):
+        z = "0"
+    else:
+        z = ""
+    if(s//60%60<10):
+        zz = "0"
+    else:
+        zz = ""
+    if(s//60//60%24<10):
+        zzz = "0"
+    else:
+        zzz = ""
+    
+    if(s>=60*60*24):
+        return str(s//60//60//24)+":"+str(zzz)+str(s//60//60%24)+":"+str(zz)+str(s//60%60)+":"+str(z)+str(s%60)
+    elif(s>=60*60):
+        return str(s//60//60)+":"+str(zz)+str(s//60%60)+":"+str(z)+str(s%60)
+    elif(s>=60):
+        return str(s//60)+":"+str(z)+str(s%60)
+    else:
+        return s
+        
+def backupListInfo(backupName,maxLength):
+    infoString = ""
+    for _ in range(maxLength-len(backupName)):
+        infoString+=" "
+    infoString += " - "
+    try:
+        noSave = cacheJSON["BackupData"][backupName]["NoSave"]
+        if(not noSave):
+            score = cacheJSON["BackupData"][backupName]["Score"]
+            diff = cacheJSON["BackupData"][backupName]["Diff"]
+            islandNum = cacheJSON["BackupData"][backupName]["IslandNum"]
+            runtime = cacheJSON["BackupData"][backupName]["RunTime"]
+            runtime = formatTime(runtime)
+            infoString+=f"Time: {runtime}\tDiff: {diff}\tIsland: {islandNum}\tScore: {score}"
+            return infoString
+    except:
+        None
+    return ""
+    
+    
+    
+
+
+loadSettings()
+
+start = time.time()
+loadCache()
+stop = time.time()
+print(round(stop-start,2))
+#exiting(0)
 makeScreen()
+
+curses.resize_term(TermHeight,TermWidth)  
             
 # 30 x 120
-Version = "1.3.0"
+Version = "2.1.0"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
@@ -635,7 +953,6 @@ try:
     LatestVersion = final_url
 except:
     None
-    
 
 mainMenuPrompt = "Current Version : "+str(Version)
 mainMenuPrompt += "\nLatest Version : "+str(LatestVersion)
@@ -646,7 +963,6 @@ if(LatestValue == -1):
     mainMenuPrompt += "\n\nCould not get latest version"
 elif(VersionValue < LatestValue):
     updateScript(isExe)
-    exiting(0)
 elif(VersionValue > LatestValue):
     mainMenuPrompt += "\n\nooohh , you have a version that isn't released yet, nice"
 else:
@@ -670,7 +986,7 @@ if(currentDirCheck()):
 mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
 mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
 while(True):
-    options = "Edit save game"+uesaveCheck(isExe)+"\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nExit"
+    options = "Edit save game"+uesaveCheck(isExe)+"\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
     choice = scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
     if(choice == 1):
         editBackup(isExe) # turned to curse
@@ -738,6 +1054,8 @@ while(True):
         infoList += "\n\nThis script has some elements that require access to the internet, this includes:\n  Version Checking\n  Downloading .exe updater\n  Downloading uesave.exe"
         scrollInfoMenu(infoList,-1)
     elif(choice == 8):
+        settings()
+    elif(choice == 9):
         break
     
 exiting(0)
