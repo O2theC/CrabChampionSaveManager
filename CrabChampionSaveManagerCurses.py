@@ -405,6 +405,7 @@ def versionToValue(version):
 
 def updateScript():
     global isExe
+    global owd
     perm = yornMenu("There is a newer version available\nWould you like to update to the latest version?")
     if(perm):
         if(isExe):
@@ -415,13 +416,13 @@ def updateScript():
             updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
             
             response = requests.get(downloadLatestURL)
-            path = os.path.join(__file__[:__file__.rindex("\\")],downloadLatestURL[downloadLatestURL.rindex("/")+1:])
+            path = os.path.join(owd,downloadLatestURL[downloadLatestURL.rindex("/")+1:])
             path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
             with open(path, 'wb') as file:
                 file.write(response.content)
             if(isExe):
                 response = requests.get(updaterURL)
-                path = os.path.join(__file__[:__file__.rindex("\\")],updaterURL[updaterURL.rindex("/")+1:])
+                path = os.path.join(owd,updaterURL[updaterURL.rindex("/")+1:])
                 with open(path, 'wb') as file:
                     file.write(response.content)
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
@@ -625,8 +626,9 @@ def settings():
     global configJSON
     global TermHeight
     global TermWidth
+    global owd
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
-    configPath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/config.json"
+    configPath = owd+"/CrabChampionSaveManager/config.json"
 
     # Create the directory if it doesn't exist
     directory = os.path.dirname(configPath)
@@ -695,9 +697,10 @@ def settings():
 def loadSettings():
     global configJSON
     global TermHeight
+    global owd
     global TermWidth
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
-    configPath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/config.json"
+    configPath = owd+"/CrabChampionSaveManager/config.json"
 
     # Create the directory if it doesn't exist
     directory = os.path.dirname(configPath)
@@ -736,7 +739,8 @@ def loadSettings():
     file.close()
 
 def saveSettings():
-    configPath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/config.json"
+    global owd
+    configPath = owd+"/CrabChampionSaveManager/config.json"
     global configJSON
     directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
@@ -766,10 +770,11 @@ def getChecksum(file_path):
 
 def loadCache():
     global lock
+    global owd
     lock = threading.Lock()
     global cacheJSON
     backups = getBackups()
-    cachePath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/backupDataCache.json"
+    cachePath = owd+"/CrabChampionSaveManager/backupDataCache.json"
     
     # Create the directory if it doesn't exist
     directory = os.path.dirname(cachePath)
@@ -917,9 +922,10 @@ def backupListInfo(backupName,maxLength):
 def getUesavePath():
     global isExe
     global isLinux
-    programDir = __file__[:__file__.rindex("\\")]
+    global owd
+    programDir = owd
     if(isLinux):
-        uesavePath = programDir+"\\uesave"
+        uesavePath = programDir+"/uesave"
         if(os.path.exists(uesavePath)):
             return uesavePath
     elif(isExe):
@@ -940,15 +946,15 @@ def getUesavePath():
     perm = yornMenu("uesave could not be found, permission to download?")
     if(perm):
         response = requests.get(uesaveDownloadlink)
-        with open(programDir+"\\"+uesave, 'wb') as file:
+        with open(programDir+"/"+uesave, 'wb') as file:
             file.write(response.content)
         return getUesavePath()
     else:
         return ""
     
     
-    
-       
+global owd
+owd = os.getcwd()
 
 
 
