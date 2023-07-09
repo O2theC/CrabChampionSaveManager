@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 import subprocess
+import platform
 import sys
 import json
 from os import path
@@ -177,34 +178,10 @@ def restoreBackup():
     start = time.time()
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, folders[parseInt(choice)-1])
-    uesavePath = ""
-    if(isExe):
-        file = __file__
-        bundle_dir = path.abspath(path.dirname(file)) 
-        path_to_dat = path.join(bundle_dir, 'uesave.exe')
-        uesavePath = path_to_dat
-    else:
-        #%APPDATA%/../../.cargo/bin
-        uesaveExe = os.path.expandvars("%APPDATA%/../../.cargo/bin")
-        
-        if(os.path.exists(os.path.join(uesaveExe,"uesave.exe"))):
-            uesaveExe = os.path.join(uesaveExe,"uesave.exe")
-        elif(os.path.exists("uesave.exe")):
-            uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
-        else:
-            prompt = "uesave.exe could not be found\nPermission to download uesave?"
-            perm = yornMenu(prompt)
-            if("y" in perm.lower()):
-                downURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
-                response = requests.get(downURL)
-                with open(__file__[:__file__.rindex("\\")+1]+"uesave.exe", 'wb') as file:
-                    file.write(response.content)
-                uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
-            else:
-                scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nRestore Backups requires uesave to work\nPress Enter to return to main menu",-1)
-                return
-        uesavePath = uesaveExe
-    None
+    uesavePath = getUesavePath()
+    if(uesavePath == ""):
+        scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu")
+        return
     saveGame+="\\SaveSlot.sav"
     backupName+="\\SaveSlot.sav"
     saveGame = "\""+saveGame+"\""
@@ -253,8 +230,8 @@ def restoreBackup():
     #print("it took",round(stop-start,3)," seconds")
     return
 
-def editBackup(isExe):
-
+def editBackup():
+    global isExe
     """Edits a backup of the save game.
     
     Displays the available backups and prompts the user to choose one.
@@ -284,32 +261,12 @@ def editBackup(isExe):
     
     infoScreen("close window opened by uesave to continue\nBackup Opened : "+saveFile[saveFile.rindex("\\",0,saveFile.rindex("\\"))+1:saveFile.rindex("\\")].replace("SaveGames","Current Save"))
     saveFile = "\""+saveFile+"\""
-    if(isExe):
-        file = __file__
-        bundle_dir = path.abspath(path.dirname(file)) 
-        path_to_dat = path.join(bundle_dir, 'uesave.exe')
-        subprocess.run(str(path_to_dat)+" edit "+str(saveFile))
+    uesavePath = getUesavePath()
+    if(uesavePath == ""):
+        scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu")
+        return
     else:
-        #%APPDATA%/../../.cargo/bin
-        uesaveExe = os.path.expandvars("%APPDATA%/../../.cargo/bin")
-        
-        if(os.path.exists(os.path.join(uesaveExe,"uesave.exe"))):
-            uesaveExe = os.path.join(uesaveExe,"uesave.exe")
-        elif(os.path.exists("uesave.exe")):
-            uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
-        else:
-            prompt = "uesave.exe could not be found\nPermission to download uesave?"
-            perm = yornMenu(prompt)
-            if("y" in perm.lower()):
-                downURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
-                response = requests.get(downURL)
-                with open(__file__[:__file__.rindex("\\")+1]+"uesave.exe", 'wb') as file:
-                    file.write(response.content)
-                uesaveExe = __file__[:__file__.rindex("\\")+1]+"uesave.exe"
-            else:
-                scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nEdit Backups requires uesave to work\nPress Enter to return to main menu")
-                return
-        subprocess.run(str(uesaveExe)+" edit "+str(saveFile))
+        subprocess.run(uesavePath+" edit "+str(saveFile))
 
     try:
         os.remove(saveBackA)
@@ -434,7 +391,8 @@ def versionToValue(version):
     except:
         return -1
 
-def updateScript(isExe):
+def updateScript():
+    global isExe
     perm = yornMenu("There is a newer version available\nWould you like to update to the latest version?")
     if(perm):
         if(isExe):
@@ -445,13 +403,13 @@ def updateScript(isExe):
             updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
             
             response = requests.get(downloadLatestURL)
-            path = os.path.join(os.getcwd(),downloadLatestURL[downloadLatestURL.rindex("/")+1:])
+            path = os.path.join(__file__[:__file__.rindex("\\")],downloadLatestURL[downloadLatestURL.rindex("/")+1:])
             path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
             with open(path, 'wb') as file:
                 file.write(response.content)
             if(isExe):
                 response = requests.get(updaterURL)
-                path = os.path.join(os.getcwd(),updaterURL[updaterURL.rindex("/")+1:])
+                path = os.path.join(__file__[:__file__.rindex("\\")],updaterURL[updaterURL.rindex("/")+1:])
                 with open(path, 'wb') as file:
                     file.write(response.content)
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
@@ -656,14 +614,14 @@ def settings():
     global TermHeight
     global TermWidth
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
-    relative_path = "CrabChampionSaveManager/config.json"
+    configPath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/config.json"
 
     # Create the directory if it doesn't exist
-    directory = os.path.dirname(relative_path)
+    directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
         os.makedirs(directory)
     
-    file = open("CrabChampionSaveManager/config.json","r+")
+    file = open(configPath,"r+")
     try:
         configJSON = json.loads(file.read())
     except:
@@ -727,21 +685,21 @@ def loadSettings():
     global TermHeight
     global TermWidth
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
-    relative_path = "CrabChampionSaveManager/config.json"
+    configPath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/config.json"
 
     # Create the directory if it doesn't exist
-    directory = os.path.dirname(relative_path)
+    directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
         os.makedirs(directory)
     # while(not os.path.exists(directory)):
     #     time.sleep(.1)
     
     try:
-        file = open("CrabChampionSaveManager/config.json","r+")
+        file = open(configPath,"r+")
     except:
-        file = open("CrabChampionSaveManager/config.json","w")
+        file = open(configPath,"w")
         file.close()
-        file = open("CrabChampionSaveManager/config.json","r+")
+        file = open(configPath,"r+")
     try:
         configJSON = json.loads(file.read())
     except Exception as e:
@@ -766,13 +724,13 @@ def loadSettings():
     file.close()
 
 def saveSettings():
-    relative_path = "CrabChampionSaveManager/config.json"
+    configPath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/config.json"
     global configJSON
-    directory = os.path.dirname(relative_path)
+    directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
         os.makedirs(directory)
     
-    file = open("CrabChampionSaveManager/config.json","w")
+    file = open(configPath,"w")
     file.write(json.dumps(configJSON,indent=4))
 
 def getChecksum(file_path):
@@ -799,7 +757,7 @@ def loadCache():
     lock = threading.Lock()
     global cacheJSON
     backups = getBackups()
-    cachePath = "CrabChampionSaveManager/backupDataCache.json"
+    cachePath = __file__[:__file__.rindex("\\")+1]+"CrabChampionSaveManager/backupDataCache.json"
     
     # Create the directory if it doesn't exist
     directory = os.path.dirname(cachePath)
@@ -809,11 +767,11 @@ def loadCache():
     #     time.sleep(.1)
     
     try:
-        file = open("CrabChampionSaveManager/backupDataCache.json","r+")
+        file = open(cachePath,"r+")
     except:
-        file = open("CrabChampionSaveManager/backupDataCache.json","w")
+        file = open(cachePath,"w")
         file.close()
-        file = open("CrabChampionSaveManager/backupDataCache.json","r+")
+        file = open(cachePath,"r+")
     try:
         cacheJSON = json.loads(file.read())
     except:
@@ -855,7 +813,8 @@ def genBackupData(backupName):
     savFile = savFilePath
     #print(savFile)
     #print(savFile.replace("SaveSlot.sav","data.json"))
-    proc = subprocess.Popen("uesave to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
+    uesavePath = getUesavePath()
+    proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
     proc.wait()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
     saveJSON = json.loads(saveFile.read())
@@ -943,24 +902,67 @@ def backupListInfo(backupName,maxLength):
         None
     return ""
     
+def getUesavePath():
+    global isExe
+    global isLinux
+    programDir = __file__[:__file__.rindex("\\")]
+    if(isLinux):
+        uesavePath = programDir+"\\uesave"
+        if(os.path.exists(uesavePath)):
+            return uesavePath
+    elif(isExe):
+        return path.join(path.abspath(path.dirname(__file__)), 'uesave.exe')
+    else:
+        uesavePath = programDir+"\\uesave.exe"
+        if(os.path.exists(uesavePath)):
+            return uesavePath
+        
     
+    
+    if(isLinux):
+        uesaveDownloadlink = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave"
+        uesave = "uesave"
+    else:
+        uesaveDownloadlink = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
+        uesave = "uesave.exe"
+    perm = yornMenu("uesave could not be found, permission to download?")
+    if(perm):
+        response = requests.get(uesaveDownloadlink)
+        with open(programDir+"\\"+uesave, 'wb') as file:
+            file.write(response.content)
+        return getUesavePath()
+    else:
+        return ""
+    
+    
+    
+       
     
 
 
 loadSettings()
-
-start = time.time()
-loadCache()
-stop = time.time()
-print(round(stop-start,2))
+path = getUesavePath()
+if(path == ""):
+    scrollInfoMenu("This script uses uesave a lot,it is highly reccomended to download it\nyou can still use this program but i can not guarantee that it will fully work\nPress Enter to continue")
+else:
+    start = time.time()
+    loadCache()
+    stop = time.time()
+#print(round(stop-start,2))
 #exiting(0)
 makeScreen()
 
 curses.resize_term(TermHeight,TermWidth)  
             
 # 30 x 120
-Version = "2.1.1"
+Version = "2.2.0"
+global isExe
+global isLinux
 isExe = False
+isLinux = False
+
+if platform.system() == "Linux":
+    isLinux =  True
 
 if (getattr(sys, 'frozen', False)):
     isExe = True
@@ -983,7 +985,7 @@ LatestValue = versionToValue(LatestVersion)
 if(LatestValue == -1):
     mainMenuPrompt += "\n\nCould not get latest version"
 elif(VersionValue < LatestValue):
-    updateScript(isExe)
+    updateScript()
 elif(VersionValue > LatestValue):
     mainMenuPrompt += "\n\nooohh , you have a version that isn't released yet, nice"
 else:
@@ -994,7 +996,10 @@ else:
             
 if(currentDirCheck()):
     try:
-        new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
+        if(isLinux):
+            new_dir = os.path.expandvars("$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved")
+        else:
+            new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
         os.chdir(new_dir)
     except:
         infoScreen("Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . .")
@@ -1010,7 +1015,7 @@ while(True):
     options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
     choice = scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
     if(choice == 1):
-        editBackup(isExe) # turned to curse
+        editBackup() # turned to curse
     elif(choice == 2):
         backupSave()
     elif(choice == 3):
