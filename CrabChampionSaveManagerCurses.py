@@ -200,12 +200,6 @@ def restoreBackup():
     backupName = backupName.replace("\\","/")
     saveGame = "\""+saveGame+"\""
     backupName = "\""+backupName+"\""
-    
-    with open("debug.txt","w") as fil:
-        fil.write(saveGame)
-        fil.write("\n")
-        
-        fil.write(backupName)
     infoScreen("0/8")
     proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json")
     infoScreen("1/8")
@@ -426,6 +420,7 @@ def updateScript():
             response = requests.get(downloadLatestURL)
             path = os.path.join(owd,downloadLatestURL[downloadLatestURL.rindex("/")+1:])
             path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
+            path = path.replace("\\","/")
             with open(path, 'wb') as file:
                 file.write(response.content)
             if(isExe):
@@ -637,7 +632,7 @@ def settings():
     global owd
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
     configPath = owd+"/CrabChampionSaveManager/config.json"
-
+    configPath = configPath.replace("\\","/")
     # Create the directory if it doesn't exist
     directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
@@ -709,7 +704,8 @@ def loadSettings():
     global TermWidth
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
     configPath = owd+"/CrabChampionSaveManager/config.json"
-
+    
+    configPath = configPath.replace("\\","/")
     # Create the directory if it doesn't exist
     directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
@@ -749,6 +745,7 @@ def loadSettings():
 def saveSettings():
     global owd
     configPath = owd+"/CrabChampionSaveManager/config.json"
+    configPath = configPath.replace("\\","/")
     global configJSON
     directory = os.path.dirname(configPath)
     if not os.path.exists(directory):
@@ -760,7 +757,7 @@ def saveSettings():
 def getChecksum(file_path):
     # Get the absolute path of the file
     absolute_path = os.path.abspath(file_path)
-
+    absolute_path = absolute_path.replace("\\","/")
     # Open the file in binary mode and read it in chunks
     with open(absolute_path, 'rb') as file:
         # Create a SHA-512 hash object
@@ -783,7 +780,7 @@ def loadCache():
     global cacheJSON
     backups = getBackups()
     cachePath = owd+"/CrabChampionSaveManager/backupDataCache.json"
-    
+    cachePath = cachePath.replace("\\","/")
     # Create the directory if it doesn't exist
     directory = os.path.dirname(cachePath)
     if not os.path.exists(directory):
@@ -840,6 +837,7 @@ def genBackupData(backupName):
     #print(savFile.replace("SaveSlot.sav","data.json"))
     uesavePath = getUesavePath()
     saveFile = saveFile.replace("\\","/")
+    savFile = savFile.replace("\\","/")
     proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
     proc.wait()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
@@ -933,6 +931,7 @@ def getUesavePath():
     global isLinux
     global owd
     programDir = owd
+    programDir = programDir.replace("\\","/")
     if(isLinux):
         uesavePath = programDir+"/uesave"
         if(os.path.exists(uesavePath)):
