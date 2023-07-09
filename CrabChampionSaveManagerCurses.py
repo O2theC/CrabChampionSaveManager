@@ -957,7 +957,7 @@ global owd
 owd = os.getcwd()
 
 
-
+makeScreen()
 loadSettings()
 path = getUesavePath()
 if(path == ""):
@@ -968,7 +968,7 @@ else:
     stop = time.time()
 #print(round(stop-start,2))
 #exiting(0)
-makeScreen()
+
 
 curses.resize_term(TermHeight,TermWidth)  
             
