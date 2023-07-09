@@ -10,6 +10,17 @@ import json
 from os import path
 import threading
 
+global isExe
+global isLinux
+isExe = False
+isLinux = False
+
+if platform.system() == "Linux":
+    isLinux =  True
+
+if (getattr(sys, 'frozen', False)):
+    isExe = True
+
 def closeScreen():
     global screen
     curses.nocbreak()
@@ -32,7 +43,8 @@ except:
     print("Not all libraries are installed")
     perm = input("Permission to download libraries? [y/N]\n")
     if("y" in perm.lower()):
-        os.system("pip install windows-curses")
+        if(not isLinux):
+            os.system("pip install windows-curses")
         os.system("pip install requests")
         import requests
         import curses
@@ -937,7 +949,7 @@ def getUesavePath():
     
     
        
-    
+
 
 
 loadSettings()
@@ -956,16 +968,6 @@ curses.resize_term(TermHeight,TermWidth)
             
 # 30 x 120
 Version = "2.2.0"
-global isExe
-global isLinux
-isExe = False
-isLinux = False
-
-if platform.system() == "Linux":
-    isLinux =  True
-
-if (getattr(sys, 'frozen', False)):
-    isExe = True
     
 LatestVersion = Version
 latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
