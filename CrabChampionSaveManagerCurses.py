@@ -194,11 +194,9 @@ def restoreBackup():
     if(uesavePath == ""):
         scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu")
         return
-    saveGame+="\\SaveSlot.sav"
-    backupName+="\\SaveSlot.sav"
+    saveGame+="/SaveSlot.sav"
+    backupName+="/SaveSlot.sav"
     saveGame = "\""+saveGame+"\""
-    saveGame.replace("\\","/")
-    backupName.replace("\\","/")
     backupName = "\""+backupName+"\""
     infoScreen("0/8")
     proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json")
