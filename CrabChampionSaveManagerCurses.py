@@ -982,7 +982,7 @@ else:
 curses.resize_term(TermHeight,TermWidth)  
             
 # 30 x 120
-Version = "2.2.0"
+Version = "2.2.1"
     
 LatestVersion = Version
 latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
