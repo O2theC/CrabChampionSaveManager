@@ -31,7 +31,8 @@ except:
     print("Not all libraries are installed")
     perm = input("Permission to download libraries? [y/N]\n")
     if("y" in perm.lower()):
-        os.system("pip install requests windows-curses")
+        os.system("pip install windows-curses")
+        os.system("pip install requests")
         import requests
         import curses
     else:
@@ -40,14 +41,14 @@ except:
 
 
 
-def extract_numbers(input_string):
+def parseInt(input_string):
     """Converts the input string to an integer if possible, otherwise returns -1."""
     try:
         return int(input_string)
     except:
         return -1
 
-def is_valid_folder_name(folder_name):
+def isValidFolderName(folder_name):
     """Checks if the folder name is valid based on certain criteria.
     
     The folder name should not contain any of the characters \\/:*?\"<>|,
@@ -113,7 +114,9 @@ def backupNameMenu(prompt):
             folder_name = folder_name[:-1]
         elif key == curses.KEY_ENTER or key in [10, 13]:
             curses.curs_set(curstate)
-            if is_valid_folder_name(folder_name):
+            if(folder_name == ""):
+                return ""
+            elif isValidFolderName(folder_name):
                 return folder_name
             else:
                 infoScreen("Invaild backup name\nBackup name can not contain any of these characters \\ / : * ? \" < > | .")
@@ -135,7 +138,7 @@ def backupSave():
     folders = getBackups()
     confirm = False
     while(not confirm):
-        saveName = backupNameMenu("Enter none to go back to the main menu\nEnter backup name")
+        saveName = backupNameMenu("Enter nothing to go back to the main menu\nEnter backup name")
         if(not saveName in folders):
             confirm = True
         else:
@@ -144,7 +147,7 @@ def backupSave():
                 confirm = True
             else:
                 confirm = False
-    if(saveName.lower == "none"):
+    if(saveName == ""):
         return
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, saveName)
@@ -169,11 +172,11 @@ def restoreBackup():
     for i in range(len(folders)):
         options+="\n"+str(folders[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
-    if(extract_numbers(choice) == 0):
+    if(parseInt(choice) == 0):
         return
     start = time.time()
     saveGame = os.path.join(current_directory, "SaveGames")
-    backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
+    backupName = os.path.join(current_directory, folders[parseInt(choice)-1])
     uesavePath = ""
     if(isExe):
         file = __file__
@@ -245,7 +248,7 @@ def restoreBackup():
     shutil.copyfile("SaveGames/SaveSlot.sav","SaveGames/SaveSlotBackupA.sav")
     shutil.copyfile("SaveGames/SaveSlot.sav","SaveGames/SaveSlotBackupB.sav")
     infoScreen("8/8")
-    infoScreen("Backup Restored - "+str(folders[extract_numbers(choice)-1]))
+    infoScreen("Backup Restored - "+str(folders[parseInt(choice)-1]))
     stop = time.time()
     #print("it took",round(stop-start,3)," seconds")
     return
@@ -273,7 +276,7 @@ def editBackup(isExe):
     if(choice == 1):
         saveFile = os.path.join(current_directory,"SaveGames")
     else:
-        saveFile = os.path.join(current_directory,str(folders[extract_numbers(choice)-2]))
+        saveFile = os.path.join(current_directory,str(folders[parseInt(choice)-2]))
     saveFile = os.path.join(saveFile,"SaveSlot.sav")
     saveBackA = saveFile.replace("SaveSlot.sav","SaveSlotBackupA.sav")
     saveBackB = saveFile.replace("SaveSlot.sav","SaveSlotBackupB.sav")
@@ -330,9 +333,9 @@ def deleteBackup():
     for i in range(len(folders)):
         options+="\n"+str(folders[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
-    if(extract_numbers(choice) == 0):
+    if(parseInt(choice) == 0):
         return
-    backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
+    backupName = os.path.join(current_directory, folders[parseInt(choice)-1])
     try:
         shutil.rmtree(backupName)
     except Exception as error:
@@ -406,10 +409,10 @@ def updateBackup():
     for i in range(len(folders)):
         options+="\n"+str(folders[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
-    if(extract_numbers(choice) == 0):
+    if(parseInt(choice) == 0):
         return
     saveGame = os.path.join(current_directory, "SaveGames")
-    backupName = os.path.join(current_directory, folders[extract_numbers(choice)-1])
+    backupName = os.path.join(current_directory, folders[parseInt(choice)-1])
     try:
         shutil.rmtree(backupName,ignore_errors=True)
         shutil.copytree(saveGame, backupName)
@@ -462,12 +465,6 @@ def updateScript(isExe):
         exiting(0)
     else:
         return
- 
-def uesaveCheck(isEXE):
-    if(isExe):
-        return ""
-    else:
-        return " (requires uesave.exe)"
 
 def makeScreen():
     global screen
@@ -687,18 +684,42 @@ def settings():
                     break
                 elif(choice == 1):
                     promptTS = "Select setting to edit"
-                    optionsTS = "Back\nHeight\nWidth"  
+                      
                     while True:
+                        height = configJSON["Start_Up"]["Terminal_Size"]["Height"]
+                        width = configJSON["Start_Up"]["Terminal_Size"]["Width"]
+                        optionsTS = f"Back\nHeight - {height}\nWidth - {width}\nManuel"
                         choice = scrollSelectMenu(promptTS,optionsTS)
                         if(choice == 0):
                             break
                         elif(choice == 1):
-                            prompt = "Enter new height for terminal at start up (Currently at "+str(TermHeight)+")"
-                            configJSON["Start_Up"]["Terminal_Size"]["Height"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 30",29)
+                            prompt = f"Enter new height for terminal at start up (Currently at {TermHeight})\nIt is not recommend to go below 30"
+                            configJSON["Start_Up"]["Terminal_Size"]["Height"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 1",0)
                             saveSettings()
                         elif(choice == 2):
-                            prompt = "Enter new width for terminal at start up (Currently at "+str(TermWidth)+")"
-                            configJSON["Start_Up"]["Terminal_Size"]["Width"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 120",119)
+                            prompt = f"Enter new width for terminal at start up (Currently at {TermWidth})\nIt is not recommend to go below 120"
+                            configJSON["Start_Up"]["Terminal_Size"]["Width"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 1",0)
+                            saveSettings()
+                        elif(choice == 3):
+                            screen.nodelay(True)
+                            curstate = curses.curs_set(0)
+                            while(True):
+                                screen.clear()
+                                
+                                screen.addstr(0,0,"Change your terminal size to what you want")
+                                screen.addstr(1,0,"Current Width : "+str(screen.getmaxyx()[1]))
+                                screen.addstr(2,0,"Current Height : "+str(screen.getmaxyx()[0]))
+                                screen.addstr(3,0,"Press enter when you want to save the terminal size")
+                                
+                                screen.refresh()
+                                key = screen.getch()
+                                
+                                if(key in [13,10] or key == curses.KEY_ENTER):
+                                    break
+                            screen.nodelay(False)
+                            curses.curs_set(curstate)
+                            configJSON["Start_Up"]["Terminal_Size"]["Width"] = screen.getmaxyx()[1]
+                            configJSON["Start_Up"]["Terminal_Size"]["Height"] = screen.getmaxyx()[0]
                             saveSettings()
                         
 def loadSettings():
@@ -938,7 +959,7 @@ makeScreen()
 curses.resize_term(TermHeight,TermWidth)  
             
 # 30 x 120
-Version = "2.1.0"
+Version = "2.1.1"
 isExe = False
 
 if (getattr(sys, 'frozen', False)):
@@ -986,7 +1007,7 @@ if(currentDirCheck()):
 mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
 mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
 while(True):
-    options = "Edit save game"+uesaveCheck(isExe)+"\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
+    options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
     choice = scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
     if(choice == 1):
         editBackup(isExe) # turned to curse
@@ -1001,57 +1022,46 @@ while(True):
     elif(choice == 6):
         listBackups()
     elif(choice == 7):
-        infoList = "Crab Champion Save Manager\n"
-        infoList += "\nWelcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion."
-        infoList += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager"
-        infoList += "\nThis program provides the following options:\n"
+        infoList = """Crab Champion Save Manager
+        Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.
+        Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager
+        This program provides the following options:\n
 
-        infoList += "\n1. Edit Save Game:"
-        infoList += "\n   - This option allows you to edit your save game using the uesave tool."
-        infoList += "\n   - The uesave tool can be found at https://github.com/trumank/uesave-rs, all credit for the tool goes to trumank"
-        infoList += "\n   - This option uses the uesave tool for editing the .sav file, the selection of the backup is done by the script"
-        infoList += "\n   - .exe Version : this options uses the uesave tool that is bundled with the EXE meaning that you don't have to do\n     anything to use this option"
-        infoList += "\n   - .py Version : you will have to have a copy of the uesave tool, if no copy is detected then a copy will be\n     downloaded if permission is given"
+\nEdit Save Game:
+    - Uses uesave to allow the user to edit the SaveSlot.sav file in a backup or your current save
 
-        infoList += "\n\n2. Backup Save:"
-        infoList += "\n   - This option allows you to create a backup of your current save game."
-        infoList += "\n   - When prompted, enter a name for the backup folder."
-        infoList += "\n   - The backup name must be a valid folder name and should not already exist."
-        infoList += "\n   - If a valid backup name is provided, the SaveGames folder will be copied to the backup location."
+ \nBackup Save:
+    - backup up your current save with a custom name
 
-        infoList += "\n\n3. Update backup:"
-        infoList += "\n   - This option allows you to update a backup using your current save game."
-        infoList += "\n   - When prompted, choose a backup to be updated."
+ \nUpdate backup:
+    - Update a already made backup with the current saved run
 
-        infoList += "\n\n4. Restore Save from Backup:"
-        infoList += "\n   - This option allows you to restore a backup of your save game."
-        infoList += "\n   - Select a backup from the available options."
-        infoList += "\n   - The uesave tool will be used to turn both the backup .sav file and the current save's .sav file into json"
-        infoList += "\n   - This program then takes in the json and takes the autosave from the backup and copys it over to the current save\n     json"
-        infoList += "\n   - The json with the restored save is then saved to a file and the uesave tool turns that back to .sav and the backup\n     copys are made"
-        infoList += "\n   - Caution: Restoring a backup will overwrite your current save game, so choose the backup carefully."
+ \nRestore Save from Backup:
+    - Restores a run from a backup
 
-        infoList += "\n\n5. Delete Backup:"
-        infoList += "\n   - This option allows you to delete a backup of your save game."
-        infoList += "\n   - Select a backup from the available options."
-        infoList += "\n   - The selected backup folder will be permanently deleted."
-        infoList += "\n   - Note: Deleting a backup cannot be undone, so be careful when removing backups."
+ \nDelete Backup:
+    - Deletes a backup
+    - Note: Deleting a backup cannot be undone, so be careful when removing backups.
 
-        infoList += "\n\n6. List Backups:"
-        infoList += "\n   - This option displays the available backups of your save game."
-        infoList += "\n   - It shows the names of the backup folders and the total count of backups."
+ \nList Backups:
+    - Lists all backups and trys to list some info about the run
 
-        infoList += "\n\n7. Info/How to use:"
-        infoList += "\n   - This option provides a brief description of each functionality and how to use them."
-        infoList += "\n   - It gives an overview of the script's purpose and directs you to the GitHub repository for reporting issues and\n     suggestions."
+ \nInfo/How to use:
+    - provides info about the program and how to use it
 
-        infoList += "\n\n8. Exit:"
-        infoList += "\n   - This option allows you to exit the program."
+ \Settings:
+    - Change program settings
 
-        infoList += "\n\nThis script uses uesave.exe from https://github.com/trumank/uesave-rs, all credit for this goes to trumank,their\n     program is in my opinion very well made and works very well"
-        infoList += "\nReport issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager"
-        infoList += "\nNote that this info section and most of the code comments were made by chatgpt , if it did something wrong, make an\n     issue at https://github.com/O2theC/CrabChampionSaveManager"
-        infoList += "\n\nThis script has some elements that require access to the internet, this includes:\n  Version Checking\n  Downloading .exe updater\n  Downloading uesave.exe"
+ \nExit:
+    - Exits the program.
+
+ This script uses uesave from https://github.com/trumank/uesave-rs, all credit for this goes to trumank,their
+ program is in my opinion very well made and works very well
+ Report issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager
+ This script has some elements that require access to the internet, this includes:
+ Version Checking
+ Downloading an updater for the .exe version of the program
+ Downloading uesave"""
         scrollInfoMenu(infoList,-1)
     elif(choice == 8):
         settings()
