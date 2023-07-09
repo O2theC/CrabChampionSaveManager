@@ -196,8 +196,16 @@ def restoreBackup():
         return
     saveGame+="/SaveSlot.sav"
     backupName+="/SaveSlot.sav"
+    saveGame = saveGame.replace("\\","/")
+    backupName = backupName.replace("\\","/")
     saveGame = "\""+saveGame+"\""
     backupName = "\""+backupName+"\""
+    
+    with open("debug.txt","w") as fil:
+        fil.write(saveGame)
+        fil.write("\n")
+        
+        fil.write(backupName)
     infoScreen("0/8")
     proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json")
     infoScreen("1/8")
@@ -270,8 +278,8 @@ def editBackup():
     saveBackA = saveFile.replace("SaveSlot.sav","SaveSlotBackupA.sav")
     saveBackB = saveFile.replace("SaveSlot.sav","SaveSlotBackupB.sav")
     sf = saveFile
-    
-    infoScreen("close window opened by uesave to continue\nBackup Opened : "+saveFile[saveFile.rindex("\\",0,saveFile.rindex("\\"))+1:saveFile.rindex("\\")].replace("SaveGames","Current Save"))
+    saveFile = saveFile.replace("\\","/")
+    infoScreen("close window opened by uesave to continue\nBackup Opened : "+saveFile[saveFile.rindex("/",0,saveFile.rindex("/"))+1:saveFile.rindex("/")].replace("SaveGames","Current Save"))
     saveFile = "\""+saveFile+"\""
     uesavePath = getUesavePath()
     if(uesavePath == ""):
@@ -831,7 +839,7 @@ def genBackupData(backupName):
     #print(savFile)
     #print(savFile.replace("SaveSlot.sav","data.json"))
     uesavePath = getUesavePath()
-    saveFile.replace("\\","/")
+    saveFile = saveFile.replace("\\","/")
     proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
     proc.wait()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
@@ -932,7 +940,8 @@ def getUesavePath():
     elif(isExe):
         return path.join(path.abspath(path.dirname(__file__)), 'uesave.exe')
     else:
-        uesavePath = programDir+"\\uesave.exe"
+        uesavePath = programDir+"/uesave.exe"
+        uesavePath = uesavePath.replace("\\","/")
         if(os.path.exists(uesavePath)):
             return uesavePath
         
