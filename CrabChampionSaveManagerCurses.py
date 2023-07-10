@@ -289,6 +289,11 @@ def editBackup():
         None
     shutil.copy(sf, saveBackA)
     shutil.copy(sf, saveBackB)
+
+    #fix for terminal text editors like nano and vim
+    curses.noecho()
+    curses.cbreak()
+    screen.keypad(True)
     
 def deleteBackup():
     """Deletes a backup of the save game.
@@ -311,11 +316,6 @@ def deleteBackup():
         shutil.rmtree(backupName)
     except Exception as error:
         scrollInfoMenu("Could not delete backup. Error below:\n"+str(error),-1)
-
-    #fix for terminal text editors like nano and vim
-    curses.noecho()
-    curses.cbreak()
-    screen.keypad(True)
 
 def listBackups():
     global screen
