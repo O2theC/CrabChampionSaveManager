@@ -312,6 +312,11 @@ def deleteBackup():
     except Exception as error:
         scrollInfoMenu("Could not delete backup. Error below:\n"+str(error),-1)
 
+    #fix for terminal text editors like nano and vim
+    curses.noecho()
+    curses.cbreak()
+    screen.keypad(True)
+
 def listBackups():
     global screen
     """Lists all the available backups of the save game.
