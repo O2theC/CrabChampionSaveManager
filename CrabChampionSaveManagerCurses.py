@@ -201,14 +201,14 @@ def restoreBackup():
     saveGame = "\""+saveGame+"\""
     backupName = "\""+backupName+"\""
     infoScreen("0/8")
-    proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json")
+    proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json",shell=True)
     infoScreen("1/8")
     proc1.wait()
     with open("currentSave.json") as JSON_File:
         saveJSON = json.load(JSON_File)
     os.remove("currentSave.json")
     infoScreen("2/8")
-    proc2 = subprocess.Popen(uesavePath+" to-json -i "+backupName+" -o backupSave.json")    
+    proc2 = subprocess.Popen(uesavePath+" to-json -i "+backupName+" -o backupSave.json", shell=True)    
     proc2.wait()
     with open("backupSave.json") as JSON_File:
         backupJSON = json.load(JSON_File)
@@ -230,7 +230,7 @@ def restoreBackup():
     with open("restoredSave.json","w") as JSON_File:
         JSON_File.write(json.dumps(saveJSON, indent=4))
     infoScreen("6/8")
-    proc1 = subprocess.Popen(uesavePath+" from-json -i restoredSave.json -o SaveGames/SaveSlot.sav")
+    proc1 = subprocess.Popen(uesavePath+" from-json -i restoredSave.json -o SaveGames/SaveSlot.sav", shell=True)
     #proc2 = subprocess.Popen(uesavePath+" from-json -i restoredSave.json -o test/SaveSlot.sav")
     proc1.wait()
     os.remove("restoredSave.json")
@@ -280,7 +280,7 @@ def editBackup():
         scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu")
         return
     else:
-        subprocess.run(uesavePath+" edit "+str(saveFile))
+        subprocess.run(uesavePath+" edit "+str(saveFile), shell=True)
 
     try:
         os.remove(saveBackA)
@@ -838,7 +838,7 @@ def genBackupData(backupName):
     uesavePath = getUesavePath()
     saveFile = saveFile.replace("\\","/")
     savFile = savFile.replace("\\","/")
-    proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"")
+    proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"", shell=True)
     proc.wait()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
     saveJSON = json.loads(saveFile.read())
