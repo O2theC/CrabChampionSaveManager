@@ -289,6 +289,11 @@ def editBackup():
         None
     shutil.copy(sf, saveBackA)
     shutil.copy(sf, saveBackB)
+
+    #fix for terminal text editors like nano and vim
+    curses.noecho()
+    curses.cbreak()
+    screen.keypad(True)
     
 def deleteBackup():
     """Deletes a backup of the save game.
