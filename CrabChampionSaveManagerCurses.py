@@ -12,8 +12,11 @@ import threading
 
 global isExe
 global isLinux
+global Version
 isExe = False
 isLinux = False
+
+Version = "2.2.4"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -36,7 +39,10 @@ def exiting(var):
         saveSettings()
     except:
         None
-    exit(var)
+    if(var == 0):
+        exit(0)
+    elif(var == 1):
+        exit(1)
     
 try:
     import requests
@@ -181,7 +187,7 @@ def restoreBackup():
     """
 
     current_directory = os.getcwd()
-    folders = getBackups()
+    folders = getBackups(moreInfo=1)
     prompt = "Choose Backup to restore\n"
     options = "Go back to main menu"
     for i in range(len(folders)):
@@ -257,7 +263,7 @@ def editBackup():
     """
 
     current_directory = os.getcwd()
-    folders = getBackups()
+    folders = getBackups(moreInfo=1)
     prompt = "Choose Backup to edit\n"
     options = "Go back to main menu\nEdit current save"
     for i in range(len(folders)):
@@ -305,7 +311,7 @@ def deleteBackup():
     """
     
     current_directory = os.getcwd()
-    folders = getBackups()
+    folders = getBackups(moreInfo=1)
     prompt = "Choose Backup to delete\n"
     options = "Go back to main menu"
     for i in range(len(folders)):
@@ -330,21 +336,19 @@ def listBackups():
     
     loadCache()
     current_directory = os.getcwd()
-    folders = getBackups()
+    folders = getBackups(moreInfo=1)
     prompt = str(len(folders))+" Backups Stored\nCurrent Backups\n"
     backups = "Go back to main menu\n"
-    maxLength = 0
-    for i in range(len(folders)):
-       maxLength = max(maxLength,len(folders[i]))
     for i,name in enumerate(folders):
         if(i == 0):
-            backups += (str(name)+backupListInfo(name,maxLength))
+            backups += str(name)
         else:
-            backups += "\n"+str(name)+backupListInfo(name,maxLength)
+            backups += "\n"+str(name)
             
     scrollSelectMenu(prompt,backups,wrapMode=2)
 
-def getBackups():
+def getBackups(moreInfo = 0):
+    global cacheJSON
     """Retrieves the list of backup folders.
     
     Searches the current directory for backup folders and returns a list of their names.
@@ -360,7 +364,55 @@ def getBackups():
         None
     folders = [item for item in items if os.path.isdir(os.path.join(current_directory, item))]
     folders = [item for item in items if os.path.isfile(os.path.join(os.path.join(current_directory, item),"SaveSlot.sav"))]
-    return folders
+    if(moreInfo == 0):
+        return folders
+    else:
+        #for the config json
+    #run time seconds        - ["BackupData"][BackupName]["RunTime"]
+    #score                   - ["BackupData"][BackupName]["Score"]
+    #difficulty              - ["BackupData"][BackupName]["Diff"]
+    #island num              - ["BackupData"][BackupName]["IslandNum"]
+    #diff mods               - ["BackupData"][BackupName]["DiffMods"]
+    #checksum                - ["BackupData"][BackupName]["CheckSum"]
+    #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
+        loadCache()
+        maxLenName = 0
+        maxLenTime = 0
+        maxLenDiff = 0
+        maxLenIsland = 0
+        maxLenScore = 0
+        for name in folders:
+            maxLenName = max(maxLenName,len(name))
+            maxLenTime = max(maxLenTime,len(f"Time: {formatTime(cacheJSON['BackupData'][name]['RunTime'])}"))
+            maxLenDiff = max(maxLenDiff,len("Diff: "+str(cacheJSON["BackupData"][name]["Diff"])))
+            maxLenIsland = max(maxLenIsland,len("Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])))
+            maxLenScore = max(maxLenScore,len("Score: "+str(cacheJSON["BackupData"][name]["Score"])))
+        distance = 4
+        maxLenTime += distance
+        maxLenDiff += distance
+        maxLenIsland += distance
+        maxLenScore += distance
+        for i in range(len(folders)):
+            name = folders[i]
+            time = "Time: "+str(formatTime(cacheJSON['BackupData'][name]['RunTime']))
+            time = ensureLength(time,maxLenTime)
+            diff = "Diff: "+str(cacheJSON["BackupData"][name]["Diff"])
+            diff = ensureLength(diff,maxLenDiff)
+            islandnum = "Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])
+            islandnum = ensureLength(islandnum,maxLenIsland)
+            score = "Score: "+str(cacheJSON["BackupData"][name]["Score"])
+            score = ensureLength(score,maxLenScore)
+            name = ensureLength(name,maxLenName)
+            folders[i] = name+" - "+time+diff+islandnum+score
+        return folders
+            
+def ensureLength(string,length):
+    '''
+    takes in a string and adds spaces to the end up it till it has the same length
+    '''      
+    while(len(string)<length):
+        string +=" "
+    return string    
 
 def currentDirCheck():
     """Checks if the required folders are present in the current directory.
@@ -381,7 +433,7 @@ def currentDirCheck():
 
 def updateBackup():
     current_directory = os.getcwd()
-    folders = getBackups()
+    folders = getBackups(moreInfo=1)
     prompt = "Choose Backup to update\n"
     options = "Go back to main menu"
     for i in range(len(folders)):
@@ -425,24 +477,23 @@ def updateScript():
             updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
             
             response = requests.get(downloadLatestURL)
-            path = os.path.join(owd,downloadLatestURL[downloadLatestURL.rindex("/")+1:])
-            path = path.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
-            path = path.replace("\\","/")
-            with open(path, 'wb') as file:
+            propath = os.path.join(owd,downloadLatestURL[downloadLatestURL.rindex("/")+1:])
+            propath = propath.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
+            propath = propath.replace("\\","/")
+            with open(propath, 'wb') as file:
                 file.write(response.content)
             if(isExe):
                 response = requests.get(updaterURL)
-                path = os.path.join(owd,updaterURL[updaterURL.rindex("/")+1:])
-                with open(path, 'wb') as file:
+                propath = os.path.join(owd,updaterURL[updaterURL.rindex("/")+1:])
+                with open(propath, 'wb') as file:
                     file.write(response.content)
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
                 exiting(0)
         except:
             infoScreen("Could not download latest version\nThis program may be corrupted\npress any key to continue")
-            screen.getch()
+            time.sleep(2)
             exiting(1)
         infoScreen("Latest Version succesfully downloaded\nRestart required for changes to take effect\npress any key to continue")
-        screen.getch()
         exiting(0)
     else:
         return
@@ -689,13 +740,19 @@ def settings():
                         if(choice == 0):
                             break
                         elif(choice == 1):
-                            prompt = f"Enter new height for terminal at start up (Currently at {TermHeight})\nIt is not recommend to go below 30"
-                            configJSON["Start_Up"]["Terminal_Size"]["Height"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 1",0)
-                            saveSettings()
+                            try:
+                                prompt = f"Enter new height for terminal at start up (Currently at {TermHeight})\nIt is not recommend to go below 30"
+                                configJSON["Start_Up"]["Terminal_Size"]["Height"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 1",0)
+                                saveSettings()
+                            except:
+                                None
                         elif(choice == 2):
-                            prompt = f"Enter new width for terminal at start up (Currently at {TermWidth})\nIt is not recommend to go below 120"
-                            configJSON["Start_Up"]["Terminal_Size"]["Width"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 1",0)
-                            saveSettings()
+                            try:
+                                prompt = f"Enter new width for terminal at start up (Currently at {TermWidth})\nIt is not recommend to go below 120"
+                                configJSON["Start_Up"]["Terminal_Size"]["Width"] = userInputMenuNum(prompt,"Invaild number, number must be greater than or equal to 1",0)
+                                saveSettings()
+                            except:
+                                None
                         elif(choice == 3):
                             screen.nodelay(True)
                             curstate = curses.curs_set(0)
@@ -797,6 +854,7 @@ def getChecksum(file_path):
 
 def loadCache():
     global lock
+    global Version
     global owd
     lock = threading.Lock()
     global cacheJSON
@@ -827,7 +885,11 @@ def loadCache():
             cacheCS = cacheJSON["BackupData"][backup]["CheckSum"]
         except:
             cacheCS = ""
-        if(currentCS != cacheCS):
+        try:
+            cacheVersion = cacheJSON["BackupData"][backup]["Version"]
+        except:
+            cacheVersion = "0.0.0"
+        if(currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(Version)):
             t = threading.Thread(target=genBackupData, args=(backup,))
             t.start()
             threads.append(t)
@@ -852,6 +914,7 @@ def parseDiffMods(mods):
             
 def genBackupData(backupName):
     global lock
+    global Version
     global cacheJSON
     savFilePath = ""+backupName+"/SaveSlot.sav"
     savFile = savFilePath
@@ -871,6 +934,7 @@ def genBackupData(backupName):
         lock.acquire()
         cacheJSON["BackupData"][backupName] = {}
         cacheJSON["BackupData"][backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
+        cacheJSON["BackupData"][backupName]["Version"] = Version
         cacheJSON["BackupData"][backupName]["NoSave"] = True
         lock.release()
         return
@@ -881,6 +945,24 @@ def genBackupData(backupName):
     #difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override 
     #island num                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
     # diff mods                ["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
+    # stat elmins              ["Eliminations"]["Int"]["value"]
+    # stat shots fired         ["ShotsFired"]["Int"]["value"]
+    # stat damage dealt        ["DamageDealt"]["Int"]["value"]
+    # stat highest dmg delt    ["HighestDamageDealt"]["Int"]["value"]
+    # stat damage Taken        ["DamageTaken"]["Int"]["value"]
+    # stat flawless islands    ["NumFlawlessIslands"]["Int"]["value"]
+    
+    
+    
+    #for the config json
+    #run time seconds        - ["BackupData"][BackupName]["RunTime"]
+    #score                   - ["BackupData"][BackupName]["Score"]
+    #difficulty              - ["BackupData"][BackupName]["Diff"]
+    #island num              - ["BackupData"][BackupName]["IslandNum"]
+    #diff mods               - ["BackupData"][BackupName]["DiffMods"]
+    #checksum                - ["BackupData"][BackupName]["CheckSum"]
+    #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
+    #Version                 - ["BackupData"][BackupName]["Version"]
     backupJSON[backupName] = {}
     backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
     backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
@@ -897,6 +979,7 @@ def genBackupData(backupName):
         backupJSON[backupName]["DiffMods"] = []
     backupJSON[backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
     backupJSON[backupName]["NoSave"] = False
+    backupJSON[backupName]["Version"] = Version
     lock.acquire()
     try:
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
@@ -958,7 +1041,7 @@ def getUesavePath():
         if(os.path.exists(uesavePath)):
             return uesavePath
     elif(isExe):
-        return path.join(path.abspath(path.dirname(__file__)), 'uesave.exe')
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uesave.exe')
     else:
         uesavePath = programDir+"/uesave.exe"
         uesavePath = uesavePath.replace("\\","/")
@@ -1013,8 +1096,8 @@ owd = os.getcwd()
 
 makeScreen()
 loadSettings()
-path = getUesavePath()
-if(path == ""):
+uepath = getUesavePath()
+if(uepath == ""):
     scrollInfoMenu("This script uses uesave a lot,it is highly reccomended to download it\nyou can still use this program but i can not guarantee that it will fully work\nPress Enter to continue")
 else:
     start = time.time()
@@ -1026,7 +1109,6 @@ else:
 curses.resize_term(TermHeight,TermWidth)  
             
 # 30 x 120
-Version = "2.2.3"
     
 LatestVersion = Version
 latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
