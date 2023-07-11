@@ -29,7 +29,9 @@ def closeScreen():
     curses.endwin()
 
 def exiting(var):
+    global screen
     try:
+        screen.clear()
         closeScreen()
         saveSettings()
     except:
@@ -289,11 +291,11 @@ def editBackup():
         None
     shutil.copy(sf, saveBackA)
     shutil.copy(sf, saveBackB)
-
+    
     #fix for terminal text editors like nano and vim
-    curses.noecho()
-    curses.cbreak()
-    screen.keypad(True)
+    curses.noecho()  # Don't display user input
+    curses.cbreak()  # React to keys immediately without Enter
+    screen.keypad(True)  # Enable special keys (e.g., arrow keys)
     
 def deleteBackup():
     """Deletes a backup of the save game.
@@ -336,11 +338,11 @@ def listBackups():
        maxLength = max(maxLength,len(folders[i]))
     for i,name in enumerate(folders):
         if(i == 0):
-            backups += str(name)+backupListInfo(name,maxLength)
+            backups += (str(name)+backupListInfo(name,maxLength))
         else:
             backups += "\n"+str(name)+backupListInfo(name,maxLength)
             
-    scrollSelectMenu(prompt,backups)
+    scrollSelectMenu(prompt,backups,wrapMode=2)
 
 def getBackups():
     """Retrieves the list of backup folders.
@@ -452,7 +454,7 @@ def makeScreen():
     curses.cbreak()  # React to keys immediately without Enter
     screen.keypad(True)  # Enable special keys (e.g., arrow keys)
 
-def scrollSelectMenu(prompt,options,window_height = -1,buffer_size = 1):
+def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1):
     global screen
     
     
@@ -461,52 +463,62 @@ def scrollSelectMenu(prompt,options,window_height = -1,buffer_size = 1):
     if(type(prompt) == type("")):
         prompt = prompt.split("\n")
     
-    if(window_height == -1):
+    if(win_height == -1):
         autoSize = True
-        window_height = 1000
+        win_height = 1000
     else:
         autoSize = False
     
         
-    window_height = min(window_height,screen.getmaxyx()[0]-(3+len(prompt)))
-    window_height = max(1,window_height)
-    
+    win_height = min(win_height,screen.getmaxyx()[0]-(3+len(prompt)))
+    win_height = max(1,win_height)
+    win_wid = screen.getmaxyx()[1]
     oBufSize = buffer_size
     
-    buffer_size = min(buffer_size,window_height//2 - 1 + window_height % 2)
+    buffer_size = min(buffer_size,win_height//2 - 1 + win_height % 2)
     buffer_size = max(buffer_size,0)
     
     selected_option = 0
     scroll_window = 0
     curstate = curses.curs_set(0)
+    firstPass = False
     while True:
         screen.clear()
-        
+        win_wid = screen.getmaxyx()[1]
         # Display the main prompt
         for i, prom in enumerate(prompt):
+            if(len(prom)>win_wid) and wrapMode == 2:
+                prom = prom[:win_wid]
             screen.addstr(i, 0, prom)
         
         # Display the options
         for i, option in enumerate(options):
             
-            if(i>=scroll_window and i <scroll_window+window_height):
-            
+            if(i>=scroll_window and i <scroll_window+win_height):
                 if i == selected_option:
                     # Highlight the selected option
-                    screen.addstr((i + len(prompt) - scroll_window), 1, "> " + option, curses.A_BOLD)
+                    if(len(option)+2>win_wid) and wrapMode == 2:
+                        option = option[:win_wid]
+                    screen.addstr((i + len(prompt) - scroll_window), 0, " > " + option, curses.A_BOLD)
                 else:
-                    screen.addstr((i + len(prompt) - scroll_window), 1, " " + option)
-        
-        screen.addstr(min(window_height,len(options)) + len(prompt)+1, 0, "Use arrow keys to navigate options. Press Enter to select.")
+                    if(len(option)+1>win_wid) and wrapMode == 2:
+                        option = option[:win_wid]
+                    screen.addstr((i + len(prompt) - scroll_window), 0, "  " + option)
+        screen.addstr(min(win_height,len(options)) + len(prompt),0,"                                                                                                               ")
+        screen.addstr(min(win_height,len(options)) + len(prompt)+1, 0, "Use arrow keys to navigate options. Press Enter to select.")
         screen.refresh()
-        key = screen.getch()
+        if(firstPass):
+            key = screen.getch()
+        else:
+            key = -1
+            firstPass = True
         
         if(autoSize):            
-            window_height = screen.getmaxyx()[0]-(3+len(prompt))
+            win_height = screen.getmaxyx()[0]-(3+len(prompt))
             
             buffer_size = oBufSize
     
-            buffer_size = min(buffer_size,window_height//2 - 1 + window_height % 2)
+            buffer_size = min(buffer_size,win_height//2 - 1 + win_height % 2)
             buffer_size = max(buffer_size,0)
             
             
@@ -524,7 +536,7 @@ def scrollSelectMenu(prompt,options,window_height = -1,buffer_size = 1):
         #if the selected item goes out of the effective window then the scrolling window moves up or down to keep the selective item in the effective window, the effective window is in the center of the scrolling window and is scrolling_window_size-(buffer_size*2) = effective_window_size, and effective window size can not be smaller than 1 and not any larger than scrolling_window_size
         if(selected_option < scroll_window+buffer_size and scroll_window > 0):
             scroll_window-=1
-        elif(selected_option > scroll_window+window_height-(1+buffer_size) and scroll_window < len(options)-window_height):
+        elif(selected_option > scroll_window+win_height-(1+buffer_size) and scroll_window < len(options)-win_height):
             scroll_window+=1
 
 def scrollInfoMenu(info,window_height = -1):
@@ -539,6 +551,8 @@ def scrollInfoMenu(info,window_height = -1):
     else:
         autoSize = False
     window_height = min(window_height,screen.getmaxyx()[0]-4)
+    oinfo = info
+    
     window_height = max(1,window_height)
     
     scroll_window = 0
@@ -547,6 +561,8 @@ def scrollInfoMenu(info,window_height = -1):
         screen.clear()
         if(autoSize):
             window_height = screen.getmaxyx()[0]-4
+        win_width = screen.getmaxyx()[1]
+        info = lengthLimit(oinfo,win_width)
         # Display the options
         for i, inf in enumerate(info):
             
@@ -684,6 +700,7 @@ def settings():
                             screen.nodelay(True)
                             curstate = curses.curs_set(0)
                             while(True):
+                                time.sleep(.05) # limits loop speed , should fix terminal flickering noticed on linux
                                 screen.clear()
                                 
                                 screen.addstr(0,0,"Change your terminal size to what you want")
@@ -731,14 +748,14 @@ def loadSettings():
         
     try:
         TermHeight = configJSON["Start_Up"]["Terminal_Size"]["Height"]
-        TermHeight = max(TermHeight,15)
+        TermHeight = max(TermHeight,1)
     except:
         configJSON["Start_Up"]["Terminal_Size"]["Height"] = 30
         TermHeight = 30
         
     try:
         TermWidth = configJSON["Start_Up"]["Terminal_Size"]["Width"]
-        TermWidth = max(TermWidth,120)
+        TermWidth = max(TermWidth,1)
     except:
         configJSON["Start_Up"]["Terminal_Size"]["Width"] = 120  
         TermWidth = 120
@@ -841,7 +858,6 @@ def genBackupData(backupName):
     #print(savFile)
     #print(savFile.replace("SaveSlot.sav","data.json"))
     uesavePath = getUesavePath()
-    saveFile = saveFile.replace("\\","/")
     savFile = savFile.replace("\\","/")
     proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"", shell=True)
     proc.wait()
@@ -966,6 +982,30 @@ def getUesavePath():
     else:
         return ""
     
+def lengthLimit(dict , wid):
+    None
+    if(type(dict) == type("")):
+        if(len(dict)<wid):
+            return dict
+        for i in range(wid,0,-1):
+            try:
+                if(dict.index(" ",i)<= wid):
+                    space = dict.index(" ",i)
+                    return [dict[:space],dict[space+1:]]
+            except:
+                None
+        return dict
+    else:
+        di = []
+        for d in dict:
+            d = lengthLimit(d,wid)
+            if(type(d) == type("")):
+                di.append(d)
+            else:
+                for ad in d:
+                    di.append(ad)
+        return di
+
     
 global owd
 owd = os.getcwd()
@@ -983,11 +1023,10 @@ else:
 #print(round(stop-start,2))
 #exiting(0)
 
-
 curses.resize_term(TermHeight,TermWidth)  
             
 # 30 x 120
-Version = "2.2.1"
+Version = "2.2.3"
     
 LatestVersion = Version
 latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
@@ -1049,10 +1088,11 @@ while(True):
     elif(choice == 6):
         listBackups()
     elif(choice == 7):
-        infoList = """Crab Champion Save Manager
-        Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.
-        Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager
-        This program provides the following options:\n
+        infoList = """
+Crab Champion Save Manager
+Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.
+Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager
+This program provides the following options:\n
 
 \nEdit Save Game:
     - Uses uesave to allow the user to edit the SaveSlot.sav file in a backup or your current save
@@ -1076,14 +1116,13 @@ while(True):
  \nInfo/How to use:
     - provides info about the program and how to use it
 
- \Settings:
+ \nSettings:
     - Change program settings
 
  \nExit:
     - Exits the program.
 
- This script uses uesave from https://github.com/trumank/uesave-rs, all credit for this goes to trumank,their
- program is in my opinion very well made and works very well
+ This script uses uesave from https://github.com/trumank/uesave-rs, all credit for this goes to trumank,their program is in my opinion very well made and works very well
  Report issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager
  This script has some elements that require access to the internet, this includes:
  Version Checking
