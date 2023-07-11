@@ -24,3 +24,9 @@ FAQ:<br>
 Q: Can I help write and commit code?<br>
 
 A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome<br>
+<br>
+<br>
+<br>
+Some other projects that are kind of similar to this one, in no particular order<br><br>
+a web-based save converter to turn your .sav to JSON and back - https://afkaf.github.io/Crab-Champion-Save-Manager/ - https://github.com/afkaf/Crab-Champion-Save-Manager<br>
+item wiki for the game - https://crabchampions.info
