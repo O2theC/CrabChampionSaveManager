@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.3.4"
+Version = "2.3.5"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -515,6 +515,7 @@ def updateScript():
         if(meow):
             exiting(0)
         infoScreen("Latest Version succesfully downloaded\nRestart required for changes to take effect\npress any key to continue")
+        screen.getch()
         exiting(0)
     else:
         return
@@ -686,6 +687,8 @@ def yornMenu(prompt):
                 return False
             elif(ans == "y"):
                 return True
+        else:
+            None
             
 def infoScreen(info):
     curstate = curses.curs_set(0)
