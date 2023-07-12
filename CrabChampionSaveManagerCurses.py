@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.3.2"
+Version = "2.3.3"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -41,9 +41,9 @@ def exiting(var):
     except:
         None
     if(var == 0):
-        exit(0)
+        sys.exit(0)
     elif(var == 1):
-        exit(1)
+        sys.exit(1)
     
 try:
     import requests
@@ -957,6 +957,7 @@ def genBackupData(backupName):
     savFile = savFile.replace("\\","/")
     proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"", shell=True)
     proc.wait()
+    start3 = time.time()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
     saveJSON = json.loads(saveFile.read())
     saveFile.close()
@@ -1000,6 +1001,16 @@ def genBackupData(backupName):
     #Weapon Mod in array item   ["Struct"]["WeaponModDA"]["Object"]["value"] - use parseWeaponMod() to get parsed and formated name 
     #Weapon Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
     
+    #Gernade Mod Slots           ["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
+    #Gernade Mod Array           ["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
+    #Gernade Mod in array item   ["Struct"]["GrenadeModDA"]["Object"]["value"] - use parseGernadeMod() to get parsed and formated name 
+    #Gernade Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
+
+    #Perk Slots           ["NumPerkSlots"]["Byte"]["value"]["Byte"]
+    #Perk Array           ["Perks"]["Array"]["value"]["Struct"]["value"]
+    #Perk in array item   ["Struct"]["PerkDA"]["Object"]["value"] - use parsePerk() to get parsed and formated name 
+    #Perk in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
+    
     
     
     #for the config json
@@ -1024,17 +1035,28 @@ def genBackupData(backupName):
     #Totems Destroyed        - ["BackupData"][BackupName]["Stats"]["TotemsDestroyed"]
     #Current Biome           - ["BackupData"][BackupName]["Biome"]
     #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
+    
     #Inventory               - [backupName]["Inventory"]
     #Weapon                  - [backupName]["Inventory"]["Weapon"]
+    
     #Weapon Mod Slots        - [backupName]["Inventory"]["WeaponMods"]["Slots"]
     #Weapon Mods             - [backupName]["Inventory"]["WeaponMods"]["Mods"]
     #Weapon Mod Name         - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Name"]
     #Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
     #Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
+    
     #Gernade Mod Slots       - [backupName]["Inventory"]["GernadeMods"]["Slots"]
     #Gernade Mods            - [backupName]["Inventory"]["GernadeMods"]["Mods"]
+    #Gernade Mod Name        - [backupName]["Inventory"]["GernadeMods"]["Mods"][index of WMod]["Name"]
+    #Gernade Mod Rarity      - [backupName]["Inventory"]["GernadeMods"]["Mods"][index of WMod]["Rarity"]
+    #Gernade Mod Level       - [backupName]["Inventory"]["GernadeMods"]["Mods"][index of WMod]["Level"]
+    
     #Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
     #Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
+    #Perk Name               - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Name"]
+    #Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
+    #Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
+    
     backupJSON[backupName] = {}
     backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
     backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
@@ -1093,24 +1115,63 @@ def genBackupData(backupName):
     
     backupJSON[backupName]["Inventory"]["WeaponMods"] = {}
     backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] = saveJSON["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
-    WeaponMods = saveJSON["WeaponMods"]["Array"]["value"]["Struct"]["value"]
     backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = {}
-    WeaponModArray = []
-    while(len(WeaponModArray)<len(WeaponMods)):
-        WeaponModArray.append("")
-    for i,name in enumerate(WeaponMods):
-        WeaponModArray[i] = json.loads("{}")
-        WeaponModArray[i]["Name"] = parseWeaponMod(name["Struct"]["WeaponModDA"]["Object"]["value"])[0]
-        WeaponModArray[i]["Rarity"] = parseWeaponMod(name["Struct"]["WeaponModDA"]["Object"]["value"])[1]
-        WeaponModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
-    backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = WeaponModArray
+    try:
+        WeaponMods = saveJSON["WeaponMods"]["Array"]["value"]["Struct"]["value"]
+        WeaponModArray = []
+        while(len(WeaponModArray)<len(WeaponMods)):
+            WeaponModArray.append("")
+        for i,name in enumerate(WeaponMods):
+            WeaponModArray[i] = json.loads("{}")
+            WeaponModArray[i]["Name"] = parseWeaponMod(name["Struct"]["WeaponModDA"]["Object"]["value"])[0]
+            WeaponModArray[i]["Rarity"] = parseWeaponMod(name["Struct"]["WeaponModDA"]["Object"]["value"])[1]
+            WeaponModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+        backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = WeaponModArray
+    except:
+        backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = []
+    
+    
+    backupJSON[backupName]["Inventory"]["GernadeMods"] = {}
+    backupJSON[backupName]["Inventory"]["GernadeMods"]["Slots"] = saveJSON["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
+    backupJSON[backupName]["Inventory"]["GernadeMods"]["Mods"] = {}
+    try:
+        GernadeMods = saveJSON["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
+        GernadeModArray = []
+        while(len(GernadeModArray)<len(GernadeMods)):
+            GernadeModArray.append("")
+        for i,name in enumerate(GernadeMods):
+            GernadeModArray[i] = json.loads("{}")
+            GernadeModArray[i]["Name"] = parseGernadeMod(name["Struct"]["GrenadeModDA"]["Object"]["value"])[0]
+            GernadeModArray[i]["Rarity"] = parseGernadeMod(name["Struct"]["GrenadeModDA"]["Object"]["value"])[1]
+            GernadeModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+        backupJSON[backupName]["Inventory"]["GernadeMods"]["Mods"] = GernadeModArray
+    except:
+        backupJSON[backupName]["Inventory"]["GernadeMods"]["Mods"] = []
+    
+    
+    backupJSON[backupName]["Inventory"]["Perks"] = {}
+    backupJSON[backupName]["Inventory"]["Perks"]["Slots"] = saveJSON["NumPerkSlots"]["Byte"]["value"]["Byte"]
+    backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = {}
+    try:
+        WeaponMods = saveJSON["Perks"]["Array"]["value"]["Struct"]["value"]
+        PerkArray = []
+        while(len(PerkArray)<len(WeaponMods)):
+            PerkArray.append("")
+        for i,name in enumerate(WeaponMods):
+            PerkArray[i] = json.loads("{}")
+            PerkArray[i]["Name"] = parsePerk(name["Struct"]["PerkDA"]["Object"]["value"])[0]
+            PerkArray[i]["Rarity"] = parsePerk(name["Struct"]["PerkDA"]["Object"]["value"])[1]
+            PerkArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+        backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = PerkArray
+    except:
+        backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = []
     
     
     backupJSON[backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
     backupJSON[backupName]["NoSave"] = False
     backupJSON[backupName]["Version"] = Version
     lock.acquire()
-    start3 = time.time()
+    
     try:
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     except:
@@ -1118,7 +1179,7 @@ def genBackupData(backupName):
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     lock.release()
     stop = time.time()
-    #print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -add  ")+str(round(stop-start,2)))
+    #print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -add  ")+str(round(stop-start3,2)))
 
 def formatTime(s):
     if(s%60<10):
@@ -1238,16 +1299,21 @@ def parseGernadeMod(name):
     return [spaceBeforeUpper(name) , rarity]
 
 def parsePerk(name):
-    rarity = name[name.index("Perk/")+4:name.index("/",name.index("Perk/")+4)]
+    rarity = name[name.index("Perk/")+5:name.index("/",name.index("Perk/")+5)]
     name =  name[name.rindex(".DA_Perk_")+9:]
     return [spaceBeforeUpper(name) , rarity]
    
 global owd
 owd = os.getcwd()
 
+# os.remove("CrabChampionSaveManager/backupDataCache.json")
+# time.sleep(1)
 
 makeScreen()
 loadSettings()
+
+infoScreen("Starting Crab Champion Save Manager\nThis may take a few seconds")
+
 uepath = getUesavePath()
 if(uepath == ""):
     scrollInfoMenu("This script uses uesave a lot,it is highly reccomended to download it\nyou can still use this program but i can not guarantee that it will fully work\nPress Enter to continue")
