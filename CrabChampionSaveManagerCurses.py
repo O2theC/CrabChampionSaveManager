@@ -10,6 +10,7 @@ import json
 from os import path
 import threading
 
+
 global isExe
 global isLinux
 global Version
@@ -384,11 +385,12 @@ def getBackups(moreInfo = 0):
             maxLenIsland = 0
             maxLenScore = 0
             for name in folders:
-                maxLenName = max(maxLenName,len(name))
-                maxLenTime = max(maxLenTime,len(f"Time: {formatTime(cacheJSON['BackupData'][name]['RunTime'])}"))
-                maxLenDiff = max(maxLenDiff,len("Diff: "+str(cacheJSON["BackupData"][name]["Diff"])))
-                maxLenIsland = max(maxLenIsland,len("Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])))
-                maxLenScore = max(maxLenScore,len("Score: "+str(cacheJSON["BackupData"][name]["Score"])))
+                if(not cacheJSON["BackupData"][name]["NoSave"]):
+                    maxLenName = max(maxLenName,len(name))
+                    maxLenTime = max(maxLenTime,len(f"Time: {formatTime(cacheJSON['BackupData'][name]['RunTime'])}"))
+                    maxLenDiff = max(maxLenDiff,len("Diff: "+str(cacheJSON["BackupData"][name]["Diff"])))
+                    maxLenIsland = max(maxLenIsland,len("Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])))
+                    maxLenScore = max(maxLenScore,len("Score: "+str(cacheJSON["BackupData"][name]["Score"])))
             distance = 4
             maxLenTime += distance
             maxLenDiff += distance
@@ -408,7 +410,10 @@ def getBackups(moreInfo = 0):
                     name = ensureLength(name,maxLenName)
                     folders[i] = name+" - "+time+diff+islandnum+score
             return folders
-        except:
+        except Exception as e:
+            # import traceback
+            # print(e)
+            # traceback.print_exc()
             return ofold
             
 def ensureLength(string,length):
