@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.3.1"
+Version = "2.3.2"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -174,8 +174,10 @@ def backupSave():
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, saveName)
     try:
+        infoScreen("Making backup\nThis might take a few seconds")
         shutil.rmtree(backupName,ignore_errors=True)
         shutil.copytree(saveGame, backupName)
+        loadCache()
     except Exception as error:
         scrollInfoMenu("Could not make backup. Error below:\n"+str(error))
     
@@ -188,11 +190,12 @@ def restoreBackup():
     """
 
     current_directory = os.getcwd()
-    folders = getBackups(moreInfo=1)
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
     prompt = "Choose Backup to restore\n"
     options = "Go back to main menu"
-    for i in range(len(folders)):
-        options+="\n"+str(folders[i])
+    for i in range(len(foldersInfo)):
+        options+="\n"+str(foldersInfo[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
     if(parseInt(choice) == 0):
         return
@@ -264,11 +267,12 @@ def editBackup():
     """
 
     current_directory = os.getcwd()
-    folders = getBackups(moreInfo=1)
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
     prompt = "Choose Backup to edit\n"
     options = "Go back to main menu\nEdit current save"
-    for i in range(len(folders)):
-        options+="\n"+str(folders[i])
+    for i in range(len(foldersInfo)):
+        options+="\n"+str(foldersInfo[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
     if(choice == 0):
         return
@@ -312,11 +316,12 @@ def deleteBackup():
     """
     
     current_directory = os.getcwd()
-    folders = getBackups(moreInfo=1)
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
     prompt = "Choose Backup to delete\n"
     options = "Go back to main menu"
-    for i in range(len(folders)):
-        options+="\n"+str(folders[i])
+    for i in range(len(foldersInfo)):
+        options+="\n"+str(foldersInfo[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
     if(parseInt(choice) == 0):
         return
@@ -337,16 +342,17 @@ def listBackups():
     
     loadCache()
     current_directory = os.getcwd()
-    folders = getBackups(moreInfo=1)
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
     prompt = str(len(folders))+" Backups Stored\nCurrent Backups\n"
     backups = "Go back to main menu\n"
-    for i,name in enumerate(folders):
+    for i,name in enumerate(foldersInfo):
         if(i == 0):
             backups += str(name)
         else:
             backups += "\n"+str(name)
             
-    scrollSelectMenu(prompt,backups,wrapMode=2)
+    choice = scrollSelectMenu(prompt,backups,wrapMode=2)
 
 def getBackups(moreInfo = 0):
     global cacheJSON
@@ -443,11 +449,12 @@ def currentDirCheck():
 
 def updateBackup():
     current_directory = os.getcwd()
-    folders = getBackups(moreInfo=1)
-    prompt = "Choose Backup to update\n"
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
+    prompt = "Choose Backup to update with current save\n"
     options = "Go back to main menu"
-    for i in range(len(folders)):
-        options+="\n"+str(folders[i])
+    for i in range(len(foldersInfo)):
+        options+="\n"+str(foldersInfo[i])
     choice = scrollSelectMenu(prompt,options,-1,1)
     if(parseInt(choice) == 0):
         return
@@ -500,7 +507,7 @@ def updateScript():
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
                 exiting(0)
         except:
-            infoScreen("Could not download latest version\nThis program may be corrupted\npress any key to continue")
+            infoScreen("Could not download latest version\nThis program may be corrupted")
             time.sleep(2)
             exiting(1)
         infoScreen("Latest Version succesfully downloaded\nRestart required for changes to take effect\npress any key to continue")
@@ -515,7 +522,7 @@ def makeScreen():
     curses.cbreak()  # React to keys immediately without Enter
     screen.keypad(True)  # Enable special keys (e.g., arrow keys)
 
-def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1):
+def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1,loop=False):
     global screen
     
     
@@ -593,14 +600,21 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
         elif key == curses.KEY_ENTER or key in [10, 13]:
             curses.curs_set(curstate)
             return selected_option
-              
+        elif(key == curses.KEY_UP and selected_option == 0 and loop):
+            selected_option = len(options)-1
+        elif(key == curses.KEY_DOWN and selected_option == len(options)-1 and loop):
+            selected_option = 0
         #if the selected item goes out of the effective window then the scrolling window moves up or down to keep the selective item in the effective window, the effective window is in the center of the scrolling window and is scrolling_window_size-(buffer_size*2) = effective_window_size, and effective window size can not be smaller than 1 and not any larger than scrolling_window_size
         if(selected_option < scroll_window+buffer_size and scroll_window > 0):
-            scroll_window-=1
+            while(selected_option < scroll_window+buffer_size and scroll_window > 0):
+                scroll_window-=1
         elif(selected_option > scroll_window+win_height-(1+buffer_size) and scroll_window < len(options)-win_height):
-            scroll_window+=1
+            while(selected_option > scroll_window+win_height-(1+buffer_size) and scroll_window < len(options)-win_height):
+                scroll_window+=1
+        if(scroll_window>len(options)-win_height):
+            scroll_window = max(0,len(options)-win_height)
 
-def scrollInfoMenu(info,window_height = -1):
+def scrollInfoMenu(info,window_height = -1,loop = False):
     global screen
 
 
@@ -873,8 +887,10 @@ def loadCache():
     cachePath = cachePath.replace("\\","/")
     # Create the directory if it doesn't exist
     directory = os.path.dirname(cachePath)
+    noCache = False
     if not os.path.exists(directory):
         os.makedirs(directory)
+        noCache = True
     # while(not os.path.exists(directory)):
     #     time.sleep(.1)
     
@@ -883,11 +899,15 @@ def loadCache():
     except:
         file = open(cachePath,"w")
         file.close()
+        noCache = True
         file = open(cachePath,"r+")
     try:
         cacheJSON = json.loads(file.read())
     except:
         cacheJSON = json.loads("{}")
+        noCache = True
+    if(noCache):
+        cacheJSON["BackupData"] = {}
     threads = []
     for backup in backups:
         currentCS = getChecksum(backup+"/SaveSlot.sav")
@@ -923,6 +943,7 @@ def parseDiffMods(mods):
     return mods
             
 def genBackupData(backupName):
+    start = time.time()
     global lock
     global Version
     global cacheJSON
@@ -961,8 +982,21 @@ def genBackupData(backupName):
     # stat highest dmg delt    ["HighestDamageDealt"]["Int"]["value"]
     # stat damage Taken        ["DamageTaken"]["Int"]["value"]
     # stat flawless islands    ["NumFlawlessIslands"]["Int"]["value"]
+    # stat Items Salvaged      ["NumTimesSalvaged"]["Int"]["value"]
+    # stat Items Purchased     ["NumShopPurchases"]["Int"]["value"]
+    # stat Shop Rerolls        ["NumShopRerolls"]["Int"]["value"]
+    # stat Totems Destroyed    ["NumTotemsDestroyed"]["Int"]["value"]
+    # Crystals                 ["Crystals"]["UInt32"]["value"]
     # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
     # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
+    
+    #Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
+    
+    #Items
+    #Weapon Mod Slots           ["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
+    #Weapon Mod Array           ["WeaponMods"]["Array"]["value"]["Struct"]["value"]
+    #Weapon Mod in array item   ["Struct"]["WeaponModDA"]["Object"]["value"] - use parseWeaponMod() to get parsed and formated name 
+    #Weapon Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
     
     
     
@@ -982,8 +1016,23 @@ def genBackupData(backupName):
     #Most Damage Dealt       - ["BackupData"][BackupName]["Stats"]["MostDmgDealt"]
     #Damage Taken            - ["BackupData"][BackupName]["Stats"]["DmgTaken"]
     #Flawless Islands        - ["BackupData"][BackupName]["Stats"]["FlawlessIslands"]
+    #Items Salvaged          - ["BackupData"][BackupName]["Stats"]["ItemsSalvaged"]
+    #Items Purchased         - ["BackupData"][BackupName]["Stats"]["ItemsPurchased"]
+    #Shop Rerolls            - ["BackupData"][BackupName]["Stats"]["ShopRerolls"]
+    #Totems Destroyed        - ["BackupData"][BackupName]["Stats"]["TotemsDestroyed"]
     #Current Biome           - ["BackupData"][BackupName]["Biome"]
     #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
+    #Inventory               - [backupName]["Inventory"]
+    #Weapon                  - [backupName]["Inventory"]["Weapon"]
+    #Weapon Mod Slots        - [backupName]["Inventory"]["WeaponMods"]["Slots"]
+    #Weapon Mods             - [backupName]["Inventory"]["WeaponMods"]["Mods"]
+    #Weapon Mod Name         - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Name"]
+    #Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
+    #Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
+    #Gernade Mod Slots       - [backupName]["Inventory"]["GernadeMods"]["Slots"]
+    #Gernade Mods            - [backupName]["Inventory"]["GernadeMods"]["Mods"]
+    #Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
+    #Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
     backupJSON[backupName] = {}
     backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
     backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
@@ -1005,6 +1054,27 @@ def genBackupData(backupName):
     backupJSON[backupName]["Stats"]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"]["value"]
     backupJSON[backupName]["Stats"]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
     backupJSON[backupName]["Stats"]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"]["value"]
+    
+    try:
+        backupJSON[backupName]["Stats"]["ItemsSalvaged"] = saveJSON["NumTimesSalvaged"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["Stats"]["ItemsSalvaged"] = 0
+    try:
+        backupJSON[backupName]["Stats"]["ItemsPurchased"] = saveJSON["NumShopPurchases"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["Stats"]["ItemsPurchased"] = 0
+    try:
+        backupJSON[backupName]["Stats"]["ShopRerolls"] = saveJSON["NumShopRerolls"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["Stats"]["ShopRerolls"] = 0
+    try:
+        backupJSON[backupName]["Stats"]["TotemsDestroyed"] = saveJSON["NumTotemsDestroyed"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["Stats"]["TotemsDestroyed"] = 0
+    
+    
+    backupJSON[backupName]["Crystals"] = saveJSON["Crystals"]["UInt32"]["value"]
+    
     diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
     diff = diff[diff.index("::")+2:]
     backupJSON[backupName]["Biome"] = diff
@@ -1016,16 +1086,37 @@ def genBackupData(backupName):
         diff = "NewBiome"    
     backupJSON[backupName]["LootType"] = diff
     
+    backupJSON[backupName]["Inventory"] = {}
+    backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
+    
+    backupJSON[backupName]["Inventory"]["WeaponMods"] = {}
+    backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] = saveJSON["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
+    WeaponMods = saveJSON["WeaponMods"]["Array"]["value"]["Struct"]["value"]
+    backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = {}
+    WeaponModArray = []
+    while(len(WeaponModArray)<len(WeaponMods)):
+        WeaponModArray.append("")
+    for i,name in enumerate(WeaponMods):
+        WeaponModArray[i] = json.loads("{}")
+        WeaponModArray[i]["Name"] = parseWeaponMod(name["Struct"]["WeaponModDA"]["Object"]["value"])[0]
+        WeaponModArray[i]["Rarity"] = parseWeaponMod(name["Struct"]["WeaponModDA"]["Object"]["value"])[1]
+        WeaponModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+    backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = WeaponModArray
+    
+    
     backupJSON[backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
     backupJSON[backupName]["NoSave"] = False
     backupJSON[backupName]["Version"] = Version
     lock.acquire()
+    start3 = time.time()
     try:
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     except:
         cacheJSON["BackupData"] = {}
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     lock.release()
+    stop = time.time()
+    #print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -add  ")+str(round(stop-start,2)))
 
 def formatTime(s):
     if(s%60<10):
@@ -1078,14 +1169,14 @@ def getUesavePath():
     if(isLinux):
         uesavePath = programDir+"/uesave"
         if(os.path.exists(uesavePath)):
-            return uesavePath
+            return "\""+str(uesavePath)+"\""
     elif(isExe):
-        return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uesave.exe')
+        return "\""+os.path.join(os.path.abspath(os.path.dirname(__file__)), 'uesave.exe')+"\""
     else:
         uesavePath = programDir+"/uesave.exe"
         uesavePath = uesavePath.replace("\\","/")
         if(os.path.exists(uesavePath)):
-            return uesavePath
+            return "\""+str(uesavePath)+"\""
         
     
     
@@ -1096,7 +1187,9 @@ def getUesavePath():
         uesaveDownloadlink = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
         uesave = "uesave.exe"
     perm = yornMenu("uesave could not be found, permission to download?")
+    
     if(perm):
+        infoScreen("Downloading uesave\nThis might take a few min\nGoing to main menu when done")
         response = requests.get(uesaveDownloadlink)
         with open(programDir+"/"+uesave, 'wb') as file:
             file.write(response.content)
@@ -1128,7 +1221,25 @@ def lengthLimit(dict , wid):
                     di.append(ad)
         return di
 
-    
+def parseWeapon(name):
+    name = name[name.rindex(".DA_Weapon_")+11:]
+    return spaceBeforeUpper(name)
+
+def parseWeaponMod(name):
+    rarity = name[name.index("Mod/")+4:name.index("/",name.index("Mod/")+4)]
+    name = name[name.rindex(".DA_WeaponMod_")+14:]
+    return [spaceBeforeUpper(name) , rarity]
+
+def parseGernadeMod(name):
+    rarity = name[name.index("Mod/")+4:name.index("/",name.index("Mod/")+4)]
+    name =  name[name.rindex(".DA_GrenadeMod_")+15:]
+    return [spaceBeforeUpper(name) , rarity]
+
+def parsePerk(name):
+    rarity = name[name.index("Perk/")+4:name.index("/",name.index("Perk/")+4)]
+    name =  name[name.rindex(".DA_Perk_")+9:]
+    return [spaceBeforeUpper(name) , rarity]
+   
 global owd
 owd = os.getcwd()
 
@@ -1190,12 +1301,12 @@ if(currentDirCheck()):
 
 
 
-
+#time.sleep(20)
 mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
 mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
 while(True):
     options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
-    choice = scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
+    choice = scrollSelectMenu(mainMenuPrompt,options,-1,1,loop=True)+1
     if(choice == 1):
         editBackup() # turned to curse
     elif(choice == 2):
