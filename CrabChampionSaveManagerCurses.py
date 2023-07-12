@@ -492,7 +492,7 @@ def updateScript():
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
         try:
             updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
-            
+            meow = False
             response = requests.get(downloadLatestURL)
             propath = os.path.join(owd,downloadLatestURL[downloadLatestURL.rindex("/")+1:])
             propath = propath.replace("CrabChampionSaveManager.exe","CrabChampionSaveManagerUpdated.exe")
@@ -505,11 +505,13 @@ def updateScript():
                 with open(propath, 'wb') as file:
                     file.write(response.content)
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
-                exiting(0)
+                meow = True
         except:
             infoScreen("Could not download latest version\nThis program may be corrupted")
             time.sleep(2)
             exiting(1)
+        if(meow):
+            exiting(0)
         infoScreen("Latest Version succesfully downloaded\nRestart required for changes to take effect\npress any key to continue")
         exiting(0)
     else:
