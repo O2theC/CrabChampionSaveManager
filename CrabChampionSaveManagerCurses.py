@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.3.3"
+Version = "2.3.4"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -486,6 +486,8 @@ def updateScript():
     global owd
     perm = yornMenu("There is a newer version available\nWould you like to update to the latest version?")
     if(perm):
+        infoScreen("Updating CCSM\nThis may take a few minutes\n1/3")
+        print("\nUpdating CCSM\nThis may take a few minutes\n2/3")
         if(isExe):
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe"
         else:
