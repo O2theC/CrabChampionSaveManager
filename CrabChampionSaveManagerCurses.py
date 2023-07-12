@@ -16,7 +16,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.2.4"
+Version = "2.3.0"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -375,36 +375,41 @@ def getBackups(moreInfo = 0):
     #diff mods               - ["BackupData"][BackupName]["DiffMods"]
     #checksum                - ["BackupData"][BackupName]["CheckSum"]
     #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
-        loadCache()
-        maxLenName = 0
-        maxLenTime = 0
-        maxLenDiff = 0
-        maxLenIsland = 0
-        maxLenScore = 0
-        for name in folders:
-            maxLenName = max(maxLenName,len(name))
-            maxLenTime = max(maxLenTime,len(f"Time: {formatTime(cacheJSON['BackupData'][name]['RunTime'])}"))
-            maxLenDiff = max(maxLenDiff,len("Diff: "+str(cacheJSON["BackupData"][name]["Diff"])))
-            maxLenIsland = max(maxLenIsland,len("Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])))
-            maxLenScore = max(maxLenScore,len("Score: "+str(cacheJSON["BackupData"][name]["Score"])))
-        distance = 4
-        maxLenTime += distance
-        maxLenDiff += distance
-        maxLenIsland += distance
-        maxLenScore += distance
-        for i in range(len(folders)):
-            name = folders[i]
-            time = "Time: "+str(formatTime(cacheJSON['BackupData'][name]['RunTime']))
-            time = ensureLength(time,maxLenTime)
-            diff = "Diff: "+str(cacheJSON["BackupData"][name]["Diff"])
-            diff = ensureLength(diff,maxLenDiff)
-            islandnum = "Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])
-            islandnum = ensureLength(islandnum,maxLenIsland)
-            score = "Score: "+str(cacheJSON["BackupData"][name]["Score"])
-            score = ensureLength(score,maxLenScore)
-            name = ensureLength(name,maxLenName)
-            folders[i] = name+" - "+time+diff+islandnum+score
-        return folders
+        ofold = folders
+        try:
+            loadCache()
+            maxLenName = 0
+            maxLenTime = 0
+            maxLenDiff = 0
+            maxLenIsland = 0
+            maxLenScore = 0
+            for name in folders:
+                maxLenName = max(maxLenName,len(name))
+                maxLenTime = max(maxLenTime,len(f"Time: {formatTime(cacheJSON['BackupData'][name]['RunTime'])}"))
+                maxLenDiff = max(maxLenDiff,len("Diff: "+str(cacheJSON["BackupData"][name]["Diff"])))
+                maxLenIsland = max(maxLenIsland,len("Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])))
+                maxLenScore = max(maxLenScore,len("Score: "+str(cacheJSON["BackupData"][name]["Score"])))
+            distance = 4
+            maxLenTime += distance
+            maxLenDiff += distance
+            maxLenIsland += distance
+            maxLenScore += distance
+            for i in range(len(folders)):
+                name = folders[i]
+                if(not cacheJSON["BackupData"][name]["NoSave"]):
+                    time = "Time: "+str(formatTime(cacheJSON['BackupData'][name]['RunTime']))
+                    time = ensureLength(time,maxLenTime)
+                    diff = "Diff: "+str(cacheJSON["BackupData"][name]["Diff"])
+                    diff = ensureLength(diff,maxLenDiff)
+                    islandnum = "Island: "+str(cacheJSON["BackupData"][name]["IslandNum"])
+                    islandnum = ensureLength(islandnum,maxLenIsland)
+                    score = "Score: "+str(cacheJSON["BackupData"][name]["Score"])
+                    score = ensureLength(score,maxLenScore)
+                    name = ensureLength(name,maxLenName)
+                    folders[i] = name+" - "+time+diff+islandnum+score
+            return folders
+        except:
+            return ofold
             
 def ensureLength(string,length):
     '''
@@ -951,6 +956,8 @@ def genBackupData(backupName):
     # stat highest dmg delt    ["HighestDamageDealt"]["Int"]["value"]
     # stat damage Taken        ["DamageTaken"]["Int"]["value"]
     # stat flawless islands    ["NumFlawlessIslands"]["Int"]["value"]
+    # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
+    # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
     
     
     
@@ -963,6 +970,15 @@ def genBackupData(backupName):
     #checksum                - ["BackupData"][BackupName]["CheckSum"]
     #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
     #Version                 - ["BackupData"][BackupName]["Version"]
+    #Stats                   - ["BackupData"][BackupName]["Stats"]
+    #Eliminations            - ["BackupData"][BackupName]["Stats"]["Elimns"]
+    #Shots Fired             - ["BackupData"][BackupName]["Stats"]["ShotsFired"]
+    #Damage Dealt            - ["BackupData"][BackupName]["Stats"]["DmgDealt"]
+    #Most Damage Dealt       - ["BackupData"][BackupName]["Stats"]["MostDmgDealt"]
+    #Damage Taken            - ["BackupData"][BackupName]["Stats"]["DmgTaken"]
+    #Flawless Islands        - ["BackupData"][BackupName]["Stats"]["FlawlessIslands"]
+    #Current Biome           - ["BackupData"][BackupName]["Biome"]
+    #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
     backupJSON[backupName] = {}
     backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
     backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
@@ -977,6 +993,24 @@ def genBackupData(backupName):
         backupJSON[backupName]["DiffMods"] = parseDiffMods(saveJSON["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"])
     except:
         backupJSON[backupName]["DiffMods"] = []
+    backupJSON[backupName]["Stats"] = {}
+    backupJSON[backupName]["Stats"]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
+    backupJSON[backupName]["Stats"]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
+    backupJSON[backupName]["Stats"]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
+    backupJSON[backupName]["Stats"]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"]["value"]
+    backupJSON[backupName]["Stats"]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
+    backupJSON[backupName]["Stats"]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"]["value"]
+    diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
+    diff = diff[diff.index("::")+2:]
+    backupJSON[backupName]["Biome"] = diff
+    
+    try:
+        diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
+        diff = diff[diff.index("::")+2:]
+    except:
+        diff = "NewBiome"    
+    backupJSON[backupName]["LootType"] = diff
+    
     backupJSON[backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
     backupJSON[backupName]["NoSave"] = False
     backupJSON[backupName]["Version"] = Version
@@ -1103,8 +1137,8 @@ else:
     start = time.time()
     loadCache()
     stop = time.time()
-#print(round(stop-start,2))
-#exiting(0)
+# print(round(stop-start,2))
+# exiting(0)
 
 curses.resize_term(TermHeight,TermWidth)  
             
