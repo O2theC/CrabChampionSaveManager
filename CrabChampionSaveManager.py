@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.4.2"
+Version = "2.4.3"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -307,6 +307,7 @@ def editBackup():
     curses.noecho()  # Don't display user input
     curses.cbreak()  # React to keys immediately without Enter
     screen.keypad(True)  # Enable special keys (e.g., arrow keys)
+    #time.sleep(10)
     
 def deleteBackup():
     """Deletes a backup of the save game.
@@ -910,6 +911,7 @@ def getChecksum(file_path):
     return checksum
 
 def loadCache():
+    infoScreen("Loading Cache\nThis might take a few seconds")
     global lock
     global Version
     global owd
@@ -988,8 +990,10 @@ def genBackupData(backupName):
     #print(savFile.replace("SaveSlot.sav","data.json"))
     uesavePath = getUesavePath()
     savFile = savFile.replace("\\","/")
+    ueStart = time.time()
     proc = subprocess.Popen(uesavePath+" to-json -i \""+savFile+"\" -o \""+savFile.replace("SaveSlot.sav","data.json")+"\"", shell=True)
     proc.wait()
+    ueStop = time.time()
     start3 = time.time()
     saveFile = open(savFile.replace("SaveSlot.sav","data.json"),"r")
     saveJSON = json.loads(saveFile.read())
@@ -1025,6 +1029,10 @@ def genBackupData(backupName):
     # Crystals                 ["Crystals"]["UInt32"]["value"]
     # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
     # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
+    # Health                   ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
+    # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
+    # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
+    # Armor Plate Health       ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
     
     #Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
     
@@ -1055,20 +1063,23 @@ def genBackupData(backupName):
     #checksum                - ["BackupData"][BackupName]["CheckSum"]
     #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
     #Version                 - ["BackupData"][BackupName]["Version"]
-    #Stats                   - ["BackupData"][BackupName]["Stats"]
-    #Eliminations            - ["BackupData"][BackupName]["Stats"]["Elimns"]
-    #Shots Fired             - ["BackupData"][BackupName]["Stats"]["ShotsFired"]
-    #Damage Dealt            - ["BackupData"][BackupName]["Stats"]["DmgDealt"]
-    #Most Damage Dealt       - ["BackupData"][BackupName]["Stats"]["MostDmgDealt"]
-    #Damage Taken            - ["BackupData"][BackupName]["Stats"]["DmgTaken"]
-    #Flawless Islands        - ["BackupData"][BackupName]["Stats"]["FlawlessIslands"]
-    #Items Salvaged          - ["BackupData"][BackupName]["Stats"]["ItemsSalvaged"]
-    #Items Purchased         - ["BackupData"][BackupName]["Stats"]["ItemsPurchased"]
-    #Shop Rerolls            - ["BackupData"][BackupName]["Stats"]["ShopRerolls"]
-    #Totems Destroyed        - ["BackupData"][BackupName]["Stats"]["TotemsDestroyed"]
+    #Eliminations            - ["BackupData"][BackupName]["Elimns"]
+    #Shots Fired             - ["BackupData"][BackupName]["ShotsFired"]
+    #Damage Dealt            - ["BackupData"][BackupName]["DmgDealt"]
+    #Most Damage Dealt       - ["BackupData"][BackupName]["MostDmgDealt"]
+    #Damage Taken            - ["BackupData"][BackupName]["DmgTaken"]
+    #Flawless Islands        - ["BackupData"][BackupName]["FlawlessIslands"]
+    #Items Salvaged          - ["BackupData"][BackupName]["ItemsSalvaged"]
+    #Items Purchased         - ["BackupData"][BackupName]["ItemsPurchased"]
+    #Shop Rerolls            - ["BackupData"][BackupName]["ShopRerolls"]
+    #Totems Destroyed        - ["BackupData"][BackupName]["TotemsDestroyed"]
     #Current Biome           - ["BackupData"][BackupName]["Biome"]
     #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
     #Crystals                - ["BackupData"][BackupName]["Crystals"]
+    #Heath                   - ["BackupData"][BackupName]["Health"]
+    #Max Health              - ["BackupData"][BackupName]["MaxHealth"]
+    #Armor Plates            - ["BackupData"][BackupName]["ArmorPlates"]
+    #Armor Plate Health      - ["BackupData"][BackupName]["ArmorPlatesHealth"]
     
     #Inventory               - [backupName]["Inventory"]
     #Weapon                  - [backupName]["Inventory"]["Weapon"]
@@ -1091,6 +1102,85 @@ def genBackupData(backupName):
     #Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
     #Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
     
+    #Island types
+    
+    #Arctic
+    
+    #Arctic_Arena_01
+    #Arctic_Arena_02
+    #Arctic_Boss_01
+    #Arctic_Boss_02
+    #Arctic_Boss_03
+    #Arctic_Horde_01
+    #Arctic_Horde_02
+    #Arctic_Horde_03
+    #Arctic_Horde_04
+    #Arctic_Horde_05
+    #Arctic_Horde_06
+    #Arctic_Horde_07
+    #Arctic_Horde_08
+    #Arctic_Parkour_01
+    
+    #Other
+    
+    #Animation
+    #DebugPersistent
+    #MedalLightroom
+    
+    #Tropical
+    
+    #Tropical_Arena_01
+    #Tropical_Arena_02
+    #Tropical_Arena_03
+    #Tropical_Arena_04
+    #Tropical_Arena_05
+    #Tropical_Arena_06
+    #Tropical_Arena_07
+    #Tropical_Arena_08
+    #Tropical_Boss_01
+    #Tropical_Boss_02
+    #Tropical_Horde_01
+    #Tropical_Horde_02
+    #Tropical_Horde_03
+    #Tropical_Horde_04
+    #Tropical_Horde_05
+    #Tropical_Horde_06
+    #Tropical_Horde_07
+    #Tropical_Parkour_01
+    #Tropical_Shop_01
+    
+    #Volcanic
+    
+    #Volcanic_Arena_01
+    #Volcanic_Arena_02
+    #Volcanic_Arena_03
+    #Volcanic_Arena_04
+    #Volcanic_Arena_05
+    #Volcanic_Arena_06
+    #Volcanic_Boss_01
+    #Volcanic_Horde_01
+    #Volcanic_Horde_02
+    #Volcanic_Horde_03
+    #Volcanic_Horde_04
+    #Volcanic_Horde_05
+    
+    #Island
+    
+    #CrabIsland
+    #Lobby
+    #Persistent
+    #Splash
+    #TemplateIsland
+    
+    
+    #Island Type
+    
+    #Boss - used when going to a Boss/Elite battle island
+    #CrabIsland - used when going to crab island for a victory
+    #Arena - used when going to a Arena battle island
+    #Horde - used when going to a Horde battle island
+    #Shop - used when going to a Shop island
+    
     backupJSON[backupName] = {}
     backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
     backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
@@ -1105,30 +1195,29 @@ def genBackupData(backupName):
         backupJSON[backupName]["DiffMods"] = parseDiffMods(saveJSON["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"])
     except:
         backupJSON[backupName]["DiffMods"] = []
-    backupJSON[backupName]["Stats"] = {}
-    backupJSON[backupName]["Stats"]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
-    backupJSON[backupName]["Stats"]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
-    backupJSON[backupName]["Stats"]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
-    backupJSON[backupName]["Stats"]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"]["value"]
-    backupJSON[backupName]["Stats"]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
-    backupJSON[backupName]["Stats"]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"]["value"]
+    backupJSON[backupName]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
+    backupJSON[backupName]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
+    backupJSON[backupName]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
+    backupJSON[backupName]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"]["value"]
+    backupJSON[backupName]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
+    backupJSON[backupName]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"]["value"]
     
     try:
-        backupJSON[backupName]["Stats"]["ItemsSalvaged"] = saveJSON["NumTimesSalvaged"]["Int"]["value"]
+        backupJSON[backupName]["ItemsSalvaged"] = saveJSON["NumTimesSalvaged"]["Int"]["value"]
     except:
-        backupJSON[backupName]["Stats"]["ItemsSalvaged"] = 0
+        backupJSON[backupName]["ItemsSalvaged"] = 0
     try:
-        backupJSON[backupName]["Stats"]["ItemsPurchased"] = saveJSON["NumShopPurchases"]["Int"]["value"]
+        backupJSON[backupName]["ItemsPurchased"] = saveJSON["NumShopPurchases"]["Int"]["value"]
     except:
-        backupJSON[backupName]["Stats"]["ItemsPurchased"] = 0
+        backupJSON[backupName]["ItemsPurchased"] = 0
     try:
-        backupJSON[backupName]["Stats"]["ShopRerolls"] = saveJSON["NumShopRerolls"]["Int"]["value"]
+        backupJSON[backupName]["ShopRerolls"] = saveJSON["NumShopRerolls"]["Int"]["value"]
     except:
-        backupJSON[backupName]["Stats"]["ShopRerolls"] = 0
+        backupJSON[backupName]["ShopRerolls"] = 0
     try:
-        backupJSON[backupName]["Stats"]["TotemsDestroyed"] = saveJSON["NumTotemsDestroyed"]["Int"]["value"]
+        backupJSON[backupName]["TotemsDestroyed"] = saveJSON["NumTotemsDestroyed"]["Int"]["value"]
     except:
-        backupJSON[backupName]["Stats"]["TotemsDestroyed"] = 0
+        backupJSON[backupName]["TotemsDestroyed"] = 0
     
     
     backupJSON[backupName]["Crystals"] = saveJSON["Crystals"]["UInt32"]["value"]
@@ -1143,6 +1232,17 @@ def genBackupData(backupName):
     except:
         diff = "New Biome"    
     backupJSON[backupName]["LootType"] = diff
+    
+    
+    backupJSON[backupName]["Health"] = saveJSON["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
+    backupJSON[backupName]["MaxHealth"] = saveJSON["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
+    try:
+        backupJSON[backupName]["ArmorPlates"] = saveJSON["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
+        backupJSON[backupName]["ArmorPlatesHealth"] = saveJSON["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
+    except:
+        backupJSON[backupName]["ArmorPlates"] = 0
+        backupJSON[backupName]["ArmorPlatesHealth"] = 0
+    
     
     backupJSON[backupName]["Inventory"] = {}
     backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
@@ -1213,7 +1313,7 @@ def genBackupData(backupName):
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     lock.release()
     stop = time.time()
-    #print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -add  ")+str(round(stop-start3,2)))
+    #print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -ue  ")+str(round(ueStop-ueStart,2)))
 
 def formatTime(s):
     if(s%60<10):
@@ -1340,57 +1440,12 @@ def parsePerk(name):
 def formatNumber(num=0, decimal_places=0):
     return '{:,.{}f}'.format(num, decimal_places)
 
-
-
 def backupDetailsScreen(backupName):
-    #for the config json
-    #run time seconds        - ["BackupData"][BackupName]["RunTime"]
-    #score                   - ["BackupData"][BackupName]["Score"]
-    #difficulty              - ["BackupData"][BackupName]["Diff"]
-    #island num              - ["BackupData"][BackupName]["IslandNum"]
-    #diff mods               - ["BackupData"][BackupName]["DiffMods"]
-    #checksum                - ["BackupData"][BackupName]["CheckSum"]
-    #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
-    #Version                 - ["BackupData"][BackupName]["Version"]
-    #Stats                   - ["BackupData"][BackupName]["Stats"]
-    #Eliminations            - ["BackupData"][BackupName]["Stats"]["Elimns"]
-    #Shots Fired             - ["BackupData"][BackupName]["Stats"]["ShotsFired"]
-    #Damage Dealt            - ["BackupData"][BackupName]["Stats"]["DmgDealt"]
-    #Most Damage Dealt       - ["BackupData"][BackupName]["Stats"]["MostDmgDealt"]
-    #Damage Taken            - ["BackupData"][BackupName]["Stats"]["DmgTaken"]
-    #Flawless Islands        - ["BackupData"][BackupName]["Stats"]["FlawlessIslands"]
-    #Items Salvaged          - ["BackupData"][BackupName]["Stats"]["ItemsSalvaged"]
-    #Items Purchased         - ["BackupData"][BackupName]["Stats"]["ItemsPurchased"]
-    #Shop Rerolls            - ["BackupData"][BackupName]["Stats"]["ShopRerolls"]
-    #Totems Destroyed        - ["BackupData"][BackupName]["Stats"]["TotemsDestroyed"]
-    #Current Biome           - ["BackupData"][BackupName]["Biome"]
-    #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
-    #Crystals                - ["BackupData"][BackupName]["Crystals"]
     
-    #Inventory               - [backupName]["Inventory"]
-    #Weapon                  - [backupName]["Inventory"]["Weapon"]
-    
-    #Weapon Mod Slots        - [backupName]["Inventory"]["WeaponMods"]["Slots"]
-    #Weapon Mods             - [backupName]["Inventory"]["WeaponMods"]["Mods"]
-    #Weapon Mod Name         - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Name"]
-    #Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
-    #Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
-    
-    #Grenade Mod Slots       - [backupName]["Inventory"]["GrenadeMods"]["Slots"]
-    #Grenade Mods            - [backupName]["Inventory"]["GrenadeMods"]["Mods"]
-    #Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
-    #Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
-    #Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
-    
-    #Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
-    #Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
-    #Perk Name               - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Name"]
-    #Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
-    #Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
-    
-    #Rarity Rare Color Number
-    #Rarity Epic Color Number
-    #Rarity Legendary Color Number
+    #Rarity Rare Color Number 3
+    #Rarity Epic Color Number 13
+    #Rarity Legendary Color Number 14
+    #Rarity Greed Color Number 12
     
     
     leng = 22
@@ -1418,22 +1473,27 @@ def backupDetailsScreen(backupName):
     info += "\n"+ensureLength("Biome: ",leng)+str(backupJSON["Biome"])
     if(str(backupJSON["LootType"]) != "New Biome"):
         info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
-    info += "\n"+ensureLength("Eliminations:",leng)+str(formatNumber(backupJSON["Stats"]["Elimns"],0))
-    info += "\n"+ensureLength("Shots Fired:",leng)+str(formatNumber(backupJSON["Stats"]["ShotsFired"],0))
-    info += "\n"+ensureLength("Damage Dealt:",leng)+str(formatNumber(backupJSON["Stats"]["DmgDealt"]))
-    info += "\n"+ensureLength("Most Damage Dealt:",leng)+str(formatNumber(backupJSON["Stats"]["MostDmgDealt"]))
-    info += "\n"+ensureLength("Damage Taken:",leng)+str(formatNumber(backupJSON["Stats"]["DmgTaken"]))
-    info += "\n"+ensureLength("Flawless Islands:",leng)+str(formatNumber(backupJSON["Stats"]["FlawlessIslands"],0))
-    info += "\n"+ensureLength("Items Salvaged:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsSalvaged"],0))
-    info += "\n"+ensureLength("Items Purchased:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsPurchased"],0))
-    info += "\n"+ensureLength("Shop Rerolls:",leng)+str(formatNumber(backupJSON["Stats"]["ShopRerolls"],0))
-    info += "\n"+ensureLength("Totems Destroyed:",leng)+str(formatNumber(backupJSON["Stats"]["TotemsDestroyed"],0))
-    info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"],3),3))
-    info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"],3),3))
-    info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"]),3),3))
-    info += "\nDifficulty Modifiers: "
-    for diffMod in backupJSON["DiffMods"]:
-        info += "\n"+indent+str(diffMod)
+    info += "\n"+ensureLength("Health:",leng)+str(formatNumber(backupJSON["Health"],0))
+    info += "\n"+ensureLength("Max Health:",leng)+str(formatNumber(backupJSON["MaxHealth"],0))
+    info += "\n"+ensureLength("Armor Plates:",leng)+str(formatNumber(backupJSON["ArmorPlates"],0))
+    info += "\n"+ensureLength("Armor Plate Health:",leng)+str(formatNumber(backupJSON["ArmorPlatesHealth"],0))  
+    info += "\n"+ensureLength("Eliminations:",leng)+str(formatNumber(backupJSON["Elimns"],0))
+    info += "\n"+ensureLength("Shots Fired:",leng)+str(formatNumber(backupJSON["ShotsFired"],0))
+    info += "\n"+ensureLength("Damage Dealt:",leng)+str(formatNumber(backupJSON["DmgDealt"]))
+    info += "\n"+ensureLength("Most Damage Dealt:",leng)+str(formatNumber(backupJSON["MostDmgDealt"]))
+    info += "\n"+ensureLength("Damage Taken:",leng)+str(formatNumber(backupJSON["DmgTaken"]))
+    info += "\n"+ensureLength("Flawless Islands:",leng)+str(formatNumber(backupJSON["FlawlessIslands"],0))
+    info += "\n"+ensureLength("Items Salvaged:",leng)+str(formatNumber(backupJSON["ItemsSalvaged"],0))
+    info += "\n"+ensureLength("Items Purchased:",leng)+str(formatNumber(backupJSON["ItemsPurchased"],0))
+    info += "\n"+ensureLength("Shop Rerolls:",leng)+str(formatNumber(backupJSON["ShopRerolls"],0))
+    info += "\n"+ensureLength("Totems Destroyed:",leng)+str(formatNumber(backupJSON["TotemsDestroyed"],0))
+    info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["DmgDealt"]/backupJSON["ShotsFired"],3),3))
+    info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["ShotsFired"]/backupJSON["RunTime"],3),3))
+    info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["DmgDealt"]/backupJSON["ShotsFired"]),3),3))
+    if(len(backupJSON["DiffMods"])>0):
+        info += "\nDifficulty Modifiers: "
+        for diffMod in backupJSON["DiffMods"]:
+            info += "\n"+indent+str(diffMod)
     info += "\n"
     info += "\n"+ensureLength("Weapon:",leng)+str(backupJSON["Inventory"]["Weapon"])
     info += "\n"+ensureLength("Weapon Mod Slots:",leng)+str(backupJSON["Inventory"]["WeaponMods"]["Slots"])
