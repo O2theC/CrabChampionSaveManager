@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.4.1"
+Version = "2.4.2"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -357,6 +357,7 @@ def listBackups():
         return
     choice -=1
     backupDetailsScreen(folders[choice])
+    listBackups()
 
 def getBackups(moreInfo = 0):
     global cacheJSON
@@ -530,6 +531,11 @@ def makeScreen():
     curses.noecho()  # Don't display user input
     curses.cbreak()  # React to keys immediately without Enter
     screen.keypad(True)  # Enable special keys (e.g., arrow keys)
+    try:
+        curses.start_color()
+        curses.use_default_colors()
+    except:
+        None
 
 def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1,loop=False):
     global screen
@@ -623,7 +629,7 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
         if(scroll_window>len(options)-win_height):
             scroll_window = max(0,len(options)-win_height)
 
-def scrollInfoMenu(info,window_height = -1,loop = False,instructions = "Use arrow keys to scroll up and down. Press Enter to go back to main menu."):
+def scrollInfoMenu(info,window_height = -1,loop = False,instructions = "Use arrow keys to scroll up and down. Press Enter to go back to main menu.",color = "None"):
     global screen
 
 
@@ -651,7 +657,23 @@ def scrollInfoMenu(info,window_height = -1,loop = False,instructions = "Use arro
         for i, inf in enumerate(info):
             
             if(i>=scroll_window and i <scroll_window+window_height):
-                screen.addstr((i - scroll_window)+1, 0, str(inf))
+                if(color == "BackupDetails"):
+                    if("Rare" in inf):
+                        rarColor = curses.color_pair(1)
+                        screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)  
+                    elif("Epic" in inf):
+                        rarColor = curses.color_pair(2)
+                        screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)  
+                    elif("Legendary" in inf):
+                        rarColor = curses.color_pair(3)
+                        screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)   
+                    elif("Greed" in inf):
+                        rarColor = curses.color_pair(4)
+                        screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)  
+                    else:
+                        screen.addstr((i - scroll_window)+1, 0, str(inf))   
+                else:
+                    screen.addstr((i - scroll_window)+1, 0, str(inf))
         
         screen.addstr(window_height +2, 0, instructions)
         screen.refresh()
@@ -1315,8 +1337,9 @@ def parsePerk(name):
     name =  name[name.rindex(".DA_Perk_")+9:]
     return [spaceBeforeUpper(name) , rarity]
 
-def formatNumber(num = 0):
-    return '{:,.0f}'.format(num)
+def formatNumber(num=0, decimal_places=0):
+    return '{:,.{}f}'.format(num, decimal_places)
+
 
 
 def backupDetailsScreen(backupName):
@@ -1364,8 +1387,21 @@ def backupDetailsScreen(backupName):
     #Perk Name               - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Name"]
     #Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
     #Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
-    leng = 22
     
+    #Rarity Rare Color Number
+    #Rarity Epic Color Number
+    #Rarity Legendary Color Number
+    
+    
+    leng = 22
+    try:
+        curses.init_pair(1, 3, -1)
+        curses.init_pair(2, 13, -1)
+        curses.init_pair(3, 14, -1)
+        curses.init_pair(4, 12, -1)
+        colors = "BackupDetails"
+    except:
+        colors = "None"
     indent = ensureLength("",2)
     disbetween = 4
     backupJSON = cacheJSON["BackupData"][backupName]
@@ -1375,26 +1411,26 @@ def backupDetailsScreen(backupName):
         scrollInfoMenu(info)
         return
     info += "\n"+ensureLength("Run Time: ",leng)+formatTime(backupJSON["RunTime"])
-    info += "\n"+ensureLength("Score: ",leng)+str(formatNumber(backupJSON["Score"]))
-    info += "\n"+ensureLength("Island: ",leng)+str(formatNumber(backupJSON["IslandNum"]))
-    info += "\n"+ensureLength("Crystals: ",leng)+str(formatNumber(backupJSON["Crystals"]))
+    info += "\n"+ensureLength("Score: ",leng)+str(formatNumber(backupJSON["Score"],0))
+    info += "\n"+ensureLength("Island: ",leng)+str(formatNumber(backupJSON["IslandNum"],0))
+    info += "\n"+ensureLength("Crystals: ",leng)+str(formatNumber(backupJSON["Crystals"],0))
     info += "\n"+ensureLength("Difficulty: ",leng)+str(backupJSON["Diff"])
     info += "\n"+ensureLength("Biome: ",leng)+str(backupJSON["Biome"])
     if(str(backupJSON["LootType"]) != "New Biome"):
         info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
-    info += "\n"+ensureLength("Eliminations:",leng)+str(formatNumber(backupJSON["Stats"]["Elimns"]))
-    info += "\n"+ensureLength("Shots Fired:",leng)+str(formatNumber(backupJSON["Stats"]["ShotsFired"]))
+    info += "\n"+ensureLength("Eliminations:",leng)+str(formatNumber(backupJSON["Stats"]["Elimns"],0))
+    info += "\n"+ensureLength("Shots Fired:",leng)+str(formatNumber(backupJSON["Stats"]["ShotsFired"],0))
     info += "\n"+ensureLength("Damage Dealt:",leng)+str(formatNumber(backupJSON["Stats"]["DmgDealt"]))
     info += "\n"+ensureLength("Most Damage Dealt:",leng)+str(formatNumber(backupJSON["Stats"]["MostDmgDealt"]))
     info += "\n"+ensureLength("Damage Taken:",leng)+str(formatNumber(backupJSON["Stats"]["DmgTaken"]))
-    info += "\n"+ensureLength("Flawless Islands:",leng)+str(formatNumber(backupJSON["Stats"]["FlawlessIslands"]))
-    info += "\n"+ensureLength("Items Salvaged:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsSalvaged"]))
-    info += "\n"+ensureLength("Items Purchased:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsPurchased"]))
-    info += "\n"+ensureLength("Shop Rerolls:",leng)+str(formatNumber(backupJSON["Stats"]["ShopRerolls"]))
-    info += "\n"+ensureLength("Totems Destroyed:",leng)+str(formatNumber(backupJSON["Stats"]["TotemsDestroyed"]))
-    info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"],2)))
-    info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"],2)))
-    info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"]),2)))
+    info += "\n"+ensureLength("Flawless Islands:",leng)+str(formatNumber(backupJSON["Stats"]["FlawlessIslands"],0))
+    info += "\n"+ensureLength("Items Salvaged:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsSalvaged"],0))
+    info += "\n"+ensureLength("Items Purchased:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsPurchased"],0))
+    info += "\n"+ensureLength("Shop Rerolls:",leng)+str(formatNumber(backupJSON["Stats"]["ShopRerolls"],0))
+    info += "\n"+ensureLength("Totems Destroyed:",leng)+str(formatNumber(backupJSON["Stats"]["TotemsDestroyed"],0))
+    info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"],3),3))
+    info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"],3),3))
+    info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"]),3),3))
     info += "\nDifficulty Modifiers: "
     for diffMod in backupJSON["DiffMods"]:
         info += "\n"+indent+str(diffMod)
@@ -1428,11 +1464,15 @@ def backupDetailsScreen(backupName):
     #info += "\n"
     for WMod in backupJSON["Inventory"]["WeaponMods"]["Mods"]:
         info += "\n"+indent+ensureLength("Weapon Mod",10+disbetween)+ensureLength(WMod["Rarity"],maxRarity)+ensureLength(WMod["Name"],maxName)+ensureLength(str(WMod["Level"]),maxLevel)
+    if(len(backupJSON["Inventory"]["WeaponMods"]["Mods"])>= 1):
+       info += "\n" 
     for GMod in backupJSON["Inventory"]["GrenadeMods"]["Mods"]:
         info += "\n"+indent+ensureLength("Grenade Mod",10+disbetween)+ensureLength(GMod["Rarity"],maxRarity)+ensureLength(GMod["Name"],maxName)+ensureLength(str(GMod["Level"]),maxLevel)
+    if(len(backupJSON["Inventory"]["GrenadeMods"]["Mods"])>= 1):
+       info += "\n" 
     for Perk in backupJSON["Inventory"]["Perks"]["Perks"]:
         info += "\n"+indent+ensureLength("Perk",10+disbetween)+ensureLength(Perk["Rarity"],maxRarity)+ensureLength(Perk["Name"],maxName)+ensureLength(str(Perk["Level"]),maxLevel)
-    scrollInfoMenu(info)
+    scrollInfoMenu(info,color = "BackupDetails")
     return
 
    
@@ -1546,6 +1586,9 @@ This program provides the following options:\n
  \nList Backups:
     - Lists all backups and trys to list some info about the run
     - Allows the user to select a backup at which more info about that run is displayed
+    - DPB - Damage Per Bullt
+    - SPS - Shots Per Second
+    - DPS - Damage Per Second
 
  \nInfo/How to use:
     - provides info about the program and how to use it
