@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.4.0"
+Version = "2.4.1"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -940,6 +940,8 @@ def loadCache():
     file.write(json.dumps(cacheJSON,indent=4))
         
 def spaceBeforeUpper(string):
+    if string == "FMJ":
+        return string
     result = string[0]  # The first uppercase letter should not have a space before it
     for char in string[1:]:
         if char.isupper():
@@ -1313,6 +1315,10 @@ def parsePerk(name):
     name =  name[name.rindex(".DA_Perk_")+9:]
     return [spaceBeforeUpper(name) , rarity]
 
+def formatNumber(num = 0):
+    return '{:,.0f}'.format(num)
+
+
 def backupDetailsScreen(backupName):
     #for the config json
     #run time seconds        - ["BackupData"][BackupName]["RunTime"]
@@ -1369,27 +1375,29 @@ def backupDetailsScreen(backupName):
         scrollInfoMenu(info)
         return
     info += "\n"+ensureLength("Run Time: ",leng)+formatTime(backupJSON["RunTime"])
-    info += "\n"+ensureLength("Score: ",leng)+str(backupJSON["Score"])
-    info += "\n"+ensureLength("Crystals: ",leng)+str(backupJSON["Crystals"])
+    info += "\n"+ensureLength("Score: ",leng)+str(formatNumber(backupJSON["Score"]))
+    info += "\n"+ensureLength("Island: ",leng)+str(formatNumber(backupJSON["IslandNum"]))
+    info += "\n"+ensureLength("Crystals: ",leng)+str(formatNumber(backupJSON["Crystals"]))
     info += "\n"+ensureLength("Difficulty: ",leng)+str(backupJSON["Diff"])
     info += "\n"+ensureLength("Biome: ",leng)+str(backupJSON["Biome"])
     if(str(backupJSON["LootType"]) != "New Biome"):
         info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
+    info += "\n"+ensureLength("Eliminations:",leng)+str(formatNumber(backupJSON["Stats"]["Elimns"]))
+    info += "\n"+ensureLength("Shots Fired:",leng)+str(formatNumber(backupJSON["Stats"]["ShotsFired"]))
+    info += "\n"+ensureLength("Damage Dealt:",leng)+str(formatNumber(backupJSON["Stats"]["DmgDealt"]))
+    info += "\n"+ensureLength("Most Damage Dealt:",leng)+str(formatNumber(backupJSON["Stats"]["MostDmgDealt"]))
+    info += "\n"+ensureLength("Damage Taken:",leng)+str(formatNumber(backupJSON["Stats"]["DmgTaken"]))
+    info += "\n"+ensureLength("Flawless Islands:",leng)+str(formatNumber(backupJSON["Stats"]["FlawlessIslands"]))
+    info += "\n"+ensureLength("Items Salvaged:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsSalvaged"]))
+    info += "\n"+ensureLength("Items Purchased:",leng)+str(formatNumber(backupJSON["Stats"]["ItemsPurchased"]))
+    info += "\n"+ensureLength("Shop Rerolls:",leng)+str(formatNumber(backupJSON["Stats"]["ShopRerolls"]))
+    info += "\n"+ensureLength("Totems Destroyed:",leng)+str(formatNumber(backupJSON["Stats"]["TotemsDestroyed"]))
+    info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"],2)))
+    info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"],2)))
+    info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["Stats"]["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["Stats"]["DmgDealt"]/backupJSON["Stats"]["ShotsFired"]),2)))
     info += "\nDifficulty Modifiers: "
     for diffMod in backupJSON["DiffMods"]:
         info += "\n"+indent+str(diffMod)
-
-    info += "\nStats: "
-    info += "\n"+indent+ensureLength("Eliminations:",leng-len(indent))+str(backupJSON["Stats"]["Elimns"])
-    info += "\n"+indent+ensureLength("Shots Fired:",leng-len(indent))+str(backupJSON["Stats"]["ShotsFired"])
-    info += "\n"+indent+ensureLength("Damage Dealt:",leng-len(indent))+str(backupJSON["Stats"]["DmgDealt"])
-    info += "\n"+indent+ensureLength("Most Damage Dealt:",leng-len(indent))+str(backupJSON["Stats"]["MostDmgDealt"])
-    info += "\n"+indent+ensureLength("Damage Taken:",leng-len(indent))+str(backupJSON["Stats"]["DmgTaken"])
-    info += "\n"+indent+ensureLength("Flawless Islands:",leng-len(indent))+str(backupJSON["Stats"]["FlawlessIslands"])
-    info += "\n"+indent+ensureLength("Items Salvaged:",leng-len(indent))+str(backupJSON["Stats"]["ItemsSalvaged"])
-    info += "\n"+indent+ensureLength("Items Purchased:",leng-len(indent))+str(backupJSON["Stats"]["ItemsPurchased"])
-    info += "\n"+indent+ensureLength("Shop Rerolls:",leng-len(indent))+str(backupJSON["Stats"]["ShopRerolls"])
-    info += "\n"+indent+ensureLength("Totems Destroyed:",leng-len(indent))+str(backupJSON["Stats"]["TotemsDestroyed"])
     info += "\n"
     info += "\n"+ensureLength("Weapon:",leng)+str(backupJSON["Inventory"]["Weapon"])
     info += "\n"+ensureLength("Weapon Mod Slots:",leng)+str(backupJSON["Inventory"]["WeaponMods"]["Slots"])
