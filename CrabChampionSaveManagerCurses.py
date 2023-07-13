@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.3.5"
+Version = "2.4.0"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -344,7 +344,7 @@ def listBackups():
     current_directory = os.getcwd()
     foldersInfo = getBackups(moreInfo=1)
     folders = getBackups()
-    prompt = str(len(folders))+" Backups Stored\nCurrent Backups\n"
+    prompt = str(len(folders))+" Backups Stored\nSelect Backup for more info about that backup\n"
     backups = "Go back to main menu\n"
     for i,name in enumerate(foldersInfo):
         if(i == 0):
@@ -353,6 +353,10 @@ def listBackups():
             backups += "\n"+str(name)
             
     choice = scrollSelectMenu(prompt,backups,wrapMode=2)
+    if(choice == 0):
+        return
+    choice -=1
+    backupDetailsScreen(folders[choice])
 
 def getBackups(moreInfo = 0):
     global cacheJSON
@@ -619,7 +623,7 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
         if(scroll_window>len(options)-win_height):
             scroll_window = max(0,len(options)-win_height)
 
-def scrollInfoMenu(info,window_height = -1,loop = False):
+def scrollInfoMenu(info,window_height = -1,loop = False,instructions = "Use arrow keys to scroll up and down. Press Enter to go back to main menu."):
     global screen
 
 
@@ -649,7 +653,7 @@ def scrollInfoMenu(info,window_height = -1,loop = False):
             if(i>=scroll_window and i <scroll_window+window_height):
                 screen.addstr((i - scroll_window)+1, 0, str(inf))
         
-        screen.addstr(window_height +2, 0, "Use arrow keys to scroll up and down. Press Enter to go back to main menu.")
+        screen.addstr(window_height +2, 0, instructions)
         screen.refresh()
         key = screen.getch()
 
@@ -1006,10 +1010,10 @@ def genBackupData(backupName):
     #Weapon Mod in array item   ["Struct"]["WeaponModDA"]["Object"]["value"] - use parseWeaponMod() to get parsed and formated name 
     #Weapon Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
     
-    #Gernade Mod Slots           ["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
-    #Gernade Mod Array           ["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
-    #Gernade Mod in array item   ["Struct"]["GrenadeModDA"]["Object"]["value"] - use parseGernadeMod() to get parsed and formated name 
-    #Gernade Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
+    #Grenade Mod Slots           ["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
+    #Grenade Mod Array           ["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
+    #Grenade Mod in array item   ["Struct"]["GrenadeModDA"]["Object"]["value"] - use parseGrenadeMod() to get parsed and formated name 
+    #Grenade Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
 
     #Perk Slots           ["NumPerkSlots"]["Byte"]["value"]["Byte"]
     #Perk Array           ["Perks"]["Array"]["value"]["Struct"]["value"]
@@ -1040,6 +1044,7 @@ def genBackupData(backupName):
     #Totems Destroyed        - ["BackupData"][BackupName]["Stats"]["TotemsDestroyed"]
     #Current Biome           - ["BackupData"][BackupName]["Biome"]
     #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
+    #Crystals                - ["BackupData"][BackupName]["Crystals"]
     
     #Inventory               - [backupName]["Inventory"]
     #Weapon                  - [backupName]["Inventory"]["Weapon"]
@@ -1050,11 +1055,11 @@ def genBackupData(backupName):
     #Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
     #Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
     
-    #Gernade Mod Slots       - [backupName]["Inventory"]["GernadeMods"]["Slots"]
-    #Gernade Mods            - [backupName]["Inventory"]["GernadeMods"]["Mods"]
-    #Gernade Mod Name        - [backupName]["Inventory"]["GernadeMods"]["Mods"][index of WMod]["Name"]
-    #Gernade Mod Rarity      - [backupName]["Inventory"]["GernadeMods"]["Mods"][index of WMod]["Rarity"]
-    #Gernade Mod Level       - [backupName]["Inventory"]["GernadeMods"]["Mods"][index of WMod]["Level"]
+    #Grenade Mod Slots       - [backupName]["Inventory"]["GrenadeMods"]["Slots"]
+    #Grenade Mods            - [backupName]["Inventory"]["GrenadeMods"]["Mods"]
+    #Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
+    #Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
+    #Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
     
     #Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
     #Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
@@ -1112,7 +1117,7 @@ def genBackupData(backupName):
         diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
         diff = diff[diff.index("::")+2:]
     except:
-        diff = "NewBiome"    
+        diff = "New Biome"    
     backupJSON[backupName]["LootType"] = diff
     
     backupJSON[backupName]["Inventory"] = {}
@@ -1136,22 +1141,22 @@ def genBackupData(backupName):
         backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = []
     
     
-    backupJSON[backupName]["Inventory"]["GernadeMods"] = {}
-    backupJSON[backupName]["Inventory"]["GernadeMods"]["Slots"] = saveJSON["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
-    backupJSON[backupName]["Inventory"]["GernadeMods"]["Mods"] = {}
+    backupJSON[backupName]["Inventory"]["GrenadeMods"] = {}
+    backupJSON[backupName]["Inventory"]["GrenadeMods"]["Slots"] = saveJSON["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
+    backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = {}
     try:
-        GernadeMods = saveJSON["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
-        GernadeModArray = []
-        while(len(GernadeModArray)<len(GernadeMods)):
-            GernadeModArray.append("")
-        for i,name in enumerate(GernadeMods):
-            GernadeModArray[i] = json.loads("{}")
-            GernadeModArray[i]["Name"] = parseGernadeMod(name["Struct"]["GrenadeModDA"]["Object"]["value"])[0]
-            GernadeModArray[i]["Rarity"] = parseGernadeMod(name["Struct"]["GrenadeModDA"]["Object"]["value"])[1]
-            GernadeModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
-        backupJSON[backupName]["Inventory"]["GernadeMods"]["Mods"] = GernadeModArray
+        GrenadeMods = saveJSON["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
+        GrenadeModArray = []
+        while(len(GrenadeModArray)<len(GrenadeMods)):
+            GrenadeModArray.append("")
+        for i,name in enumerate(GrenadeMods):
+            GrenadeModArray[i] = json.loads("{}")
+            GrenadeModArray[i]["Name"] = parseGrenadeMod(name["Struct"]["GrenadeModDA"]["Object"]["value"])[0]
+            GrenadeModArray[i]["Rarity"] = parseGrenadeMod(name["Struct"]["GrenadeModDA"]["Object"]["value"])[1]
+            GrenadeModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+        backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = GrenadeModArray
     except:
-        backupJSON[backupName]["Inventory"]["GernadeMods"]["Mods"] = []
+        backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = []
     
     
     backupJSON[backupName]["Inventory"]["Perks"] = {}
@@ -1298,7 +1303,7 @@ def parseWeaponMod(name):
     name = name[name.rindex(".DA_WeaponMod_")+14:]
     return [spaceBeforeUpper(name) , rarity]
 
-def parseGernadeMod(name):
+def parseGrenadeMod(name):
     rarity = name[name.index("Mod/")+4:name.index("/",name.index("Mod/")+4)]
     name =  name[name.rindex(".DA_GrenadeMod_")+15:]
     return [spaceBeforeUpper(name) , rarity]
@@ -1307,6 +1312,121 @@ def parsePerk(name):
     rarity = name[name.index("Perk/")+5:name.index("/",name.index("Perk/")+5)]
     name =  name[name.rindex(".DA_Perk_")+9:]
     return [spaceBeforeUpper(name) , rarity]
+
+def backupDetailsScreen(backupName):
+    #for the config json
+    #run time seconds        - ["BackupData"][BackupName]["RunTime"]
+    #score                   - ["BackupData"][BackupName]["Score"]
+    #difficulty              - ["BackupData"][BackupName]["Diff"]
+    #island num              - ["BackupData"][BackupName]["IslandNum"]
+    #diff mods               - ["BackupData"][BackupName]["DiffMods"]
+    #checksum                - ["BackupData"][BackupName]["CheckSum"]
+    #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
+    #Version                 - ["BackupData"][BackupName]["Version"]
+    #Stats                   - ["BackupData"][BackupName]["Stats"]
+    #Eliminations            - ["BackupData"][BackupName]["Stats"]["Elimns"]
+    #Shots Fired             - ["BackupData"][BackupName]["Stats"]["ShotsFired"]
+    #Damage Dealt            - ["BackupData"][BackupName]["Stats"]["DmgDealt"]
+    #Most Damage Dealt       - ["BackupData"][BackupName]["Stats"]["MostDmgDealt"]
+    #Damage Taken            - ["BackupData"][BackupName]["Stats"]["DmgTaken"]
+    #Flawless Islands        - ["BackupData"][BackupName]["Stats"]["FlawlessIslands"]
+    #Items Salvaged          - ["BackupData"][BackupName]["Stats"]["ItemsSalvaged"]
+    #Items Purchased         - ["BackupData"][BackupName]["Stats"]["ItemsPurchased"]
+    #Shop Rerolls            - ["BackupData"][BackupName]["Stats"]["ShopRerolls"]
+    #Totems Destroyed        - ["BackupData"][BackupName]["Stats"]["TotemsDestroyed"]
+    #Current Biome           - ["BackupData"][BackupName]["Biome"]
+    #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
+    #Crystals                - ["BackupData"][BackupName]["Crystals"]
+    
+    #Inventory               - [backupName]["Inventory"]
+    #Weapon                  - [backupName]["Inventory"]["Weapon"]
+    
+    #Weapon Mod Slots        - [backupName]["Inventory"]["WeaponMods"]["Slots"]
+    #Weapon Mods             - [backupName]["Inventory"]["WeaponMods"]["Mods"]
+    #Weapon Mod Name         - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Name"]
+    #Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
+    #Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
+    
+    #Grenade Mod Slots       - [backupName]["Inventory"]["GrenadeMods"]["Slots"]
+    #Grenade Mods            - [backupName]["Inventory"]["GrenadeMods"]["Mods"]
+    #Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
+    #Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
+    #Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
+    
+    #Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
+    #Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
+    #Perk Name               - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Name"]
+    #Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
+    #Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
+    leng = 22
+    
+    indent = ensureLength("",2)
+    disbetween = 4
+    backupJSON = cacheJSON["BackupData"][backupName]
+    info =ensureLength("Backup Name: ",leng)+str(backupName)
+    if(backupJSON["NoSave"]):
+        info+="This backup has no save"
+        scrollInfoMenu(info)
+        return
+    info += "\n"+ensureLength("Run Time: ",leng)+formatTime(backupJSON["RunTime"])
+    info += "\n"+ensureLength("Score: ",leng)+str(backupJSON["Score"])
+    info += "\n"+ensureLength("Crystals: ",leng)+str(backupJSON["Crystals"])
+    info += "\n"+ensureLength("Difficulty: ",leng)+str(backupJSON["Diff"])
+    info += "\n"+ensureLength("Biome: ",leng)+str(backupJSON["Biome"])
+    if(str(backupJSON["LootType"]) != "New Biome"):
+        info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
+    info += "\nDifficulty Modifiers: "
+    for diffMod in backupJSON["DiffMods"]:
+        info += "\n"+indent+str(diffMod)
+
+    info += "\nStats: "
+    info += "\n"+indent+ensureLength("Eliminations:",leng-len(indent))+str(backupJSON["Stats"]["Elimns"])
+    info += "\n"+indent+ensureLength("Shots Fired:",leng-len(indent))+str(backupJSON["Stats"]["ShotsFired"])
+    info += "\n"+indent+ensureLength("Damage Dealt:",leng-len(indent))+str(backupJSON["Stats"]["DmgDealt"])
+    info += "\n"+indent+ensureLength("Most Damage Dealt:",leng-len(indent))+str(backupJSON["Stats"]["MostDmgDealt"])
+    info += "\n"+indent+ensureLength("Damage Taken:",leng-len(indent))+str(backupJSON["Stats"]["DmgTaken"])
+    info += "\n"+indent+ensureLength("Flawless Islands:",leng-len(indent))+str(backupJSON["Stats"]["FlawlessIslands"])
+    info += "\n"+indent+ensureLength("Items Salvaged:",leng-len(indent))+str(backupJSON["Stats"]["ItemsSalvaged"])
+    info += "\n"+indent+ensureLength("Items Purchased:",leng-len(indent))+str(backupJSON["Stats"]["ItemsPurchased"])
+    info += "\n"+indent+ensureLength("Shop Rerolls:",leng-len(indent))+str(backupJSON["Stats"]["ShopRerolls"])
+    info += "\n"+indent+ensureLength("Totems Destroyed:",leng-len(indent))+str(backupJSON["Stats"]["TotemsDestroyed"])
+    info += "\n"
+    info += "\n"+ensureLength("Weapon:",leng)+str(backupJSON["Inventory"]["Weapon"])
+    info += "\n"+ensureLength("Weapon Mod Slots:",leng)+str(backupJSON["Inventory"]["WeaponMods"]["Slots"])
+    info += "\n"+ensureLength("Grenade Mod Slots:",leng)+str(backupJSON["Inventory"]["GrenadeMods"]["Slots"])
+    info += "\n"+ensureLength("Perk Slots:",leng)+str(backupJSON["Inventory"]["Perks"]["Slots"])
+    info += "\nItems:"
+    maxName = 0
+    maxRarity = 0
+    maxLevel = 0
+    #Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
+    #Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
+    #Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
+    for WMod in backupJSON["Inventory"]["WeaponMods"]["Mods"]:
+        maxName = max(maxName,len(WMod["Name"]))
+        maxRarity = max(maxRarity,len(WMod["Rarity"]))
+        maxLevel = max(maxLevel,len(str(WMod["Level"])))
+    for GMod in backupJSON["Inventory"]["GrenadeMods"]["Mods"]:
+        maxName = max(maxName,len(GMod["Name"]))
+        maxRarity = max(maxRarity,len(GMod["Rarity"]))
+        maxLevel = max(maxLevel,len(str(GMod["Level"])))
+    for Perk in backupJSON["Inventory"]["Perks"]["Perks"]:
+        maxName = max(maxName,len(Perk["Name"]))
+        maxRarity = max(maxRarity,len(Perk["Rarity"]))
+        maxLevel = max(maxLevel,len(str(Perk["Level"])))
+    maxRarity+=disbetween
+    maxName+=disbetween
+    info += "\n"+indent+ensureLength("Type",10+disbetween)+ensureLength("Rarity",maxRarity)+ensureLength("Name",maxName)+ensureLength("Level",maxLevel)
+    #info += "\n"
+    for WMod in backupJSON["Inventory"]["WeaponMods"]["Mods"]:
+        info += "\n"+indent+ensureLength("Weapon Mod",10+disbetween)+ensureLength(WMod["Rarity"],maxRarity)+ensureLength(WMod["Name"],maxName)+ensureLength(str(WMod["Level"]),maxLevel)
+    for GMod in backupJSON["Inventory"]["GrenadeMods"]["Mods"]:
+        info += "\n"+indent+ensureLength("Grenade Mod",10+disbetween)+ensureLength(GMod["Rarity"],maxRarity)+ensureLength(GMod["Name"],maxName)+ensureLength(str(GMod["Level"]),maxLevel)
+    for Perk in backupJSON["Inventory"]["Perks"]["Perks"]:
+        info += "\n"+indent+ensureLength("Perk",10+disbetween)+ensureLength(Perk["Rarity"],maxRarity)+ensureLength(Perk["Name"],maxName)+ensureLength(str(Perk["Level"]),maxLevel)
+    scrollInfoMenu(info)
+    return
+
    
 global owd
 owd = os.getcwd()
@@ -1417,6 +1537,7 @@ This program provides the following options:\n
 
  \nList Backups:
     - Lists all backups and trys to list some info about the run
+    - Allows the user to select a backup at which more info about that run is displayed
 
  \nInfo/How to use:
     - provides info about the program and how to use it
