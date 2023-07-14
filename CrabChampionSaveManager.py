@@ -514,6 +514,7 @@ def updateScript():
                 propath = os.path.join(owd,updaterURL[updaterURL.rindex("/")+1:])
                 with open(propath, 'wb') as file:
                     file.write(response.content)
+                os.chdir(owd)
                 subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
                 meow = True
         except:
