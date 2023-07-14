@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.5.1"
+Version = "2.5.2"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -1994,28 +1994,30 @@ Welcome to Crab Champion Save Manager, a script designed to help you manage your
 Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager
 This program provides the following options:\n
 
-\nEdit Save Game:
-    - Uses uesave to allow the user to edit the SaveSlot.sav file in a backup or your current save
+\nManage Backups
 
- \nBackup Save:
-    - backup up your current save with a custom name
+\n - Edit Save Game:
+       - Uses uesave to allow the user to edit the SaveSlot.sav file in a backup or your current save
 
- \nUpdate backup:
-    - Update a already made backup with the current saved run
+\n - Backup Save:
+       - backup up your current save with a custom name
 
- \nRestore Save from Backup:
-    - Restores a run from a backup
+\n - Update backup:
+       - Update a already made backup with the current saved run
 
- \nDelete Backup:
-    - Deletes a backup
-    - Note: Deleting a backup cannot be undone, so be careful when removing backups.
+\n - Restore Save from Backup:
+       - Restores a run from a backup
 
- \nList Backups:
-    - Lists all backups and trys to list some info about the run
-    - Allows the user to select a backup at which more info about that run is displayed
-    - DPB - Damage Per Bullt
-    - SPS - Shots Per Second
-    - DPS - Damage Per Second
+\n - Delete Backup:
+       - Deletes a backup
+       - Note: Deleting a backup cannot be undone, so be careful when removing backups.
+
+\n - List Backups:
+       - Lists all backups and trys to list some info about the run
+       - Allows the user to select a backup at which more info about that run is displayed
+       - DPB - Damage Per Bullt
+       - SPS - Shots Per Second
+       - DPS - Damage Per Second
 
  \nInfo/How to use:
     - provides info about the program and how to use it
