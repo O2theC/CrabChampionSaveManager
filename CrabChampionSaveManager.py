@@ -982,7 +982,7 @@ def loadCache():
             t = threading.Thread(target=genBackupData, args=(backup,))
             t.start()
             threads.append(t)
-    CurrentSaveCS = getChecksum("SaveGames/SaveSlot.sav")
+    CurrentSaveCS = getChecksum(os.getcwd().replace("\\","/")+"/SaveGames/SaveSlot.sav")
     try:
         CurrentSaveCacheCS = cacheJSON["BackupData"]["Current Save"]["CheckSum"]
     except:
@@ -1884,13 +1884,34 @@ def genPlayerData(saveJSON,checksum):
 global owd
 owd = os.getcwd()
 
+
+
+
 # os.remove("CrabChampionSaveManager/backupDataCache.json")
 # time.sleep(1)
 
 makeScreen()
+infoScreen("Starting Crab Champion Save Manager\nThis may take a few seconds")
 loadSettings()
 
-infoScreen("Starting Crab Champion Save Manager\nThis may take a few seconds")
+
+
+
+if(currentDirCheck()):
+    try:
+        if(isLinux):
+            new_dir = os.path.expandvars("$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved")
+        else:
+            new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
+        os.chdir(new_dir)
+    except:
+        infoScreen("Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . .")
+        screen.getch()
+        exiting(0)
+
+
+
+
 
 uepath = getUesavePath()
 if(uepath == ""):
@@ -1933,17 +1954,7 @@ else:
 
 
             
-if(currentDirCheck()):
-    try:
-        if(isLinux):
-            new_dir = os.path.expandvars("$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved")
-        else:
-            new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
-        os.chdir(new_dir)
-    except:
-        infoScreen("Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . .")
-        screen.getch()
-        exiting(0)
+
 
 
 
