@@ -17,7 +17,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "2.4.3"
+Version = "2.5.0"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -256,7 +256,7 @@ def restoreBackup():
     #print("it took",round(stop-start,3)," seconds")
     return
 
-def editBackup():
+def editBackupRaw():
     global isExe
     """Edits a backup of the save game.
     
@@ -343,8 +343,8 @@ def listBackups():
     
     loadCache()
     current_directory = os.getcwd()
-    foldersInfo = getBackups(moreInfo=1)
-    folders = getBackups()
+    foldersInfo = getBackups(moreInfo=1,currentSave=True)
+    folders = getBackups(currentSave=True)
     prompt = str(len(folders))+" Backups Stored\nSelect Backup for more info about that backup\n"
     backups = "Go back to main menu\n"
     for i,name in enumerate(foldersInfo):
@@ -353,14 +353,14 @@ def listBackups():
         else:
             backups += "\n"+str(name)
             
-    choice = scrollSelectMenu(prompt,backups,wrapMode=2)
+    choice = scrollSelectMenu(prompt,backups,wrapMode=2,detailsSelected = False)
     if(choice == 0):
         return
     choice -=1
     backupDetailsScreen(folders[choice])
     listBackups()
 
-def getBackups(moreInfo = 0):
+def getBackups(moreInfo = 0,currentSave = False):
     global cacheJSON
     """Retrieves the list of backup folders.
     
@@ -377,6 +377,8 @@ def getBackups(moreInfo = 0):
         None
     folders = [item for item in items if os.path.isdir(os.path.join(current_directory, item))]
     folders = [item for item in items if os.path.isfile(os.path.join(os.path.join(current_directory, item),"SaveSlot.sav"))]
+    if(currentSave):
+        folders.insert(0,"Current Save")
     if(moreInfo == 0):
         return folders
     else:
@@ -434,7 +436,7 @@ def ensureLength(string,length):
     '''      
     while(len(string)<length):
         string +=" "
-    return string    
+    return str(string)    
 
 def currentDirCheck():
     """Checks if the required folders are present in the current directory.
@@ -538,9 +540,23 @@ def makeScreen():
     except:
         None
 
-def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1,loop=False):
+def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1,loop=False,detailsSelected = True):
     global screen
     
+    def moreDeatils(opt,details=False):
+        optio = ""
+        detail = ""
+        try: 
+           optio = opt[:opt.index("-")]
+           detail = opt[opt.index("-")+1:]
+        except:
+            optio = opt
+            detail = ""
+            details = False
+        if(details):
+            return str(optio)+" - "+str(detail)
+        else:
+            return str(optio)
     
     if(type(options) == type("")):
         options = options.split("\n")
@@ -583,11 +599,17 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
                     # Highlight the selected option
                     if(len(option)+2>win_wid) and wrapMode == 2:
                         option = option[:win_wid]
-                    screen.addstr((i + len(prompt) - scroll_window), 0, " > " + option, curses.A_BOLD)
+                    if(detailsSelected):
+                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True), curses.A_BOLD)
+                    else:
+                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + option, curses.A_BOLD)
                 else:
                     if(len(option)+1>win_wid) and wrapMode == 2:
                         option = option[:win_wid]
-                    screen.addstr((i + len(prompt) - scroll_window), 0, "  " + option)
+                    if(detailsSelected):
+                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option))
+                    else:
+                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + option)
         screen.addstr(min(win_height,len(options)) + len(prompt),0,"                                                                                                               ")
         screen.addstr(min(win_height,len(options)) + len(prompt)+1, 0, "Use arrow keys to navigate options. Press Enter to select.")
         screen.refresh()
@@ -794,7 +816,7 @@ def settings():
                         height = configJSON["Start_Up"]["Terminal_Size"]["Height"]
                         width = configJSON["Start_Up"]["Terminal_Size"]["Width"]
                         optionsTS = f"Back\nHeight - {height}\nWidth - {width}\nManuel"
-                        choice = scrollSelectMenu(promptTS,optionsTS)
+                        choice = scrollSelectMenu(promptTS,optionsTS,detailsSelected=False)
                         if(choice == 0):
                             break
                         elif(choice == 1):
@@ -943,21 +965,32 @@ def loadCache():
         noCache = True
     if(noCache):
         cacheJSON["BackupData"] = {}
+        cacheJSON["PlayerData"] = {}
     threads = []
+    try:
+        cacheVersion = cacheJSON["Version"]
+    except:
+        cacheJSON["Version"] = Version
+        cacheVersion = "0.0.0"
     for backup in backups:
         currentCS = getChecksum(backup+"/SaveSlot.sav")
         try:
             cacheCS = cacheJSON["BackupData"][backup]["CheckSum"]
         except:
             cacheCS = ""
-        try:
-            cacheVersion = cacheJSON["BackupData"][backup]["Version"]
-        except:
-            cacheVersion = "0.0.0"
         if(currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(Version)):
             t = threading.Thread(target=genBackupData, args=(backup,))
             t.start()
             threads.append(t)
+    CurrentSaveCS = getChecksum("SaveGames/SaveSlot.sav")
+    try:
+        CurrentSaveCacheCS = cacheJSON["BackupData"]["Current Save"]["CheckSum"]
+    except:
+        CurrentSaveCacheCS = ""
+    if(CurrentSaveCS != CurrentSaveCacheCS):
+        t = threading.Thread(target=genBackupData, args=("SaveGames",))
+        t.start()
+        threads.append(t)
     for t in threads:
         t.join()
     file.seek(0)
@@ -982,7 +1015,6 @@ def parseDiffMods(mods):
 def genBackupData(backupName):
     start = time.time()
     global lock
-    global Version
     global cacheJSON
     savFilePath = ""+backupName+"/SaveSlot.sav"
     savFile = savFilePath
@@ -999,13 +1031,16 @@ def genBackupData(backupName):
     saveJSON = json.loads(saveFile.read())
     saveFile.close()
     os.remove(savFile.replace("SaveSlot.sav","data.json"))
+    checksum = getChecksum(backupName+"/SaveSlot.sav")
+    if(backupName == "SaveGames"):
+        backupName = "Current Save"
+        genPlayerData(saveJSON,checksum)
     try:
         saveJSON = saveJSON["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]
     except:
         lock.acquire()
         cacheJSON["BackupData"][backupName] = {}
-        cacheJSON["BackupData"][backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
-        cacheJSON["BackupData"][backupName]["Version"] = Version
+        cacheJSON["BackupData"][backupName]["CheckSum"] = checksum
         cacheJSON["BackupData"][backupName]["NoSave"] = True
         lock.release()
         return
@@ -1062,7 +1097,6 @@ def genBackupData(backupName):
     #diff mods               - ["BackupData"][BackupName]["DiffMods"]
     #checksum                - ["BackupData"][BackupName]["CheckSum"]
     #nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
-    #Version                 - ["BackupData"][BackupName]["Version"]
     #Eliminations            - ["BackupData"][BackupName]["Elimns"]
     #Shots Fired             - ["BackupData"][BackupName]["ShotsFired"]
     #Damage Dealt            - ["BackupData"][BackupName]["DmgDealt"]
@@ -1301,9 +1335,8 @@ def genBackupData(backupName):
         backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = []
     
     
-    backupJSON[backupName]["CheckSum"] = getChecksum(backupName+"/SaveSlot.sav")
+    backupJSON[backupName]["CheckSum"] = checksum
     backupJSON[backupName]["NoSave"] = False
-    backupJSON[backupName]["Version"] = Version
     lock.acquire()
     
     try:
@@ -1437,8 +1470,30 @@ def parsePerk(name):
     name =  name[name.rindex(".DA_Perk_")+9:]
     return [spaceBeforeUpper(name) , rarity]
 
+def parseWeaponRank(rank):
+    return rank[rank.index("ECrabRank::")+11:]
+
 def formatNumber(num=0, decimal_places=0):
     return '{:,.{}f}'.format(num, decimal_places)
+
+def parseSkin(skin):
+    return skin[skin.rindex("MI_")+3:]
+    
+def parseChallenageName(name):
+    name = name[4:]
+    name = name.split("_")
+    tname = ""
+    for i in range(len(name)):
+        if(len(name[i]) == name[i].count("I")):
+            None
+        else:
+            name[i] = name[i].lower()
+            name[i] = name[i][:1].upper()+name[i][1:]
+        if(i == 0):
+            tname = name[i]
+        else:
+            tname +=" "+name[i]
+    return tname
 
 def backupDetailsScreen(backupName):
     
@@ -1465,12 +1520,12 @@ def backupDetailsScreen(backupName):
         info+="This backup has no save"
         scrollInfoMenu(info)
         return
-    info += "\n"+ensureLength("Run Time: ",leng)+formatTime(backupJSON["RunTime"])
-    info += "\n"+ensureLength("Score: ",leng)+str(formatNumber(backupJSON["Score"],0))
-    info += "\n"+ensureLength("Island: ",leng)+str(formatNumber(backupJSON["IslandNum"],0))
-    info += "\n"+ensureLength("Crystals: ",leng)+str(formatNumber(backupJSON["Crystals"],0))
-    info += "\n"+ensureLength("Difficulty: ",leng)+str(backupJSON["Diff"])
-    info += "\n"+ensureLength("Biome: ",leng)+str(backupJSON["Biome"])
+    info += "\n"+str(ensureLength("Run Time: ",leng))+str(formatTime(backupJSON["RunTime"]))
+    info += "\n"+str(ensureLength("Score: ",leng))+str(formatNumber(backupJSON["Score"],0))
+    info += "\n"+str(ensureLength("Island: ",leng))+str(formatNumber(backupJSON["IslandNum"],0))
+    info += "\n"+str(ensureLength("Crystals: ",leng))+str(formatNumber(backupJSON["Crystals"],0))
+    info += "\n"+str(ensureLength("Difficulty: ",leng))+str(backupJSON["Diff"])
+    info += "\n"+str(ensureLength("Biome: ",leng))+str(backupJSON["Biome"])
     if(str(backupJSON["LootType"]) != "New Biome"):
         info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
     info += "\n"+ensureLength("Health:",leng)+str(formatNumber(backupJSON["Health"],0))
@@ -1487,9 +1542,14 @@ def backupDetailsScreen(backupName):
     info += "\n"+ensureLength("Items Purchased:",leng)+str(formatNumber(backupJSON["ItemsPurchased"],0))
     info += "\n"+ensureLength("Shop Rerolls:",leng)+str(formatNumber(backupJSON["ShopRerolls"],0))
     info += "\n"+ensureLength("Totems Destroyed:",leng)+str(formatNumber(backupJSON["TotemsDestroyed"],0))
-    info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["DmgDealt"]/backupJSON["ShotsFired"],3),3))
-    info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["ShotsFired"]/backupJSON["RunTime"],3),3))
-    info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["DmgDealt"]/backupJSON["ShotsFired"]),3),3))
+    try:
+        info += "\n"+ensureLength("Average DPB:",leng)+str(formatNumber(round(backupJSON["DmgDealt"]/backupJSON["ShotsFired"],3),3))
+        info += "\n"+ensureLength("Average SPS:",leng)+str(formatNumber(round(backupJSON["ShotsFired"]/backupJSON["RunTime"],3),3))
+        info += "\n"+ensureLength("Average DPS:",leng)+str(formatNumber(round((backupJSON["ShotsFired"]/backupJSON["RunTime"])*(backupJSON["DmgDealt"]/backupJSON["ShotsFired"]),3),3))
+    except:
+        info += "\n"+ensureLength("Average DPB:",leng)+"0"
+        info += "\n"+ensureLength("Average SPS:",leng)+"0"
+        info += "\n"+ensureLength("Average DPS:",leng)+"0"
     if(len(backupJSON["DiffMods"])>0):
         info += "\nDifficulty Modifiers: "
         for diffMod in backupJSON["DiffMods"]:
@@ -1535,6 +1595,291 @@ def backupDetailsScreen(backupName):
     scrollInfoMenu(info,color = "BackupDetails")
     return
 
+def manageBackups():
+    prompt = "Managing Backups\n"
+    options = """Back-Returns you to the main menu
+Edit Save-Edit your current save or any of your backups using uesave
+Backup Save-Backup up your current save with a name of your choice
+Update Backup-Choose a backup to update using your current save
+Restore Save-Set your current save using a backup
+Delete Backup-Delete a backup
+List Backups and Backup Details-List backups and some details about, choose a backup to learn more about it"""
+    while True:
+        choice = scrollSelectMenu(prompt,options)
+        if(choice == 0):
+            return
+        elif(choice == 1):
+            editBackupRaw()
+        elif(choice == 2):
+            backupSave()
+        elif(choice == 3):
+            updateBackup()
+        elif(choice == 4):
+            restoreBackup()
+        elif(choice == 5):
+            deleteBackup()
+        elif(choice == 6):
+            listBackups()
+
+def managePresets():
+    prompt = "Managing Presets\n"
+    options = """Back-Returns you to the main menu
+Create Preset-Create a new preset
+Edit Presets-Edit one of your presets
+Delete Preset-delete a preset
+List Presets and Preset Details-List all your presets, select a preset to see it's settings"""
+    while True:
+        choice = scrollSelectMenu(prompt,options)
+        if(choice == 0):
+            return
+        elif(choice == 1):
+            None
+        elif(choice == 2):
+            None
+        elif(choice == 3):
+            None
+        elif(choice == 4):
+            None
+
+def genPlayerData(saveJSON,checksum):
+    start = time.time()
+    global lock
+    global cacheJSON
+    try:
+        cacheJSON["PlayerData"] = {}
+        saveJSON = saveJSON["root"]["properties"]
+    except:
+        lock.acquire()
+        cacheJSON["PlayerData"] = {}
+        lock.release()
+        return
+    PlayerDataJSON = json.loads("{}")
+    # in .sav to json
+    #XP to next level up           - ["XPToNextLevelUp"]["Int"]["value"]
+    #Weapon Rank Array             - ["RankedWeapons"]["Array"]["value"]["Struct"]["value"]
+    #    Weapon Name From Array    - ["Struct"]["Weapon"]["Object"]["value"] , use parseWeapon()
+    #    Weapon Rank From Array    - ["Struct"]["Rank"]["Enum"]["value"] , use parseWeaponRank()
+    #Account Level                 - ["AccountLevel"]["Int"]["value"]
+    #Keys                          - ["Keys"]["Int"]["value"]
+    #Crab Skin                     - ["CrabSkin"]["Object"]["value"] , use parseSkin()
+    #Weapon                        - ["WeaponDA"]["Object"]["value"] , use parseWeapon()
+    #Challenages Array             - ["Challenges"]["Array"]["value"]["Struct"]["value"]
+    #    Name                      - ["Struct"]["ChallenageID"]["Name"]["value"] , use parseChallenageName()
+    #    Description               - ["Struct"]["ChallengeDescription"]["Str"]["value"]
+    #    Progress                  - ["Struct"]["ChallengeProgress"]["Int"]["value"]
+    #    Goal                      - ["Struct"]["ChallengeGoal"]["Int"]["value"]
+    #    Completed                 - ["Struct"]["bChallengeCompleted"]["Bool"]["value"]
+    #    Cosmetic Reward Name      - ["Struct"]["CosmeticReward"]["Struct"]["value"]["Struct"]["CosmeticName"]["Str"]["value"]
+    #Unlocked Weapons Array        - ["UnlockedWeapons"]["Array"]["value"]["Base"]["Object"] , make sure to parse each with parseWeapon()
+    #Unlocked Weapon Mods Array    - ["UnlockedWeaponMods"]["Array"]["value"]["Base"]["Object"]
+    #Unlocked Grenade Mods Array   - ["UnlockedGrenadeMods"]["Array"]["value"]["Base"]["Object"]
+    #Unlocked Perks Array          - ["UnlockedPerks"]["Array"]["value"]["Base"]["Object"]
+    #Easy Attempts                 - ["EasyAttempts"]["Int"]["value"]
+    #Easy Wins                     - ["EasyWins"]["Int"]["value"]
+    #Easy Highscore                - ["EasyHighScore"]["Int"]["value"]
+    #Easy Winstreak                - ["EasyWinStreak"]["Int"]["value"]
+    #Easy Highest Island           - ["EasyHighestIslandReached"]["Int"]["value"]
+    #Normal Attempts               - ["NormalAttempts"]["Int"]["value"]
+    #Normal Wins                   - ["NormalWins"]["Int"]["value"]
+    #Normal Highscore              - ["NormalHighScore"]["Int"]["value"]
+    #Normal Winstreak              - ["NormalWinStreak"]["Int"]["value"]
+    #Normal Highest Island         - ["NormalHighestIslandReached"]["Int"]["value"]
+    #Nightmare Attempts            - ["NightmareAttempts"]["Int"]["value"]
+    #Nightmare Wins                - ["NightmareWins"]["Int"]["value"]
+    #Nightmare Highscore           - ["NightmareHighScore"]["Int"]["value"]
+    #Nightmare Winstreak           - ["NightmareWinStreak"]["Int"]["value"]
+    #Nightmare Highest Island      - ["NightmareHighestIslandReached"]["Int"]["value"]
+    
+    
+    #in cache json
+    #XP to next level up           - ["XPToNextLevelUp"]
+    #Weapon Rank Array             - ["RankedWeapons"]
+    #    Weapon Name From Array    - ["RankedWeapons"][index]["Name"]
+    #    Weapon Rank From Array    - ["RankedWeapons"][index]["Rank"]
+    #Account Level                 - ["AccountLevel"]
+    #Keys                          - ["Keys"]
+    #Crab Skin                     - ["Skin"]
+    #Current Weapon                - ["CurrentWeapon"]
+    #Challenages Array             - ["Challenges"]
+    #    Name                      - ["Challenges"][index]["Name"]
+    #    Description               - ["Challenges"][index]["Description"]
+    #    Progress                  - ["Challenges"][index]["Progress"]
+    #    Goal                      - ["Challenges"][index]["Goal"]
+    #    Completed                 - ["Challenges"][index]["Completed"]
+    #    Cosmetic Reward Name      - ["Challenges"][index]["SkinRewardName"]
+    #Unlocked Weapons Array        - ["UnlockedWeapons"]
+    #Unlocked Weapon Mods Array    - ["UnlockedWeaponMods"]
+    #Unlocked Grenade Mods Array   - ["UnlockedGrenadeMods"]
+    #Unlocked Perks Array          - ["UnlockedPerks"]
+    #Easy Attempts                 - ["EasyAttempts"]
+    #Easy Wins                     - ["EasyWins"]
+    #Easy Highscore                - ["EasyHighScore"]
+    #Easy Winstreak                - ["EasyWinStreak"]
+    #Easy Highest Island           - ["EasyHighestIslandReached"]
+    #Normal Attempts               - ["NormalAttempts"]
+    #Normal Wins                   - ["NormalWins"]
+    #Normal Highscore              - ["NormalHighScore"]
+    #Normal Winstreak              - ["NormalWinStreak"]
+    #Normal Highest Island         - ["NormalHighestIslandReached"]
+    #Nightmare Attempts            - ["NightmareAttempts"]
+    #Nightmare Wins                - ["NightmareWins"]
+    #Nightmare Highscore           - ["NightmareHighScore"]
+    #Nightmare Winstreak           - ["NightmareWinStreak"]
+    #Nightmare Highest Island      - ["NightmareHighestIslandReached"]
+    
+    PlayerDataJSON["XPToNextLevelUp"] = saveJSON["XPToNextLevelUp"]["Int"]["value"]
+    PlayerDataJSON["RankedWeapons"] = []
+    RWArray = []
+    RWArrayRaw = saveJSON["RankedWeapons"]["Array"]["value"]["Struct"]["value"]
+    for RWArrayObject in RWArrayRaw:
+        RankedWeapon = json.loads("{}")
+        RankedWeapon["Name"] = parseWeapon(RWArrayObject["Struct"]["Weapon"]["Object"]["value"])
+        RankedWeapon["Rank"] = parseWeaponRank(RWArrayObject["Struct"]["Rank"]["Enum"]["value"])
+        RWArray.append(RankedWeapon)
+    PlayerDataJSON["RankedWeapons"] = RWArray
+    PlayerDataJSON["AccountLevel"] = saveJSON["AccountLevel"]["Int"]["value"]
+    PlayerDataJSON["Keys"] = saveJSON["Keys"]["Int"]["value"]
+    PlayerDataJSON["Skin"] = parseSkin(saveJSON["CrabSkin"]["Object"]["value"])
+    PlayerDataJSON["CurrentWeapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
+    PlayerDataJSON["Challenges"] = []
+    ChallengeArray = []
+    ChallengeArrayRaw = saveJSON["Challenges"]["Array"]["value"]["Struct"]["value"]
+    for ChallengeArrayObject in ChallengeArrayRaw:
+        Challenge = json.loads("{}")
+        #infoScreen(str(ChallengeArrayObject["Struct"].keys()))
+        Challenge["Name"] = parseChallenageName(ChallengeArrayObject["Struct"]["ChallengeID"]["Name"]["value"])
+        Challenge["Description"] = (ChallengeArrayObject["Struct"]["ChallengeDescription"]["Str"]["value"])
+        Challenge["Progress"] = (ChallengeArrayObject["Struct"]["ChallengeProgress"]["Int"]["value"])
+        Challenge["Goal"] = (ChallengeArrayObject["Struct"]["ChallengeGoal"]["Int"]["value"])
+        Challenge["Completed"] = (ChallengeArrayObject["Struct"]["bChallengeCompleted"]["Bool"]["value"])
+        Challenge["SkinRewardName"] = (ChallengeArrayObject["Struct"]["CosmeticReward"]["Struct"]["value"]["Struct"]["CosmeticName"]["Str"]["value"])
+        ChallengeArray.append(Challenge)
+    PlayerDataJSON["Challenges"] = ChallengeArray
+    
+    PlayerDataJSON["UnlockedWeapons"] = []
+    UnlockedWeaponsArray = []
+    UnlockedWeaponsArrayRaw = saveJSON["UnlockedWeapons"]["Array"]["value"]["Base"]["Object"]
+    for UnlockedWeapon in UnlockedWeaponsArrayRaw:
+        UnlockedWeaponsArray.append(parseWeapon(UnlockedWeapon))
+    PlayerDataJSON["UnlockedWeapons"] = UnlockedWeaponsArray
+    
+    PlayerDataJSON["UnlockedWeaponMods"] = []
+    UnlockedWeaponModsArray = []
+    UnlockedWeaponModsArrayRaw = saveJSON["UnlockedWeaponMods"]["Array"]["value"]["Base"]["Object"]
+    for UnlockedWeaponMod in UnlockedWeaponModsArrayRaw:
+        WeaponMod = json.loads("{}")
+        WeaponMod["Name"] = parseWeaponMod(UnlockedWeaponMod)[0]
+        WeaponMod["Rarity"] = parseWeaponMod(UnlockedWeaponMod)[1]
+        UnlockedWeaponModsArray.append(WeaponMod)
+    PlayerDataJSON["UnlockedWeaponMods"] = UnlockedWeaponModsArray
+
+    PlayerDataJSON["UnlockedGrenadeMods"] = []
+    UnlockedGrenadeModsArray = []
+    UnlockedGrenadeModsArrayRaw = saveJSON["UnlockedGrenadeMods"]["Array"]["value"]["Base"]["Object"]
+    for UnlockedGrenadeMod in UnlockedGrenadeModsArrayRaw:
+        GrenadeMod = json.loads("{}")
+        GrenadeMod["Name"] = parseGrenadeMod(UnlockedGrenadeMod)[0]
+        GrenadeMod["Rarity"] = parseGrenadeMod(UnlockedGrenadeMod)[1]
+        UnlockedGrenadeModsArray.append(GrenadeMod)
+    PlayerDataJSON["UnlockedGrenadeMods"] = UnlockedGrenadeModsArray
+    
+    PlayerDataJSON["UnlockedPerks"] = []
+    UnlockedPerksArray = []
+    UnlockedPerksArrayRaw = saveJSON["UnlockedPerks"]["Array"]["value"]["Base"]["Object"]
+    for UnlockedPerk in UnlockedPerksArrayRaw:
+        Perk = json.loads("{}")
+        Perk["Name"] = parsePerk(UnlockedPerk)[0]
+        Perk["Rarity"] = parsePerk(UnlockedPerk)[1]
+        UnlockedPerksArray.append(Perk)
+    PlayerDataJSON["UnlockedPerks"] = UnlockedPerksArray
+    
+    try:
+        PlayerDataJSON["EasyAttempts"] = saveJSON["EasyAttempts"]["Int"]["value"]
+    except:
+        PlayerDataJSON["EasyAttempts"] = 0
+
+    try:
+        PlayerDataJSON["EasyWins"] = saveJSON["EasyWins"]["Int"]["value"]
+    except:
+        PlayerDataJSON["EasyWins"] = 0
+
+    try:
+        PlayerDataJSON["EasyHighScore"] = saveJSON["EasyHighScore"]["Int"]["value"]
+    except:
+        PlayerDataJSON["EasyHighScore"] = 0
+
+    try:
+        PlayerDataJSON["EasyWinStreak"] = saveJSON["EasyWinStreak"]["Int"]["value"]
+    except:
+        PlayerDataJSON["EasyWinStreak"] = 0
+
+    try:
+        PlayerDataJSON["EasyHighestIslandReached"] = saveJSON["EasyHighestIslandReached"]["Int"]["value"]
+    except:
+        PlayerDataJSON["EasyHighestIslandReached"] = 0
+
+    try:
+        PlayerDataJSON["NormalAttempts"] = saveJSON["NormalAttempts"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NormalAttempts"] = 0
+
+    try:
+        PlayerDataJSON["NormalWins"] = saveJSON["NormalWins"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NormalWins"] = 0
+
+    try:
+        PlayerDataJSON["NormalHighScore"] = saveJSON["NormalHighScore"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NormalHighScore"] = 0
+
+    try:
+        PlayerDataJSON["NormalWinStreak"] = saveJSON["NormalWinStreak"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NormalWinStreak"] = 0
+
+    try:
+        PlayerDataJSON["NormalHighestIslandReached"] = saveJSON["NormalHighestIslandReached"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NormalHighestIslandReached"] = 0
+
+    try:
+        PlayerDataJSON["NightmareAttempts"] = saveJSON["NightmareAttempts"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NightmareAttempts"] = 0
+
+    try:
+        PlayerDataJSON["NightmareWins"] = saveJSON["NightmareWins"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NightmareWins"] = 0
+
+    try:
+        PlayerDataJSON["NightmareHighScore"] = saveJSON["NightmareHighScore"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NightmareHighScore"] = 0
+
+    try:
+        PlayerDataJSON["NightmareWinStreak"] = saveJSON["NightmareWinStreak"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NightmareWinStreak"] = 0
+
+    try:
+        PlayerDataJSON["NightmareHighestIslandReached"] = saveJSON["NightmareHighestIslandReached"]["Int"]["value"]
+    except:
+        PlayerDataJSON["NightmareHighestIslandReached"] = 0
+        
+    lock.acquire()
+    try:
+        cacheJSON["PlayerData"] = PlayerDataJSON
+    except:
+        cacheJSON["PlayerData"] = {}
+        cacheJSON["PlayerData"] = PlayerDataJSON
+    lock.release()
+    stop = time.time()
+    
+    
+    
+    
    
 global owd
 owd = os.getcwd()
@@ -1606,21 +1951,31 @@ if(currentDirCheck()):
 mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
 mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
 while(True):
-    options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
-    choice = scrollSelectMenu(mainMenuPrompt,options,-1,1,loop=True)+1
+    #options = "Manage Backups\nManage Presets\nInfo/How to use\nSettings\nExit"
+    options = "Manage Backups\nInfo/How to use\nSettings\nExit"
+    #options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
+    choice = scrollSelectMenu(mainMenuPrompt,options,-1,1)+1
+    # if(choice == 1):
+    #     editBackup() # turned to curse
+    # elif(choice == 2):
+    #     backupSave()
+    # elif(choice == 3):
+    #     updateBackup() # turned to curse
+    # elif(choice == 4):
+    #     restoreBackup()# turned to curse
+    # elif(choice == 5):
+    #     deleteBackup() # turned to curse
+    # elif(choice == 6):
+    #     listBackups()
+    if(choice>1):
+        choice+=1
     if(choice == 1):
-        editBackup() # turned to curse
+        manageBackups()
     elif(choice == 2):
-        backupSave()
+        #managePresets()
+        None
+    
     elif(choice == 3):
-        updateBackup() # turned to curse
-    elif(choice == 4):
-        restoreBackup()# turned to curse
-    elif(choice == 5):
-        deleteBackup() # turned to curse
-    elif(choice == 6):
-        listBackups()
-    elif(choice == 7):
         infoList = """
 Crab Champion Save Manager
 Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.
@@ -1666,9 +2021,9 @@ This program provides the following options:\n
  Downloading an updater for the .exe version of the program
  Downloading uesave"""
         scrollInfoMenu(infoList,-1)
-    elif(choice == 8):
+    elif(choice == 4):
         settings()
-    elif(choice == 9):
+    elif(choice == 5):
         break
     
 exiting(0)
