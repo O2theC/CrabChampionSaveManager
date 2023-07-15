@@ -1910,7 +1910,10 @@ def genPlayerData(saveJSON,checksum):
         RankedWeapon["Rank"] = parseWeaponRank(RWArrayObject["Struct"]["Rank"]["Enum"]["value"])
         RWArray.append(RankedWeapon)
     PlayerDataJSON["RankedWeapons"] = RWArray
-    PlayerDataJSON["AccountLevel"] = saveJSON["AccountLevel"]["Int"]["value"]
+    try:
+        PlayerDataJSON["AccountLevel"] = saveJSON["AccountLevel"]["Int"]["value"]
+    except:
+        PlayerDataJSON["AccountLevel"] = 0 
     PlayerDataJSON["Keys"] = saveJSON["Keys"]["Int"]["value"]
     PlayerDataJSON["Skin"] = parseSkin(saveJSON["CrabSkin"]["Object"]["value"])
     PlayerDataJSON["CurrentWeapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
@@ -2702,7 +2705,8 @@ def convertMyItemtoGameItem(MyItemJson):
         GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
         return GameItemJson
 
-
+def convertPresetToGameSave(preset):
+    None
 
 global DIFFMODS
 DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
