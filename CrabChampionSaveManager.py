@@ -1897,7 +1897,10 @@ def genPlayerData(saveJSON,checksum):
     #Nightmare Winstreak           - ["NightmareWinStreak"]
     #Nightmare Highest Island      - ["NightmareHighestIslandReached"]
     
-    PlayerDataJSON["XPToNextLevelUp"] = saveJSON["XPToNextLevelUp"]["Int"]["value"]
+    try:
+        PlayerDataJSON["XPToNextLevelUp"] = saveJSON["XPToNextLevelUp"]["Int"]["value"]
+    except:
+        PlayerDataJSON["XPToNextLevelUp"] = 0
     PlayerDataJSON["RankedWeapons"] = []
     RWArray = []
     RWArrayRaw = saveJSON["RankedWeapons"]["Array"]["value"]["Struct"]["value"]
@@ -2353,6 +2356,7 @@ def editPreset(preset,name):
             diff = ["Easy","Normal","Nightmare"]
             
             presetJSON["Diff"] = diff[scrollSelectMenu(prompt,diff,startChoice=diff.index(presetJSON["Diff"]))]
+        
         elif(":" in info[choice] and "Biome" in info[choice][:info[choice].index(":")]):
             prompt = "Select Biome\nCurrent Biome is "+presetJSON["Biome"]+"\n"
             biome = ["Tropical","Arctic","Volcanic"]
@@ -2397,8 +2401,7 @@ def editPreset(preset,name):
             odiffmods = presetJSON["DiffMods"]
             odiffmods.append(diffmod)
             presetJSON["DiffMods"] = odiffmods
-            
-            
+                    
         elif(":" in info[choice] and "Weapon" in info[choice][:info[choice].index(":")] and not "Mod" in info[choice][:info[choice].index(":")]):
             prompt = "Select Weapon\nCurrent Weapon is "+presetJSON["Inventory"]["Weapon"]+"\n"
             wep = WEAPONS.copy()
@@ -2418,7 +2421,8 @@ def editPreset(preset,name):
             wepMod = containsWepMod(info[choice])[1]
             array = presetJSON["Inventory"]["WeaponMods"]["Mods"]
             for i in range(len(array)):
-                if(wepMod == json.loads(str(array[i].replace("'","\"")))["Name"]):
+                #print(str(array[i].replace("'","\"")))
+                if(wepMod == json.loads(str(array[i]).replace("'","\""))["Name"]):
                     array.remove(array[i])
                     break
             presetJSON["Inventory"]["WeaponMods"]["Mods"] = array
@@ -2433,7 +2437,7 @@ def editPreset(preset,name):
             #     wepmods[i] = wepmods[i]
             wepmods.insert(0,"Back")
             while True:
-                wepmod = scrollSelectMenu(prompt,wepmods,useItemColors=True)
+                wepmod = scrollSelectMenu(prompt,wepmods,useItemColors=True,loop=True)
                 if(wepmod == 0):
                     break
                 wepmod = owepmods[wepmod-1]
@@ -2448,19 +2452,86 @@ def editPreset(preset,name):
                 mod["Level"] = lvl
                 mods.append(mod)
                 presetJSON["Inventory"]["WeaponMods"]["Mods"] = mods
+                break        
+            
+        elif(containsGreMod(info[choice])[0]):
+            gremod = containsGreMod(info[choice])[1]
+            array = presetJSON["Inventory"]["GrenadeMods"]["Mods"]
+            for i in range(len(array)):
+                #print(str(array[i].replace("'","\"")))
+                if(gremod == json.loads(str(array[i]).replace("'","\""))["Name"]):
+                    array.remove(array[i])
+                    break
+            presetJSON["Inventory"]["GrenadeMods"]["Mods"] = array
+            
+        elif("Add Grenade Mod" in info[choice]):
+            gremods = GRENADEMODS["Names"].copy()
+            for gremod in presetJSON["Inventory"]["GrenadeMods"]["Mods"]:
+                gremods.remove(json.loads(str(gremod).replace("'","\""))["Name"])
+            prompt = "Select Grenade Mod to add\n"
+            ogremods = gremods.copy()
+            # for i in range(len(gremods)):
+            #     gremods[i] = gremods[i]
+            gremods.insert(0,"Back")
+            while True:
+                gremod = scrollSelectMenu(prompt,gremods,useItemColors=True,loop=True)
+                if(gremod == 0):
+                    break
+                gremod = ogremods[gremod-1]
+                lvl = userInputMenuNum("What level should "+str(gremod)+" be?\nEnter nothing to select a differnt grenade mod","",0,256,"",)
+                if(lvl == ""):
+                    continue
+                lvl = int(lvl)
+                mods = presetJSON["Inventory"]["GrenadeMods"]["Mods"]
+                mod = json.loads("{}")
+                mod["Name"] = gremod
+                mod["Rarity"] = GRENADEMODS[gremod]
+                mod["Level"] = lvl
+                mods.append(mod)
+                presetJSON["Inventory"]["GrenadeMods"]["Mods"] = mods
                 break
+            
+        elif(containsPerk(info[choice])[0]):
+            gremod = containsPerk(info[choice])[1]
+            array = presetJSON["Inventory"]["Perks"]["Perks"]
+            for i in range(len(array)):
+                #print(str(array[i].replace("'","\"")))
+                if(gremod == json.loads(str(array[i]).replace("'","\""))["Name"]):
+                    array.remove(array[i])
+                    break
+            presetJSON["Inventory"]["Perks"]["Perks"] = array
                 
-            
-        elif(info[choice].replace(" ","") in GRENADEMODS):
-            None
-            
-        elif(":" in info[choice] and "Add Grenade" in info[choice][:info[choice].index(":")]):
-            None
-            
-        elif(info[choice].replace(" ","") in PERKS):
-            None
-        elif(":" in info[choice] and "Add Perk" in info[choice][:info[choice].index(":")]):
-            None
+        elif("Add Perk" in info[choice]):
+            perks = PERKS["Names"].copy()
+            for perk in presetJSON["Inventory"]["Perks"]["Perks"]:
+                perks.remove(json.loads(str(perk).replace("'","\""))["Name"])
+            prompt = "Select Perk to add\n"
+            operks = perks.copy()
+            # for i in range(len(perks)):
+            #     perks[i] = perks[i]
+            perks.insert(0,"Back")
+            while True:
+                perk = scrollSelectMenu(prompt,perks,useItemColors=True,loop=True)
+                if(perk == 0):
+                    break
+                perk = operks[perk-1]
+                lvl = userInputMenuNum("What level should "+str(perk)+" be?\nEnter nothing to select a differnt perk","",0,256,"",)
+                if(lvl == ""):
+                    continue
+                lvl = int(lvl)
+                mods = presetJSON["Inventory"]["Perks"]["Perks"]
+                mod = json.loads("{}")
+                mod["Name"] = perk
+                mod["Rarity"] = PERKS[perk]
+                mod["Level"] = lvl
+                mods.append(mod)
+                presetJSON["Inventory"]["Perks"]["Perks"] = mods
+                break
+        elif(choice == 0):
+            f = open(name+".json","w")
+            f.write(json.dumps(presetJSON,indent=4))
+            f.close()
+            break
 
 def getUnlocked():
     global WEAPONMODS
@@ -2566,7 +2637,7 @@ def getUnlocked():
     for wepMod in cacheJSON["PlayerData"]["UnlockedPerks"]:
         wepMod = str(wepMod).replace("'","\"")
         wepMod = json.loads(wepMod)
-        GRENADEMODS[wepMod["Name"]] = wepMod["Rarity"]
+        PERKS[wepMod["Name"]] = wepMod["Rarity"]
         names.append(wepMod["Name"])
         if(wepMod["Rarity"] == "Rare"):
             rare.append(wepMod["Name"])
@@ -2590,6 +2661,48 @@ def containsWepMod(string):
         if(wepmod in string):
             return True , wepmod
     return False , None  
+
+def containsGreMod(string):
+    for greMod in GRENADEMODS["Names"]:
+        if(greMod in string):
+            return True , greMod
+    return False , None 
+
+def containsPerk(string):
+    for perk in PERKS["Names"]:
+        if(perk in string):
+            return True , perk
+    return False , None 
+
+def convertMyItemtoGameItem(MyItemJson):
+    WeaponModJSON = "{\"Struct\":{\"WeaponModDA\":{\"Object\":{\"value\":\"\"}},\"Level\":{\"Byte\":{\"value\":{\"Byte\":0},\"enum_type\":\"None\"}}}}"
+    GrenadeModJSON = "{\"Struct\":{\"GrenadeModDA\":{\"Object\":{\"value\":\"\"}},\"Level\":{\"Byte\":{\"value\":{\"Byte\":0},\"enum_type\":\"None\"}}}}"
+    PerkJSON = "{\"Struct\":{\"PerkDA\":{\"Object\":{\"value\":\"\"}},\"Level\":{\"Byte\":{\"value\":{\"Byte\":0},\"enum_type\":\"None\"}}}}"
+
+    #/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_AuraShot.DA_WeaponMod_AuraShot
+
+
+    MyItemJson = json.loads(str(MyItemJson).replace("'","\""))
+    if(MyItemJson["Name"] in WEAPONMODS["Names"]):
+        GameItemJson = json.loads(WeaponModJSON)
+        name = f"/Game/Blueprint/Pickup/WeaponMod/{MyItemJson['Rarity']}/DA_WeaponMod_{MyItemJson['Name'].replace(' ','')}.DA_WeaponMod_{MyItemJson['Name'].replace(' ','')}"
+        GameItemJson["Struct"]["WeaponModDA"]["Object"]["value"] = name
+        GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
+        return GameItemJson
+    elif(MyItemJson["Name"] in GRENADEMODS["Names"]):
+        GameItemJson = json.loads(GrenadeModJSON)
+        name = f"/Game/Blueprint/Pickup/GrenadeMod/{MyItemJson['Rarity']}/DA_GrenadeMod_{MyItemJson['Name'].replace(' ','')}.DA_GrenadeMod_{MyItemJson['Name'].replace(' ','')}"
+        GameItemJson["Struct"]["GrenadeModDA"]["Object"]["value"] = name
+        GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
+        return GameItemJson
+    elif(MyItemJson["Name"] in PERKS["Names"]):
+        GameItemJson = json.loads(PerkJSON)
+        name = f"/Game/Blueprint/Pickup/Perk/{MyItemJson['Rarity']}/DA_Perk_{MyItemJson['Name'].replace(' ','')}.DA_Perk_{MyItemJson['Name'].replace(' ','')}"
+        GameItemJson["Struct"]["PerkDA"]["Object"]["value"] = name
+        GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
+        return GameItemJson
+
+
 
 global DIFFMODS
 DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
