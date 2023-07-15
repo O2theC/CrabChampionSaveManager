@@ -1914,7 +1914,10 @@ def genPlayerData(saveJSON,checksum):
         PlayerDataJSON["AccountLevel"] = saveJSON["AccountLevel"]["Int"]["value"]
     except:
         PlayerDataJSON["AccountLevel"] = 0 
-    PlayerDataJSON["Keys"] = saveJSON["Keys"]["Int"]["value"]
+    try:
+        PlayerDataJSON["Keys"] = saveJSON["Keys"]["Int"]["value"]
+    except:
+        PlayerDataJSON["Keys"] = 0
     PlayerDataJSON["Skin"] = parseSkin(saveJSON["CrabSkin"]["Object"]["value"])
     PlayerDataJSON["CurrentWeapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
     PlayerDataJSON["Challenges"] = []
