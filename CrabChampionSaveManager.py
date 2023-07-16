@@ -1,6 +1,7 @@
 import copy
 import hashlib
 import os
+import random
 import shutil
 import time
 import subprocess
@@ -1795,6 +1796,7 @@ def managePresets():
     prompt = "Managing Presets\n"
     options = """Back-Returns you to the main menu
 Create Preset-Create a new preset
+Use Preset-Set current save or backup using a preset
 Edit Presets-Edit one of your presets
 Delete Preset-Delete a preset
 List Presets and Preset Details-List all your presets, select a preset to see it's settings"""
@@ -1805,10 +1807,12 @@ List Presets and Preset Details-List all your presets, select a preset to see it
         elif(choice == 1):
             createPreset()
         elif(choice == 2):
-            editPresetMenu()
+            usePreset()
         elif(choice == 3):
-            deletePreset()
+            editPresetMenu()
         elif(choice == 4):
+            deletePreset()
+        elif(choice == 5):
             listPresets()
 
 def genPlayerData(saveJSON,checksum):
@@ -2209,7 +2213,7 @@ def presetDetailsScreen(preset):
        info += "\n" 
     for Perk in presetJSON["Inventory"]["Perks"]["Perks"]:
         info += "\n"+indent+ensureLength("Perk",10+disbetween)+ensureLength(Perk["Rarity"],maxRarity)+ensureLength(Perk["Name"],maxName)+ensureLength(str(Perk["Level"]),maxLevel)
-    scrollInfoMenu(info,color = "BackupDetails")
+    scrollInfoMenu(info,itemRarityColors=True)
     return
 
 def deletePreset():
@@ -2534,11 +2538,86 @@ def editPreset(preset,name):
                 presetJSON["Inventory"]["Perks"]["Perks"] = mods
                 break
         elif(choice == 0):
-            f = open(name+".json","w")
-            f.write(json.dumps(presetJSON,indent=4))
-            f.close()
-            break
-
+            if(os.path.exists(owd+"/CrabChampionSaveManager/Presets/"+name+".json")):
+                perm = yornMenu("There is already a preset by that name, Overwrite")
+                if(perm):
+                    break
+            else:
+                break
+    presetJSON
+    
+    f = open(owd+"/CrabChampionSaveManager/Presets/"+name+".json","w")
+    f.write(json.dumps(presetJSON,indent=4))
+    
+def usePreset():
+    global presetsJSON
+    loadPresets()
+    foldersInfo = getPresets(moreInfo=1)
+    presetss = getPresets()
+    prompt = "Select Preset to use\n"
+    presets = "Back\n"
+    for i,name in enumerate(foldersInfo):
+        if(i == 0):
+            presets += str(name)
+        else:
+            presets += "\n"+str(name)
+            
+    choice = scrollSelectMenu(prompt,presets,wrapMode=2,detailsSelected = False)
+    if(choice == 0):
+        return
+    choice -=1
+    
+    presetJSON = presetsJSON[presetss[choice]]
+    
+    GameJSON = convertPresetToGameSave(presetJSON)
+    
+    saveGame = os.path.join(os.getcwd(), "SaveGames")
+    uesavePath = getUesavePath()
+    if(uesavePath == ""):
+        scrollInfoMenu("No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu")
+        return
+    saveGame+="/SaveSlot.sav"
+    saveGame = saveGame.replace("\\","/")
+    saveGame = "\""+saveGame+"\""
+    infoScreen("0/8")
+    proc1 = subprocess.Popen(uesavePath+" to-json -i "+saveGame+" -o currentSave.json",shell=True)
+    infoScreen("1/8")
+    proc1.wait()
+    with open("currentSave.json") as JSON_File:
+        saveJSON = json.load(JSON_File)
+    os.remove("currentSave.json")
+    infoScreen("2/8")
+    backupJSON = GameJSON 
+    infoScreen("4/8")
+    try:
+        saveJSON["root"]["properties"]["AutoSave"] = GameJSON["AutoSave"]
+    except Exception as error:
+        scrollInfoMenu("Error when replacing autosave on current save, Error below\n"+str(error)+"\nPress Enter to return to main menu")
+        input("Press Enter to continue . . .")
+        return
+    infoScreen("5/8")
+    with open("usedPreset.json","w") as JSON_File:
+        JSON_File.write(json.dumps(saveJSON, indent=4))
+    infoScreen("6/8")
+    proc1 = subprocess.Popen(uesavePath+" from-json -i usedPreset.json -o SaveGames/SaveSlot.sav", shell=True)
+    proc1.wait()
+    os.remove("usedPreset.json")
+    infoScreen("7/8")
+    #proc2.wait()
+    shutil.copyfile("SaveGames/SaveSlot.sav","SaveGames/SaveSlotBackupA.sav")
+    shutil.copyfile("SaveGames/SaveSlot.sav","SaveGames/SaveSlotBackupB.sav")
+    infoScreen("8/8")
+    stop = time.time()
+    #print("it took",round(stop-start,3)," seconds")
+    return
+    
+    
+    f = open("game.json","w")
+    f.write(json.dumps(GameJSON,indent=4))
+    f.close()
+        
+    
+    
 def getUnlocked():
     global WEAPONMODS
     global GRENADEMODS
@@ -2709,7 +2788,133 @@ def convertMyItemtoGameItem(MyItemJson):
         return GameItemJson
 
 def convertPresetToGameSave(preset):
-    None
+    GameJSON = "{\"AutoSave\":{\"Struct\":{\"value\":{\"Struct\":{\"Difficulty\":{\"Enum\":{\"value\":\"ECrabDifficulty::Normal\",\"enum_type\":\"ECrabDifficulty\"}},\"DifficultyModifiers\":{\"Array\":{\"array_type\":\"EnumProperty\",\"value\":{\"Base\":{\"Enum\":[]}}}},\"NextIslandInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"Biome\":{\"Enum\":{\"value\":\"ECrabBiome::Tropical\",\"enum_type\":\"ECrabBiome\"}},\"CurrentIsland\":{\"Int\":{\"value\":1}},\"IslandName\":{\"Name\":{\"value\":\"Tropical_Arena_01\"}},\"IslandType\":{\"Enum\":{\"value\":\"ECrabIslandType::Arena\",\"enum_type\":\"ECrabIslandType\"}},\"RewardLootPool\":{\"Enum\":{\"value\":\"ECrabLootPool::Random\",\"enum_type\":\"ECrabLootPool\"}}}},\"struct_type\":{\"Struct\":\"CrabNextIslandInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"CurrentArmorPlates\":{\"Int\":{\"value\":0}},\"CurrentArmorPlateHealth\":{\"Float\":{\"value\":0}},\"CurrentHealth\":{\"Float\":{\"value\":100}},\"CurrentMaxHealth\":{\"Float\":{\"value\":100}}}},\"struct_type\":{\"Struct\":\"CrabHealthInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"WeaponDA\":{\"Object\":{\"value\":\"\"}},\"NumWeaponModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"WeaponMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"WeaponMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabWeaponMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumGrenadeModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"GrenadeMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"GrenadeMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabGrenadeMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumPerkSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"Perks\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"Perks\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabPerk\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"Crystals\":{\"UInt32\":{\"value\":0}}}},\"struct_type\":{\"Struct\":\"CrabAutoSave\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}}}"
+    GameJSON = json.loads(GameJSON)
+    #saveJSON = saveJSON["AutoSave"]
+    #difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override 
+    #island num                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
+    # diff mods                ["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
+    # Crystals                 ["Crystals"]["UInt32"]["value"]
+    # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
+    # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
+    # island name              ["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"]
+    # Health                   ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
+    # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
+    # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
+    # Armor Plate Health       ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
+    
+    #Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
+    
+    #Items
+    #Weapon Mod Slots           ["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
+    #Weapon Mod Array           ["WeaponMods"]["Array"]["value"]["Struct"]["value"]
+    #Weapon Mod in array item   ["Struct"]["WeaponModDA"]["Object"]["value"] - use parseWeaponMod() to get parsed and formated name 
+    #Weapon Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
+    
+    #Grenade Mod Slots           ["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
+    #Grenade Mod Array           ["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
+    #Grenade Mod in array item   ["Struct"]["GrenadeModDA"]["Object"]["value"] - use parseGrenadeMod() to get parsed and formated name 
+    #Grenade Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
+
+    #Perk Slots           ["NumPerkSlots"]["Byte"]["value"]["Byte"]
+    #Perk Array           ["Perks"]["Array"]["value"]["Struct"]["value"]
+    #Perk in array item   ["Struct"]["PerkDA"]["Object"]["value"] - use parsePerk() to get parsed and formated name 
+    #Perk in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
+    #print(GameJSON.keys())
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"] = preset["IslandNum"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Crystals"]["UInt32"]["value"] = preset["Crystals"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Difficulty"]["Enum"]["value"] = "ECrabDifficulty::"+preset["Diff"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"] = "ECrabBiome::"+preset["Biome"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"] = dynamicIslandName(preset["IslandName"])
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"] = dynamicLootType(preset["LootType"])
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"] = preset["Health"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"] = preset["MaxHealth"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"] = preset["ArmorPlates"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"] = preset["ArmorPlatesHealth"]
+    array = []
+    for dif in preset["DiffMods"]:
+        array.append("ECrabDifficultyModifier::"+dif)
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"] = array
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponDA"]["Object"]["value"] = dynamicWeapon(preset["Inventory"]["Weapon"])
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumWeaponModSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["WeaponMods"]["Slots"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumGrenadeModSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["GrenadeMods"]["Slots"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumPerkSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["Perks"]["Slots"]
+    
+    array = []
+    for wepMod in preset["Inventory"]["WeaponMods"]["Mods"]:
+        wepMod = json.loads(str(wepMod).replace("'","\""))
+        array.append(convertMyItemtoGameItem(wepMod))
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponMods"]["Array"]["value"]["Struct"]["value"] = array
+
+    array = []
+    for wepMod in preset["Inventory"]["GrenadeMods"]["Mods"]:
+        wepMod = json.loads(str(wepMod).replace("'","\""))
+        array.append(convertMyItemtoGameItem(wepMod))
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["GrenadeMods"]["Array"]["value"]["Struct"]["value"] = array
+    
+    array = []
+    for wepMod in preset["Inventory"]["Perks"]["Perks"]:
+        wepMod = json.loads(str(wepMod).replace("'","\""))
+        array.append(convertMyItemtoGameItem(wepMod))
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Perks"]["Array"]["value"]["Struct"]["value"] = array
+    
+    return GameJSON
+
+
+def dynamicLootType(lootType):
+    Types = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade"]
+    if(lootType in Types):
+        return lootType
+    else:
+        return Types[random.randint(0,len(Types))]
+    
+def dynamicIslandName(name):
+    global ISLANDS
+    
+    try:
+        options = ISLANDS[name]
+        return options[random.randint(0,len(options))]
+    except:
+        return name
+        
+def setUpIslands():
+    global ISLANDS
+    #["Tropical Arena Island","Tropical Horde Island","Tropical Elite Island","Tropical Parkour Island","Arctic Arena Island","Arctic Horde Island","Arctic Elite Island","Arctic Parkour Island","Volcanic Arena Island","Volcanic Horde Island","Volcanic Boss Island","Tropical_Arena_01","Tropical_Arena_02","Tropical_Arena_03","Tropical_Arena_04","Tropical_Arena_05","Tropical_Arena_06","Tropical_Arena_07","Tropical_Arena_08","Tropical_Boss_01","Tropical_Boss_02","Tropical_Horde_01","Tropical_Horde_02","Tropical_Horde_03","Tropical_Horde_04","Tropical_Horde_05","Tropical_Horde_06","Tropical_Horde_07","Tropical_Parkour_01","Tropical_Shop_01","Arctic_Arena_01","Arctic_Arena_02","Arctic_Boss_01","Arctic_Boss_02","Arctic_Boss_03","Arctic_Horde_01","Arctic_Horde_02","Arctic_Horde_03","Arctic_Horde_04","Arctic_Horde_05","Arctic_Horde_06","Arctic_Horde_07","Arctic_Horde_08","Arctic_Parkour_01","Volcanic_Arena_01","Volcanic_Arena_02","Volcanic_Arena_03","Volcanic_Arena_04","Volcanic_Arena_05","Volcanic_Arena_06","Volcanic_Boss_01","Volcanic_Horde_01","Volcanic_Horde_02","Volcanic_Horde_03","Volcanic_Horde_04","Volcanic_Horde_05","CrabIsland","Lobby"]
+    ISLANDS = json.loads("{}")
+    ISLANDS["Tropical"] = ["Tropical_Arena_01","Tropical_Arena_02","Tropical_Arena_03","Tropical_Arena_04","Tropical_Arena_05","Tropical_Arena_06","Tropical_Arena_07","Tropical_Arena_08","Tropical_Boss_01","Tropical_Boss_02","Tropical_Horde_01","Tropical_Horde_02","Tropical_Horde_03","Tropical_Horde_04","Tropical_Horde_05","Tropical_Horde_06","Tropical_Horde_07","Tropical_Parkour_01","Tropical_Shop_01"]
+    
+    ISLANDS["Arctic"] = ["Arctic_Arena_01","Arctic_Arena_02","Arctic_Boss_01","Arctic_Boss_02","Arctic_Boss_03","Arctic_Horde_01","Arctic_Horde_02","Arctic_Horde_03","Arctic_Horde_04","Arctic_Horde_05","Arctic_Horde_06","Arctic_Horde_07","Arctic_Horde_08","Arctic_Parkour_01"]
+    
+    ISLANDS["Volcanic"] = ["Volcanic_Arena_01","Volcanic_Arena_02","Volcanic_Arena_03","Volcanic_Arena_04","Volcanic_Arena_05","Volcanic_Arena_06","Volcanic_Boss_01","Volcanic_Horde_01","Volcanic_Horde_02","Volcanic_Horde_03","Volcanic_Horde_04","Volcanic_Horde_05"]
+    
+    ISLANDS["All"] = ["Tropical_Arena_01","Tropical_Arena_02","Tropical_Arena_03","Tropical_Arena_04","Tropical_Arena_05","Tropical_Arena_06","Tropical_Arena_07","Tropical_Arena_08","Tropical_Boss_01","Tropical_Boss_02","Tropical_Horde_01","Tropical_Horde_02","Tropical_Horde_03","Tropical_Horde_04","Tropical_Horde_05","Tropical_Horde_06","Tropical_Horde_07","Tropical_Parkour_01","Tropical_Shop_01","Arctic_Arena_01","Arctic_Arena_02","Arctic_Boss_01","Arctic_Boss_02","Arctic_Boss_03","Arctic_Horde_01","Arctic_Horde_02","Arctic_Horde_03","Arctic_Horde_04","Arctic_Horde_05","Arctic_Horde_06","Arctic_Horde_07","Arctic_Horde_08","Arctic_Parkour_01","Volcanic_Arena_01","Volcanic_Arena_02","Volcanic_Arena_03","Volcanic_Arena_04","Volcanic_Arena_05","Volcanic_Arena_06","Volcanic_Boss_01","Volcanic_Horde_01","Volcanic_Horde_02","Volcanic_Horde_03","Volcanic_Horde_04","Volcanic_Horde_05","CrabIsland","Lobby"]
+    
+    ISLANDS["Tropical Arena Island"] = ["Tropical_Arena_01","Tropical_Arena_02","Tropical_Arena_03","Tropical_Arena_04","Tropical_Arena_05","Tropical_Arena_06","Tropical_Arena_07","Tropical_Arena_08"]
+    ISLANDS["Tropical Horde Island"] = ["Tropical_Horde_01","Tropical_Horde_02","Tropical_Horde_03","Tropical_Horde_04","Tropical_Horde_05","Tropical_Horde_06","Tropical_Horde_07"]
+    ISLANDS["Tropical Elite Island"] = ["Tropical_Boss_01","Tropical_Boss_02"]
+    ISLANDS["Tropical Parkour Island"] = ["Tropical_Parkour_01"]
+    ISLANDS["Shop"] = ["Tropical_Shop_01"]
+    
+    ISLANDS["Arctic Arena Island"] = ["Arctic_Arena_01","Arctic_Arena_02"]
+    ISLANDS["Arctic Horde Island"] = ["Arctic_Horde_01","Arctic_Horde_02","Arctic_Horde_03","Arctic_Horde_04","Arctic_Horde_05","Arctic_Horde_06","Arctic_Horde_07","Arctic_Horde_08"]
+    ISLANDS["Arctic Elite Island"] = ["Arctic_Boss_01","Arctic_Boss_02","Arctic_Boss_03"]
+    ISLANDS["Arctic Parkour Island"] = ["Arctic_Parkour_01"]
+    
+    ISLANDS["Volcanic Arena Island"] = ["Volcanic_Arena_01","Volcanic_Arena_02","Volcanic_Arena_03","Volcanic_Arena_04","Volcanic_Arena_05","Volcanic_Arena_06"]
+    ISLANDS["Volcanic Horde Island"] = ["Volcanic_Horde_01","Volcanic_Horde_02","Volcanic_Horde_03","Volcanic_Horde_04","Volcanic_Horde_05"]
+    ISLANDS["Volcanic Boss Island"] = ["Volcanic_Boss_01"]
+    
+    ISLANDS["Other"] = ["CrabIsland","Lobby"]
+    
+def dynamicWeapon(wep):
+    if( wep in WEAPONS):
+        return wep
+    else:
+        return WEAPONS[random.randint(0,len(WEAPONS))]
+      
+    
+    
+    
 
 global DIFFMODS
 DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
@@ -2719,6 +2924,8 @@ global WEAPONMODS
 global GRENADEMODS
 global PERKS
 global WEAPONS
+global ISLANDS
+setUpIslands()
 WEAPONMODS = json.loads("{}")
 GRENADEMODS = json.loads("{}")
 PERKS = json.loads("{}")
