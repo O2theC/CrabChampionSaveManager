@@ -19,7 +19,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.0.0"
+Version = "3.1.0"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -179,7 +179,7 @@ def backupSave():
     folders = getBackups()
     confirm = False
     while(not confirm):
-        saveName = backupNameMenu("Enter nothing to go back to the main menu\nEnter backup name")
+        saveName = backupNameMenu("Enter nothing to go back to the main menu\nEnter backup name",escape="",escapeReturn="")
         if(not saveName in folders):
             confirm = True
         else:
@@ -215,7 +215,7 @@ def restoreBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1)
+    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
     if(parseInt(choice) == 0):
         return
     start = time.time()
@@ -342,7 +342,7 @@ def deleteBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1)
+    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
     if(parseInt(choice) == 0):
         return
     backupName = os.path.join(current_directory, folders[parseInt(choice)-1])
@@ -482,7 +482,7 @@ def updateBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1)
+    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
     if(parseInt(choice) == 0):
         return
     saveGame = os.path.join(current_directory, "SaveGames")
@@ -1150,6 +1150,7 @@ def loadCache():
     for t in threads:
         t.join()
     file.seek(0)
+    file.truncate()
     file.write(json.dumps(cacheJSON,indent=4))
         
 def spaceBeforeUpper(string):
@@ -1221,6 +1222,7 @@ def genBackupData(backupName):
     # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
     # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
     # island name              ["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"]
+    # island type              ["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"]["Name"]["value"]
     # Health                   ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
     # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
     # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
@@ -1267,6 +1269,7 @@ def genBackupData(backupName):
     #Current Biome           - ["BackupData"][BackupName]["Biome"]
     #Current Loot Type       - ["BackupData"][BackupName]["LootType"]
     #island name             - ["BackupData"][BackupName]["IslandName"]
+    #island type             - ["BackupData"][BackupName]["IslandType"]
     #Crystals                - ["BackupData"][BackupName]["Crystals"]
     #Heath                   - ["BackupData"][BackupName]["Health"]
     #Max Health              - ["BackupData"][BackupName]["MaxHealth"]
@@ -1394,8 +1397,14 @@ def genBackupData(backupName):
      
     
     backupJSON[backupName] = {}
-    backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
-    backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
+    try:
+        backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["RunTime"] = 0
+    try:
+        backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["Score"] = 0
     try:
         diff = saveJSON["Difficulty"]["Enum"]["value"]
         diff = diff[diff.index("::")+2:]
@@ -1407,13 +1416,34 @@ def genBackupData(backupName):
         backupJSON[backupName]["DiffMods"] = parseDiffMods(saveJSON["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"])
     except:
         backupJSON[backupName]["DiffMods"] = []
-    backupJSON[backupName]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
-    backupJSON[backupName]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
-    backupJSON[backupName]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
-    backupJSON[backupName]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"]["value"]
-    backupJSON[backupName]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
-    backupJSON[backupName]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"]["value"]
+    try:
+        backupJSON[backupName]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["Elimns"] = 0
+    try:
+        backupJSON[backupName]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["ShotsFired"] = 0
+        
+    try:
+        backupJSON[backupName]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["DmgDealt"] = 0
+        
+    try:
+        backupJSON[backupName]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["MostDmgDealt"] = 0   
     
+    try:
+        backupJSON[backupName]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
+    except:
+       backupJSON[backupName]["DmgTaken"] = 0 
+    
+    try:
+        backupJSON[backupName]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"]["value"]
+    except:
+        backupJSON[backupName]["FlawlessIslands"] =0    
     try:
         backupJSON[backupName]["ItemsSalvaged"] = saveJSON["NumTimesSalvaged"]["Int"]["value"]
     except:
@@ -1431,8 +1461,10 @@ def genBackupData(backupName):
     except:
         backupJSON[backupName]["TotemsDestroyed"] = 0
     
-    
-    backupJSON[backupName]["Crystals"] = saveJSON["Crystals"]["UInt32"]["value"]
+    try:
+        backupJSON[backupName]["Crystals"] = saveJSON["Crystals"]["UInt32"]["value"]
+    except:
+        backupJSON[backupName]["Crystals"] = 0   
     
     diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
     diff = diff[diff.index("::")+2:]
@@ -1445,6 +1477,9 @@ def genBackupData(backupName):
         diff = "New Biome"    
     backupJSON[backupName]["LootType"] = diff
     backupJSON[backupName]["IslandName"] = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"]
+    diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"]["Enum"]["value"]
+    diff = diff[diff.index("::")+2:]
+    backupJSON[backupName]["IslandType"] = diff
     
     
     backupJSON[backupName]["Health"] = saveJSON["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
@@ -1458,7 +1493,10 @@ def genBackupData(backupName):
     
     
     backupJSON[backupName]["Inventory"] = {}
-    backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
+    try:
+        backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
+    except:
+        backupJSON[backupName]["Inventory"]["Weapon"] = "Lobby Dependant"
     
     backupJSON[backupName]["Inventory"]["WeaponMods"] = {}
     backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] = saveJSON["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
@@ -1699,6 +1737,8 @@ def backupDetailsScreen(backupName):
     info += "\n"+str(ensureLength("Biome: ",leng))+str(backupJSON["Biome"])
     if(str(backupJSON["LootType"]) != "New Biome"):
         info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
+    info += "\n"+ensureLength("Island Name: ",leng)+str(backupJSON["IslandName"])
+    info += "\n"+ensureLength("Island Type: ",leng)+str(backupJSON["IslandType"])
     info += "\n"+ensureLength("Health:",leng)+str(formatNumber(backupJSON["Health"],0))
     info += "\n"+ensureLength("Max Health:",leng)+str(formatNumber(backupJSON["MaxHealth"],0))
     info += "\n"+ensureLength("Armor Plates:",leng)+str(formatNumber(backupJSON["ArmorPlates"],0))
@@ -2061,7 +2101,7 @@ def genPlayerData(saveJSON,checksum):
     stop = time.time()
     
 def createPreset():
-    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"Inventory\":{\"Weapon\":\"Random Weapon\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
+    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
     preset = json.loads(defaultPreset)
     prompt = "What should the preset be named?\nEnter nothing to go back"
     name = backupNameMenu(prompt)
@@ -2110,8 +2150,17 @@ def getPresets(moreInfo = False):
         except:
             pres.remove(pre)
     presets = pres.copy()
+    f = open("debug.txt",'w')
+    f.write(str(presets))
+    f.close()
     for i,pre in enumerate(presets):
-        presets[i] = (pre.replace(".json","")) 
+        if(".json" in pre):
+            f = open(owd+"/CrabChampionSaveManager/Presets/"+pre.replace(".json",".ccsm"),"w")
+            f.write(open(owd+"/CrabChampionSaveManager/Presets/"+pre,"r").read())
+            f.close()
+            os.remove(owd+"/CrabChampionSaveManager/Presets/"+pre)
+            presets[i] = presets[i].replace(".json",".ccsm")
+        presets[i] = (pre.replace(".ccsm","")) 
     if(not moreInfo):
         return presets
     else:
@@ -2150,9 +2199,15 @@ def loadPresets():
     presetsJSON = json.loads("{}")
     for preset in presets:
         try:
-            presetsJSON[preset]= json.loads(open(owd.replace("\\","/")+"/CrabChampionSaveManager/Presets/"+preset+".json","r").read())
+            presetsJSON[preset]= json.loads(open(owd.replace("\\","/")+"/CrabChampionSaveManager/Presets/"+preset+".ccsm","r").read())
         except:
             None
+        opreset = presetsJSON[preset].copy()
+        presetsJSON[preset] = updatePreset(presetsJSON[preset].copy())
+        if(opreset != presetsJSON[preset]):
+            f = open(owd.replace("\\","/")+"/CrabChampionSaveManager/Presets/"+preset+".ccsm","w")
+            f.write(json.dumps(presetsJSON[preset],indent=4))
+            f.close()
     
 def presetDetailsScreen(preset):
     
@@ -2179,8 +2234,8 @@ def presetDetailsScreen(preset):
     info += "\n"+str(ensureLength("Crystals: ",leng))+str(formatNumber(presetJSON["Crystals"],0))
     info += "\n"+str(ensureLength("Difficulty: ",leng))+str(presetJSON["Diff"])
     info += "\n"+str(ensureLength("Biome: ",leng))+str(presetJSON["Biome"])
-    if(str(presetJSON["LootType"]) != "New Biome"):
-        info += "\n"+ensureLength("Loot Type: ",leng)+str(presetJSON["LootType"])
+    info += "\n"+ensureLength("Loot Type: ",leng)+str(presetJSON["LootType"])
+    info += "\n"+ensureLength("Island Type: ",leng)+str(presetJSON["IslandType"])
     info += "\n"+ensureLength("Health:",leng)+str(formatNumber(presetJSON["Health"],0))
     info += "\n"+ensureLength("Max Health:",leng)+str(formatNumber(presetJSON["MaxHealth"],0))
     info += "\n"+ensureLength("Armor Plates:",leng)+str(formatNumber(presetJSON["ArmorPlates"],0))
@@ -2241,9 +2296,9 @@ def deletePreset():
         return
     preset = presets[choice-1]
     try:
-        os.remove(owd+"/CrabChampionSaveManager/Presets/"+preset+".json")
+        os.remove(owd+"/CrabChampionSaveManager/Presets/"+preset+".ccsm")
     except:
-        os.remove(owd+"/CrabChampionSaveManager/Presets/"+preset+".json")
+        os.remove(owd+"/CrabChampionSaveManager/Presets/"+preset+".ccsm")
     return
 
 def presetNameMenu(prompt):
@@ -2295,7 +2350,7 @@ def editPreset(preset,name,overriade = False):
     presetJSON = preset
     
     #island name             - ["BackupData"][BackupName]["IslandName"]
-    
+    preset = updatePreset(preset)
     choice = 0
     window = 0
     oname = name
@@ -2308,6 +2363,7 @@ def editPreset(preset,name,overriade = False):
         info += "\n"+str(ensureLength("Biome: ",leng))+str(presetJSON["Biome"])
         info += "\n"+str(ensureLength("Island Name: ",leng))+str(presetJSON["IslandName"])
         info += "\n"+ensureLength("Loot Type: ",leng)+str(presetJSON["LootType"])
+        info += "\n"+ensureLength("Island Type: ",leng)+str(presetJSON["IslandType"])
         info += "\n"+ensureLength("Health:",leng)+str(formatNumber(presetJSON["Health"],0))
         info += "\n"+ensureLength("Max Health:",leng)+str(formatNumber(presetJSON["MaxHealth"],0))
         info += "\n"+ensureLength("Armor Plates:",leng)+str(formatNumber(presetJSON["ArmorPlates"],0))
@@ -2367,7 +2423,7 @@ def editPreset(preset,name,overriade = False):
             if(not nam == ""):
                 name = nam
             
-        elif(":" in info[choice] and "Island" in info[choice][:info[choice].index(":")]and not "Name" in info[choice][:info[choice].index(":")]):
+        elif(":" in info[choice] and "Island" in info[choice][:info[choice].index(":")]and not "Name" in info[choice][:info[choice].index(":")] and not "Type" in info[choice][:info[choice].index(":")]):
             presetJSON["IslandNum"] = userInputMenuNum("Enter number for island\nEnter nothing to not change anything","",0,2147483647,default = presetJSON["IslandNum"],useDefaultAsPreset=True)
             
         elif(":" in info[choice] and "Crystals" in info[choice][:info[choice].index(":")]):
@@ -2393,6 +2449,11 @@ def editPreset(preset,name,overriade = False):
             prompt = "Select Loot Type\nCurrent Loot Type is "+presetJSON["LootType"]
             lootType = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade","Random Loot Type"]
             presetJSON["LootType"] = lootType[scrollSelectMenu(prompt,lootType,startChoice=lootType.index(presetJSON["LootType"]))]
+        
+        elif(":" in info[choice] and "Island Type" in info[choice][:info[choice].index(":")]):
+            prompt = "Select Loot Type\nCurrent Loot Type is "+presetJSON["IslandType"]
+            lootType = ISLANDTYPE.copy()
+            presetJSON["IslandType"] = lootType[scrollSelectMenu(prompt,lootType,startChoice=lootType.index(presetJSON["IslandType"]))]
             
         elif(":" in info[choice] and "Health" in info[choice][:info[choice].index(":")] and not "Max" in info[choice][:info[choice].index(":")]and not "Armor" in info[choice][:info[choice].index(":")]):
             presetJSON["Health"] = userInputMenuNum("Enter number for health\nEnter nothing to not change anything","",0,2147483647,default = presetJSON["Health"],useDefaultAsPreset=True)
@@ -2428,6 +2489,7 @@ def editPreset(preset,name,overriade = False):
             prompt = "Select Weapon\nCurrent Weapon is "+presetJSON["Inventory"]["Weapon"]+"\n"
             wep = WEAPONS.copy()
             wep.append("Random Weapon")
+            wep.append("Lobby Dependant")
             presetJSON["Inventory"]["Weapon"] = wep[scrollSelectMenu(prompt,wep,startChoice=wep.index(presetJSON["Inventory"]["Weapon"]))]
             
         elif(":" in info[choice] and "Weapon Mod Slots" in info[choice][:info[choice].index(":")]):
@@ -2550,7 +2612,7 @@ def editPreset(preset,name,overriade = False):
                 presetJSON["Inventory"]["Perks"]["Perks"] = mods
                 break
         elif(choice == 0):
-            if(os.path.exists(owd+"/CrabChampionSaveManager/Presets/"+name+".json") and (not overriade or (overriade and oname != name))):
+            if(os.path.exists(owd+"/CrabChampionSaveManager/Presets/"+name+".ccsm") and (not overriade or (overriade and oname != name))):
                 perm = yornMenu("There is already a preset by that name, Overwrite")
                 if(perm):
                     break
@@ -2558,12 +2620,12 @@ def editPreset(preset,name,overriade = False):
                 break
     presetJSON
     
-    f = open(owd+"/CrabChampionSaveManager/Presets/"+name+".json","w")
+    f = open(owd+"/CrabChampionSaveManager/Presets/"+name+".ccsm","w")
     f.write(json.dumps(presetJSON,indent=4))
     f.close()
     
     if(oname != name):
-        os.remove(owd+"/CrabChampionSaveManager/Presets/"+oname+".json")
+        os.remove(owd+"/CrabChampionSaveManager/Presets/"+oname+".ccsm")
     
 def usePreset():
     global presetsJSON
@@ -2859,14 +2921,15 @@ def convertPresetToGameSave(preset):
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Difficulty"]["Enum"]["value"] = "ECrabDifficulty::"+preset["Diff"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"] = "ECrabBiome::"+preset["Biome"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"] = dynamicIslandName(preset["IslandName"])
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"] = dynamicLootType(preset["LootType"])
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"] = "ECrabLootPool::"+dynamicLootType(preset["LootType"])
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"]["Enum"]["value"] = "ECrabIslandType::"+dynamicIslandType(preset["IslandType"],preset["IslandName"])
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"] = preset["Health"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"] = preset["MaxHealth"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"] = preset["ArmorPlates"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"] = preset["ArmorPlatesHealth"]
     array = []
     for dif in preset["DiffMods"]:
-        array.append("ECrabDifficultyModifier::"+dif)
+        array.append("ECrabDifficultyModifier::"+dif.replace(" ",""))
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"] = array
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponDA"]["Object"]["value"] = dynamicWeapon(preset["Inventory"]["Weapon"])
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumWeaponModSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["WeaponMods"]["Slots"]
@@ -2892,7 +2955,6 @@ def convertPresetToGameSave(preset):
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Perks"]["Array"]["value"]["Struct"]["value"] = array
     
     return GameJSON
-
 
 def dynamicLootType(lootType):
     Types = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade"]
@@ -2940,18 +3002,48 @@ def setUpIslands():
     ISLANDS["Other"] = ["CrabIsland","Lobby"]
     
 def dynamicWeapon(wep):
+    if(wep == "Lobby Dependant"):
+        return ""
     if( wep in WEAPONS):
-        return wep
+        return f"/Game/Blueprint/Weapon/{wep.replace(' ','')}/DA_Weapon_{wep.replace(' ','')}.DA_Weapon_{wep.replace(' ','')}"
     else:
-        return WEAPONS[random.randint(0,len(WEAPONS))]
+        return dynamicWeapon(WEAPONS[random.randint(0,len(WEAPONS)-1)])
       
+def updatePreset(preset):
+    try:
+        preset["IslandType"]
+    except:
+        preset["IslandType"] = "Automatic"
     
+    return preset
     
+def dynamicIslandType(islandType,islandName):
+    global ISLANDTYPE
     
+    if(islandType == "Automatic"):
+        if("arena" in islandName.lower()):
+            return "Arena"
+        elif("horde" in islandName.lower()):
+            return "Horde"
+        elif("parkour" in islandName.lower()):
+            return "Parkour"
+        elif("shop" in islandName.lower()):
+            return "Shop"
+        elif("boss" in islandName.lower() and ("tropical" in islandName.lower() or "arctic" in islandName.lower())):
+            return "Elite"
+        elif("boss" in islandName.lower()):
+            return "Boss"
+        elif("crabisland" in islandName.lower()):
+            return "CrabIsland"
+        
+    else:
+        return ISLANDTYPE[ISLANDTYPE.index(islandType)]
 
 global DIFFMODS
 DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
 global DIFFMODSDETAILS
+global ISLANDTYPE
+ISLANDTYPE = ["Automatic","Arena","Horde","Elite","Boss","Shop","Parkour","CrabIsland"]
 DIFFMODSDETAILS = ["Island types are chosen randomly instead of in a set order","Enemies regenarate health a short time after taking damage","Some inventory slot are locked and must be unlocked with crystals","Enemies have a chance to spawn with a powerful buff","Crystals must be manually picked up by walking near them before they expire","Double challenge modifiers on challenge portals","Enemies have a chance to spawn copies of themselves when eliminated","New enemies appear","All elite and boss islands have double the enmeies to fight","Taking damage lowers max health","No damage immunity when eliminating exploding enemies at close range","No more death prevention when reaching 1 health"]
 global WEAPONMODS
 global GRENADEMODS
