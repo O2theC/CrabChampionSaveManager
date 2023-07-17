@@ -19,7 +19,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.2.1"
+Version = "3.2.2"
 
 if platform.system() == "Linux":
     isLinux =  True
