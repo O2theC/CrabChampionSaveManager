@@ -19,7 +19,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.2.0"
+Version = "3.2.1"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -2767,7 +2767,7 @@ def getUnlocked():
     WEAPONS = []
     for wep in cacheJSON["PlayerData"]["UnlockedWeapons"]:
         WEAPONS.append(wep)
-    
+    WEAPONS 
     WEAPONMODS = json.loads("{}") 
     rare = []
     epic = []
@@ -2789,10 +2789,19 @@ def getUnlocked():
             leg.append(wepMod["Name"])
         elif(wepMod["Rarity"] == "Greed"):
             greed.append(wepMod["Name"])
+    rare.sort()
+    epic.sort()
+    leg.sort()
+    greed.sort()
     WEAPONMODS["Rare"] = rare
     WEAPONMODS["Epic"] = epic
     WEAPONMODS["Legendary"] = leg
     WEAPONMODS["Greed"] = greed
+    names = []
+    names.extend(rare)
+    names.extend(epic)
+    names.extend(leg)
+    names.extend(greed)
     WEAPONMODS["Names"] = names
     # f = open("wepMod.json","w")
     # f.write(json.dumps(WEAPONMODS,indent=4))
@@ -2820,6 +2829,15 @@ def getUnlocked():
             leg.append(wepMod["Name"])
         elif(wepMod["Rarity"] == "Greed"):
             greed.append(wepMod["Name"])
+    rare.sort()
+    epic.sort()
+    leg.sort()
+    greed.sort()
+    names = []
+    names.extend(rare)
+    names.extend(epic)
+    names.extend(leg)
+    names.extend(greed)
     GRENADEMODS["Rare"] = rare
     GRENADEMODS["Epic"] = epic
     GRENADEMODS["Legendary"] = leg
@@ -2851,6 +2869,16 @@ def getUnlocked():
             leg.append(wepMod["Name"])
         elif(wepMod["Rarity"] == "Greed"):
             greed.append(wepMod["Name"])
+            
+    rare.sort()
+    epic.sort()
+    leg.sort()
+    greed.sort()
+    names = []
+    names.extend(rare)
+    names.extend(epic)
+    names.extend(leg)
+    names.extend(greed)
     PERKS["Rare"] = rare
     PERKS["Epic"] = epic
     PERKS["Legendary"] = leg
