@@ -2117,7 +2117,7 @@ def genPlayerData(saveJSON,checksum):
     stop = time.time()
     
 def createPreset():
-    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"HealthMultiplier\":1,\"DamageMultiplier\":1,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
+    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"HealthMultiplier\":1,\"DamageMultiplier\":1,\"keyTotemItem\":false,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
     preset = json.loads(defaultPreset)
     prompt = "What should the preset be named?\nEnter nothing to go back"
     name = backupNameMenu(prompt)
@@ -2397,6 +2397,7 @@ def editPreset(preset,name,overriade = False):
         info += "\n"+ensureLength("Weapon Mod Slots:",leng)+str(presetJSON["Inventory"]["WeaponMods"]["Slots"])
         info += "\n"+ensureLength("Grenade Mod Slots:",leng)+str(presetJSON["Inventory"]["GrenadeMods"]["Slots"])
         info += "\n"+ensureLength("Perk Slots:",leng)+str(presetJSON["Inventory"]["Perks"]["Slots"])
+        info += "\n"+ensureLength("Key Totem:",leng)+str(presetJSON["keyTotemItem"])
         info += "\nItems:"
         maxName = 6
         maxRarity = 8
@@ -2524,6 +2525,12 @@ def editPreset(preset,name,overriade = False):
             
         elif(":" in info[choice] and "Perk Slots" in info[choice][:info[choice].index(":")]):
             presetJSON["Inventory"]["Perks"]["Slots"] = userInputMenuNum("Enter number for perk slots\nEnter nothing to not change anything","",-1,65,default = presetJSON["Inventory"]["Perks"]["Slots"],useDefaultAsPreset=True)
+        
+        elif(":" in info[choice] and "Key Totem" in info[choice][:info[choice].index(":")]):
+            if(presetJSON["keyTotemItem"]):
+                presetJSON["keyTotemItem"] = False
+            else:
+                presetJSON["keyTotemItem"] = True
             
         elif(containsWepMod(info[choice])[0]):
             wepMod = containsWepMod(info[choice])[1]
@@ -2915,6 +2922,8 @@ def convertMyItemtoGameItem(MyItemJson):
 
 
     MyItemJson = json.loads(str(MyItemJson).replace("'","\""))
+    
+    
     if(MyItemJson["Name"] in WEAPONMODS["Names"]):
         GameItemJson = json.loads(WeaponModJSON)
         name = f"/Game/Blueprint/Pickup/WeaponMod/{MyItemJson['Rarity']}/DA_WeaponMod_{MyItemJson['Name'].replace(' ','')}.DA_WeaponMod_{MyItemJson['Name'].replace(' ','')}"
@@ -2992,28 +3001,48 @@ def convertPresetToGameSave(preset):
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumGrenadeModSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["GrenadeMods"]["Slots"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumPerkSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["Perks"]["Slots"]
     
+    keyItem = False
+    if(preset["keyTotemItem"]):
+        keyItem = getKeyTotemItem()
+    
+    
     array = []
     for wepMod in preset["Inventory"]["WeaponMods"]["Mods"]:
         wepMod = json.loads(str(wepMod).replace("'","\""))
         array.append(convertMyItemtoGameItem(wepMod))
+    if(keyItem and keyItem in WEAPONMODS["Names"]):
+        keyItemJSON = json.loads("{\"Name\":\"\",\"Rarity\":\"\",\"Level\":1}")
+        keyItemJSON["Name"] = keyItem
+        keyItemJSON["Rarity"] = WEAPONMODS[keyItem]
+        array.append(convertMyItemtoGameItem(keyItemJSON))
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponMods"]["Array"]["value"]["Struct"]["value"] = array
 
     array = []
     for wepMod in preset["Inventory"]["GrenadeMods"]["Mods"]:
         wepMod = json.loads(str(wepMod).replace("'","\""))
         array.append(convertMyItemtoGameItem(wepMod))
+    if(keyItem and keyItem in GRENADEMODS["Names"]):
+        keyItemJSON = json.loads("{\"Name\":\"\",\"Rarity\":\"\",\"Level\":1}")
+        keyItemJSON["Name"] = keyItem
+        keyItemJSON["Rarity"] = GRENADEMODS[keyItem]
+        array.append(convertMyItemtoGameItem(keyItemJSON))
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["GrenadeMods"]["Array"]["value"]["Struct"]["value"] = array
     
     array = []
     for wepMod in preset["Inventory"]["Perks"]["Perks"]:
         wepMod = json.loads(str(wepMod).replace("'","\""))
         array.append(convertMyItemtoGameItem(wepMod))
+    if(keyItem and keyItem in PERKS["Names"]):
+        keyItemJSON = json.loads("{\"Name\":\"\",\"Rarity\":\"\",\"Level\":1}")
+        keyItemJSON["Name"] = keyItem
+        keyItemJSON["Rarity"] = PERKS[keyItem]
+        array.append(convertMyItemtoGameItem(keyItemJSON))
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Perks"]["Array"]["value"]["Struct"]["value"] = array
     
     return GameJSON
 
 def dynamicLootType(lootType):
-    Types = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade"]
+    Types = ["Critical","Damage","Economy","Elemental","Greed","Health","Luck","Random","Skill","Speed","Upgrade"]
     if(lootType in Types):
         return lootType
     else:
@@ -3080,6 +3109,11 @@ def updatePreset(preset):
         preset["DamageMultiplier"]
     except:
         preset["DamageMultiplier"] = 1.0
+        
+    try:
+        preset["keyTotemItem"]
+    except:
+        preset["keyTotemItem"] = False
     
     return preset
     
@@ -3104,6 +3138,25 @@ def dynamicIslandType(islandType,islandName):
         
     else:
         return ISLANDTYPE[ISLANDTYPE.index(islandType)]
+
+def getKeyTotemItem():
+    itemType = random.randint(0,2)
+    rare = random.randint(0,1)
+    if(itemType == 0):
+        if(rare == 0):
+            return WEAPONMODS["Epic"][random.randint(0,len(WEAPONMODS["Epic"])-1)]
+        elif(rare == 1):
+            return WEAPONMODS["Legendary"][random.randint(0,len(WEAPONMODS["Legendary"])-1)]
+    elif(itemType == 1):
+        if(rare == 0):
+            return GRENADEMODS["Epic"][random.randint(0,len(GRENADEMODS["Epic"])-1)]
+        elif(rare == 1):
+            return GRENADEMODS["Legendary"][random.randint(0,len(GRENADEMODS["Legendary"])-1)]
+    elif(itemType == 2):
+        if(rare == 0):
+            return PERKS["Epic"][random.randint(0,len(PERKS["Epic"])-1)]
+        elif(rare == 1):
+            return PERKS["Legendary"][random.randint(0,len(PERKS["Legendary"])-1)]
 
 global DIFFMODS
 DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
