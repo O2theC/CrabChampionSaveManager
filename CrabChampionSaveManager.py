@@ -891,7 +891,7 @@ def infoScreen(info):
     screen.refresh()
     curses.curs_set(curstate)
 
-def userInputMenuNum(prompt,escape = None,lowLimit = -2000000000,highLimit = 2000000000,default = None,useDefaultAsPreset = False):
+def userInputMenuNum(prompt,escape = None,lowLimit = -2000000000,highLimit = 2000000000,default = None,useDefaultAsPreset = False,decimal = False):
     global screen
 
     if(type(prompt) == type("")):
@@ -914,22 +914,38 @@ def userInputMenuNum(prompt,escape = None,lowLimit = -2000000000,highLimit = 200
         elif key == curses.KEY_ENTER or key in [10, 13]:
             curses.curs_set(curstate)
             try:
-                if (int(num)<highLimit and int(num)>lowLimit):
-                    return int(num)
-                elif(int(num) == escape):
-                    return default
+                if(decimal):
+                    if (float(num)<highLimit and float(num)>lowLimit):
+                        return float(num)
+                    elif(float(num) == escape):
+                        return default
+                else:
+                    if (int(num)<highLimit and int(num)>lowLimit):
+                        return int(num)
+                    elif(int(num) == escape):
+                        return default
             except:
                 if(num == escape):
                     return default
         else:
-            if(key in range(48,58)):
-                num += chr(key)
+            if(key in range(48,58) or (key == 46 and decimal)):
+                if(not "." in num):
+                    num += chr(key)
+                elif(key != 46):
+                    num += chr(key)
         try:
-            numint = int(num)
-            if(not numint>lowLimit):
-                num = str(lowLimit+1)
-            elif(not numint<highLimit):
-                num = str(highLimit-1)
+            if(decimal):
+                numint = float(num)
+                if(not numint>lowLimit):
+                    num = float(lowLimit+1)
+                elif(not numint<highLimit):
+                    num = float(highLimit-1)
+            else:
+                numint = int(num)
+                if(not numint>lowLimit):
+                    num = str(lowLimit+1)
+                elif(not numint<highLimit):
+                    num = str(highLimit-1)
         except:
             None
  
@@ -2101,7 +2117,7 @@ def genPlayerData(saveJSON,checksum):
     stop = time.time()
     
 def createPreset():
-    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
+    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"HealthMultiplier\":1,\"DamageMultiplier\":1,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
     preset = json.loads(defaultPreset)
     prompt = "What should the preset be named?\nEnter nothing to go back"
     name = backupNameMenu(prompt)
@@ -2367,7 +2383,9 @@ def editPreset(preset,name,overriade = False):
         info += "\n"+ensureLength("Health:",leng)+str(formatNumber(presetJSON["Health"],0))
         info += "\n"+ensureLength("Max Health:",leng)+str(formatNumber(presetJSON["MaxHealth"],0))
         info += "\n"+ensureLength("Armor Plates:",leng)+str(formatNumber(presetJSON["ArmorPlates"],0))
-        info += "\n"+ensureLength("Armor Plate Health:",leng)+str(formatNumber(presetJSON["ArmorPlatesHealth"],0))  
+        info += "\n"+ensureLength("Armor Plate Health:",leng)+str(formatNumber(presetJSON["ArmorPlatesHealth"],0))
+        info += "\n"+ensureLength("Health Multiplier:",leng)+str(formatNumber(presetJSON["HealthMultiplier"],3))  
+        info += "\n"+ensureLength("Damage Multiplier:",leng)+str(formatNumber(presetJSON["DamageMultiplier"],3))  
         info += "\nDifficulty Modifiers: "
         if(len(presetJSON["DiffMods"])>0):
             for diffMod in presetJSON["DiffMods"]:
@@ -2455,7 +2473,7 @@ def editPreset(preset,name,overriade = False):
             lootType = ISLANDTYPE.copy()
             presetJSON["IslandType"] = lootType[scrollSelectMenu(prompt,lootType,startChoice=lootType.index(presetJSON["IslandType"]))]
             
-        elif(":" in info[choice] and "Health" in info[choice][:info[choice].index(":")] and not "Max" in info[choice][:info[choice].index(":")]and not "Armor" in info[choice][:info[choice].index(":")]):
+        elif(":" in info[choice] and "Health" in info[choice][:info[choice].index(":")] and not "Max" in info[choice][:info[choice].index(":")] and not "Armor" in info[choice][:info[choice].index(":")] and not "Multiplier" in info[choice][:info[choice].index(":")]):
             presetJSON["Health"] = userInputMenuNum("Enter number for health\nEnter nothing to not change anything","",0,2147483647,default = presetJSON["Health"],useDefaultAsPreset=True)
             
         elif(":" in info[choice] and "Max Health" in info[choice][:info[choice].index(":")]):
@@ -2466,6 +2484,12 @@ def editPreset(preset,name,overriade = False):
             
         elif(":" in info[choice] and "Armor Plate Health" in info[choice][:info[choice].index(":")]):
             presetJSON["ArmorPlatesHealth"] = userInputMenuNum("Enter number for armor plate health\nEnter nothing to not change anything","",0,2147483647,default = presetJSON["ArmorPlatesHealth"],useDefaultAsPreset=True)
+        
+        elif(":" in info[choice] and "Health Multiplier" in info[choice][:info[choice].index(":")]):
+            presetJSON["HealthMultiplier"] = userInputMenuNum("Enter number for health multiplier\nEnter nothing to not change anything","",0,2147483647,default = presetJSON["HealthMultiplier"],useDefaultAsPreset=True,decimal = True)
+            
+        elif(":" in info[choice] and "Damage Multiplier" in info[choice][:info[choice].index(":")]):
+            presetJSON["DamageMultiplier"] = userInputMenuNum("Enter number for damage multiplier\nEnter nothing to not change anything","",0,2147483647,default = presetJSON["DamageMultiplier"],useDefaultAsPreset=True,decimal = True)
             
         elif(info[choice].replace(indent,"") in DiffModsWithDetails):
             diffmods = presetJSON["DiffMods"]
@@ -2883,7 +2907,7 @@ def convertMyItemtoGameItem(MyItemJson):
         return GameItemJson
 
 def convertPresetToGameSave(preset):
-    GameJSON = "{\"AutoSave\":{\"Struct\":{\"value\":{\"Struct\":{\"Difficulty\":{\"Enum\":{\"value\":\"ECrabDifficulty::Normal\",\"enum_type\":\"ECrabDifficulty\"}},\"DifficultyModifiers\":{\"Array\":{\"array_type\":\"EnumProperty\",\"value\":{\"Base\":{\"Enum\":[]}}}},\"NextIslandInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"Biome\":{\"Enum\":{\"value\":\"ECrabBiome::Tropical\",\"enum_type\":\"ECrabBiome\"}},\"CurrentIsland\":{\"Int\":{\"value\":1}},\"IslandName\":{\"Name\":{\"value\":\"Tropical_Arena_01\"}},\"IslandType\":{\"Enum\":{\"value\":\"ECrabIslandType::Arena\",\"enum_type\":\"ECrabIslandType\"}},\"RewardLootPool\":{\"Enum\":{\"value\":\"ECrabLootPool::Random\",\"enum_type\":\"ECrabLootPool\"}}}},\"struct_type\":{\"Struct\":\"CrabNextIslandInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"CurrentArmorPlates\":{\"Int\":{\"value\":0}},\"CurrentArmorPlateHealth\":{\"Float\":{\"value\":0}},\"CurrentHealth\":{\"Float\":{\"value\":100}},\"CurrentMaxHealth\":{\"Float\":{\"value\":100}}}},\"struct_type\":{\"Struct\":\"CrabHealthInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"WeaponDA\":{\"Object\":{\"value\":\"\"}},\"NumWeaponModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"WeaponMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"WeaponMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabWeaponMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumGrenadeModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"GrenadeMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"GrenadeMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabGrenadeMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumPerkSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"Perks\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"Perks\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabPerk\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"Crystals\":{\"UInt32\":{\"value\":0}}}},\"struct_type\":{\"Struct\":\"CrabAutoSave\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}}}"
+    GameJSON = "{\"AutoSave\":{\"Struct\":{\"value\":{\"Struct\":{\"Difficulty\":{\"Enum\":{\"value\":\"ECrabDifficulty::Normal\",\"enum_type\":\"ECrabDifficulty\"}},\"DifficultyModifiers\":{\"Array\":{\"array_type\":\"EnumProperty\",\"value\":{\"Base\":{\"Enum\":[]}}}},\"NextIslandInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"Biome\":{\"Enum\":{\"value\":\"ECrabBiome::Tropical\",\"enum_type\":\"ECrabBiome\"}},\"CurrentIsland\":{\"Int\":{\"value\":1}},\"IslandName\":{\"Name\":{\"value\":\"Tropical_Arena_01\"}},\"IslandType\":{\"Enum\":{\"value\":\"ECrabIslandType::Arena\",\"enum_type\":\"ECrabIslandType\"}},\"RewardLootPool\":{\"Enum\":{\"value\":\"ECrabLootPool::Random\",\"enum_type\":\"ECrabLootPool\"}}}},\"struct_type\":{\"Struct\":\"CrabNextIslandInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"CurrentArmorPlates\":{\"Int\":{\"value\":0}},\"CurrentArmorPlateHealth\":{\"Float\":{\"value\":0}},\"CurrentHealth\":{\"Float\":{\"value\":100}},\"CurrentMaxHealth\":{\"Float\":{\"value\":100}}}},\"struct_type\":{\"Struct\":\"CrabHealthInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthMultiplier\":{\"Float\":{\"value\":1}},\"DamageMultiplier\":{\"Float\":{\"value\":1}},\"WeaponDA\":{\"Object\":{\"value\":\"\"}},\"NumWeaponModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"WeaponMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"WeaponMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabWeaponMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumGrenadeModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"GrenadeMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"GrenadeMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabGrenadeMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumPerkSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"Perks\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"Perks\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabPerk\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"Crystals\":{\"UInt32\":{\"value\":0}}}},\"struct_type\":{\"Struct\":\"CrabAutoSave\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}}}"
     GameJSON = json.loads(GameJSON)
     #saveJSON = saveJSON["AutoSave"]
     #difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override 
@@ -2897,6 +2921,8 @@ def convertPresetToGameSave(preset):
     # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
     # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
     # Armor Plate Health       ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
+    # HealthMultiplier         ["HealthMultiplier"]["Float"]["value"]
+    # DamageMultiplier         ["DamageMultiplier"]["Float"]["value"]
     
     #Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
     
@@ -2927,6 +2953,8 @@ def convertPresetToGameSave(preset):
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"] = preset["MaxHealth"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"] = preset["ArmorPlates"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"] = preset["ArmorPlatesHealth"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthMultiplier"]["Float"]["value"] = preset["HealthMultiplier"]
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DamageMultiplier"]["Float"]["value"] = preset["DamageMultiplier"]
     array = []
     for dif in preset["DiffMods"]:
         array.append("ECrabDifficultyModifier::"+dif.replace(" ",""))
@@ -2968,7 +2996,7 @@ def dynamicIslandName(name):
     
     try:
         options = ISLANDS[name]
-        return options[random.randint(0,len(options))]
+        return options[random.randint(0,len(options)-1)]
     except:
         return name
         
@@ -3014,6 +3042,16 @@ def updatePreset(preset):
         preset["IslandType"]
     except:
         preset["IslandType"] = "Automatic"
+    
+    try:
+        preset["HealthMultiplier"]
+    except:
+        preset["HealthMultiplier"] = 1.0
+        
+    try:
+        preset["DamageMultiplier"]
+    except:
+        preset["DamageMultiplier"] = 1.0
     
     return preset
     
