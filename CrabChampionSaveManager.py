@@ -19,7 +19,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.2.2"
+Version = "3.3.0"
 
 if platform.system() == "Linux":
     isLinux =  True
@@ -215,7 +215,7 @@ def restoreBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
+    choice = scrollSelectMenu(prompt,options,-1,1)
     if(parseInt(choice) == 0):
         return
     start = time.time()
@@ -292,7 +292,7 @@ def editBackupRaw():
     options = "Go back to main menu\nEdit current save"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
+    choice = scrollSelectMenu(prompt,options,-1,1)
     if(choice == 0):
         return
     saveFile = ""
@@ -342,7 +342,7 @@ def deleteBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
+    choice = scrollSelectMenu(prompt,options,-1,1)
     if(parseInt(choice) == 0):
         return
     backupName = os.path.join(current_directory, folders[parseInt(choice)-1])
@@ -372,7 +372,7 @@ def listBackups():
         else:
             backups += "\n"+str(name)
             
-    choice = scrollSelectMenu(prompt,backups,wrapMode=2,detailsSelected = False)
+    choice = scrollSelectMenu(prompt,backups,wrapMode=2)
     if(choice == 0):
         return
     choice -=1
@@ -482,7 +482,7 @@ def updateBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options+="\n"+str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt,options,-1,1,detailsSelected=False)
+    choice = scrollSelectMenu(prompt,options,-1,1)
     if(parseInt(choice) == 0):
         return
     saveGame = os.path.join(current_directory, "SaveGames")
@@ -560,17 +560,9 @@ def makeScreen():
     except:
         None
 
-def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1,loop=False,detailsSelected = True,skip=[],startChoice = 0,returnMore = False,scrollWindowStart = 0,useItemColors = False,checkForRarityColor = False):
+def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1,loop=False,skip=[],startChoice = 0,returnMore = False,scrollWindowStart = 0,autoItemRarityColors = False,colorDisplayType = 3,skipColor = [],defaultColor = 0,defaultDetails = 0):
     global screen
-    
-    try:
-        curses.init_pair(1, RARECOLOR, -1)
-        curses.init_pair(2, EPICCOLOR, -1)
-        curses.init_pair(3, LEGENDARYCOLOR, -1)
-        curses.init_pair(4, GREEDCOLOR, -1)
-        colors = "ItemRarityColor"
-    except:
-        colors = "None"
+
     
     def moreDeatils(opt,details=False):
         optio = ""
@@ -586,6 +578,25 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
             return str(optio)+" - "+str(detail)
         else:
             return str(optio)
+    
+    def itemColor(text,ocolor):
+        for t in skipColor:
+            if(t in text):
+                return 0
+        
+        debug11 = type(ITEMS["Names"]), ITEMS["Names"]
+        for item in ITEMS["Names"]:
+            if(item in text):
+                rar =  ITEMS[item]
+                if("Rare" in rar):
+                    return RARECOLOR
+                elif("Epic" in rar):
+                    return EPICCOLOR
+                elif("Legendary" in rar):
+                    return LEGENDARYCOLOR
+                elif("Greed" in rar):
+                    return GREEDCOLOR
+        return 0
     
     if(type(options) == type("")):
         options = options.split("\n")
@@ -624,116 +635,86 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
         for i, option in enumerate(options):
             
             if(i>=scroll_window and i <scroll_window+win_height):
-                if i == selected_option:
-                    # Highlight the selected option
-                    if(len(option)+2>win_wid) and wrapMode == 2:
-                        option = option[:win_wid]
-                    if(detailsSelected):
-                        if(useItemColors):
-                            op = option.replace("  ","")
-                            try:
-                                rar = WEAPONMODS[op]
-                            except:
-                                rar = ""
-                            if(rar == ""):
-                                try:
-                                    rar = GRENADEMODS[op]
-                                except:
-                                    rar = ""  
-                            if(rar == ""):
-                                try:
-                                    rar = PERKS[op]
-                                except:
-                                    rar = "" 
-                            if("Rare" in rar):
-                                rarColor = curses.color_pair(1)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor)
-                            elif("Epic" in rar):
-                                rarColor = curses.color_pair(2)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor)
-                            elif("Legendary" in rar):
-                                rarColor = curses.color_pair(3)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor)   
-                            elif("Greed" in rar):
-                                rarColor = curses.color_pair(4)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor) 
-                            else:
-                                if(checkForRarityColor):
-                                    if("Rare" in option):
-                                        rarColor = curses.color_pair(1)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor)
-                                    elif("Epic" in option):
-                                        rarColor = curses.color_pair(2)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor)
-                                    elif("Legendary" in option):
-                                        rarColor = curses.color_pair(3)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor)   
-                                    elif("Greed" in option):
-                                        rarColor = curses.color_pair(4)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),rarColor) 
-                                    else:
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),curses.A_BOLD)
-                                else:
-                                    screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True),curses.A_BOLD)
-                        else:
-                            screen.addstr((i + len(prompt) - scroll_window), 0, " > " + moreDeatils(option,details=True), curses.A_BOLD)
-                    else:
-                        
-                        screen.addstr((i + len(prompt) - scroll_window), 0, " > " + option, curses.A_BOLD)
+                
+                textArray = [["text",defaultColor,defaultDetails]]
+                if(type(option) != type([])):
+                    textArray[0][0] = str(option)
+                    option = textArray.copy()
+                elif(type(option[0]) != type([]) and type(option) == type([])):
+                    option = [option]
                 else:
-                    if(len(option)+1>win_wid) and wrapMode == 2:
-                        option = option[:win_wid]
-                    if(detailsSelected):
-                        if(useItemColors):
-                            op = option.replace("  ","")
-                            try:
-                                rar = WEAPONMODS[op]
-                            except:
-                                rar = ""
-                            if(rar == ""):
-                                try:
-                                    rar = GRENADEMODS[op]
-                                except:
-                                    rar = ""  
-                            if(rar == ""):
-                                try:
-                                    rar = PERKS[op]
-                                except:
-                                    rar = "" 
-                            if("Rare" in rar):
-                                rarColor = curses.color_pair(1)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                            elif("Epic" in rar):
-                                rarColor = curses.color_pair(2)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                            elif("Legendary" in rar):
-                                rarColor = curses.color_pair(3)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                            elif("Greed" in rar):
-                                rarColor = curses.color_pair(4)
-                                screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                            else:
-                                if(checkForRarityColor):
-                                    if("Rare" in option):
-                                        rarColor = curses.color_pair(1)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                                    elif("Epic" in option):
-                                        rarColor = curses.color_pair(2)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                                    elif("Legendary" in option):
-                                        rarColor = curses.color_pair(3)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                                    elif("Greed" in option):
-                                        rarColor = curses.color_pair(4)
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option),rarColor)
-                                    else:
-                                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option))
-                                else:
-                                    screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option))
+                    for ii in range(len(option)):
+                        if(type(option[ii]) != type([]) or len(option[ii]) == 0):
+                            option[ii] = [str(option[ii]),0,0]
                         else:
-                            screen.addstr((i + len(prompt) - scroll_window), 0, "  " + moreDeatils(option))
+                            ar = option[ii]
+                            l = len(ar)
+                            option[ii] = [str(ar[0]),0,0]
+                            if(l >1):
+                                if(type(ar[1]) == type(1)):
+                                    option[ii][1] =  ar[ii]
+                                else:
+                                    option[ii][1] = 0
+                            if(l >2):
+                                if(type(ar[2]) == type(1)):
+                                    option[ii][2] =  ar[2]
+                                else:
+                                    option[ii][2] = 0
+                                    
+                for ii in range(len(option)):        
+                    if(autoItemRarityColors):
+                        option[ii][1] = itemColor(option[ii][0],option[ii][1])
+                        option[ii][2] = colorDisplayType
+                        if(option[ii][1] == 0):
+                            if("Rare" in option[ii][0]):
+                                option[ii][1] = RARECOLOR
+                                option[ii][2] = colorDisplayType
+                            elif("Epic" in option[ii][0]):
+                                option[ii][1] = EPICCOLOR
+                                option[ii][2] = colorDisplayType
+                            elif("Legendary" in option[ii][0]):
+                                option[ii][1] = LEGENDARYCOLOR
+                                option[ii][2] = colorDisplayType
+                            elif("Greed" in option[ii][0]):
+                                option[ii][1] = GREEDCOLOR
+                                option[ii][2] = colorDisplayType
+                        
+                xOff = 0
+                for textOb in option:
+                    prefix = ""
+                    debug1= type(textOb) , str(textOb)
+                    debug2= type(textOb[0]) , str(textOb[0])
+                    debug3= type(textOb[1]) , str(textOb[1]) 
+                    debug4= type(textOb[2]), str(textOb[2])
+                    if(i == selected_option):
+                        sel = min(xOff,1)
+                        if(xOff == 0):
+                            prefix = " > "
+                        if(textOb[2] == 0):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff+sel, prefix + textOb[0],curses.A_BOLD)
+                        elif(textOb[2] == 1):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff+sel, prefix + textOb[0],curses.color_pair(textOb[1]))
+                        elif(textOb[2] == 2):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff+sel, prefix + moreDeatils(textOb[0],details=True),curses.A_BOLD)
+                        elif(textOb[2] == 3):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff+sel, prefix + moreDeatils(textOb[0],details=True),curses.color_pair(textOb[1]))
                     else:
-                        screen.addstr((i + len(prompt) - scroll_window), 0, "  " + option)
+                        if(xOff == 0):
+                            prefix = "  "
+                        if(textOb[2] == 0):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff, prefix + textOb[0],curses.color_pair(textOb[1]))
+                        elif(textOb[2] == 1):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff, prefix + textOb[0],curses.color_pair(textOb[1]))
+                        elif(textOb[2] == 2):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff, prefix + moreDeatils(textOb[0],details=False),curses.color_pair(textOb[1]))
+                        elif(textOb[2] == 3):
+                            screen.addstr((i + len(prompt) - scroll_window), xOff, prefix + moreDeatils(textOb[0],details=False),curses.color_pair(textOb[1]))
+                    if(xOff==0):
+                        xOff+=2
+                    xOff+= len(textOb[0])
+    
+                
+
         screen.addstr(min(win_height,len(options)) + len(prompt),0,"                                                                                                               ")
         screen.addstr(min(win_height,len(options)) + len(prompt)+1, 0, "Use arrow keys to navigate options. Press Enter to select.")
         screen.refresh()
@@ -792,14 +773,6 @@ def scrollSelectMenu(prompt,options,win_height = -1,buffer_size = 1,wrapMode = 1
 
 def scrollInfoMenu(info,window_height = -1,loop = False,instructions = "Use arrow keys to scroll up and down. Press Enter to go back to main menu.",itemRarityColors = False):
     global screen
-    try:
-        curses.init_pair(1, RARECOLOR, -1)
-        curses.init_pair(2, EPICCOLOR, -1)
-        curses.init_pair(3, LEGENDARYCOLOR, -1)
-        curses.init_pair(4, GREEDCOLOR, -1)
-        colors = "ItemRarityColor"
-    except:
-        colors = "None"
 
     if(type(info) == type("")):
         info = info.split("\n")
@@ -827,16 +800,16 @@ def scrollInfoMenu(info,window_height = -1,loop = False,instructions = "Use arro
             if(i>=scroll_window and i <scroll_window+window_height):
                 if(itemRarityColors):
                     if("Rare" in inf):
-                        rarColor = curses.color_pair(1)
+                        rarColor = curses.color_pair(RARECOLOR)
                         screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)  
                     elif("Epic" in inf):
-                        rarColor = curses.color_pair(2)
+                        rarColor = curses.color_pair(EPICCOLOR)
                         screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)  
                     elif("Legendary" in inf):
-                        rarColor = curses.color_pair(3)
+                        rarColor = curses.color_pair(LEGENDARYCOLOR)
                         screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)   
                     elif("Greed" in inf):
-                        rarColor = curses.color_pair(4)
+                        rarColor = curses.color_pair(GREEDCOLOR)
                         screen.addstr((i - scroll_window)+1, 0, str(inf),rarColor)  
                     else:
                         screen.addstr((i - scroll_window)+1, 0, str(inf))   
@@ -954,6 +927,10 @@ def settings():
     global TermHeight
     global TermWidth
     global owd
+    global RARECOLOR
+    global EPICCOLOR
+    global LEGENDARYCOLOR
+    global GREEDCOLOR
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
     configPath = owd+"/CrabChampionSaveManager/config.json"
     configPath = configPath.replace("\\","/")
@@ -969,7 +946,7 @@ def settings():
         configJSON = json.loads(defaultJSON)
         
     prompt = "Select setting to edit"
-    options = "Back to main menu\nStart Up Settings"
+    options = "Back to main menu\nStart Up Settings\nUI"
     while True:
         choice = scrollSelectMenu(prompt,options)
         if(choice == 0):
@@ -988,7 +965,7 @@ def settings():
                         height = configJSON["Start_Up"]["Terminal_Size"]["Height"]
                         width = configJSON["Start_Up"]["Terminal_Size"]["Width"]
                         optionsTS = f"Back\nHeight - {height}\nWidth - {width}\nManuel"
-                        choice = scrollSelectMenu(promptTS,optionsTS,detailsSelected=False)
+                        choice = scrollSelectMenu(promptTS,optionsTS)
                         if(choice == 0):
                             break
                         elif(choice == 1):
@@ -1027,12 +1004,65 @@ def settings():
                             configJSON["Start_Up"]["Terminal_Size"]["Width"] = screen.getmaxyx()[1]
                             configJSON["Start_Up"]["Terminal_Size"]["Height"] = screen.getmaxyx()[0]
                             saveSettings()
-                        
+        
+        elif(choice == 2):
+
+            while True:
+                promptUI = "Select setting to edit"
+                optionsUI = "Back\nRarity Colors"
+                choice = scrollSelectMenu(promptUI,optionsUI)
+                if(choice == 0):
+                    break
+                elif(choice == 1):
+                    promptUI = "Select setting to edit"
+                    while True:
+                        optionsUIColors = ["Back",["Rare Color - Currently at "+str(configJSON["UI"]["Colors"]["RareColor"]),configJSON["UI"]["Colors"]["RareColor"],1],
+                                 ["Epic Color - Currently at "+str(configJSON["UI"]["Colors"]["EpicColor"]),configJSON["UI"]["Colors"]["EpicColor"],1],
+                                 ["Legendary Color - Currently at "+str(configJSON["UI"]["Colors"]["LegendaryColor"]),configJSON["UI"]["Colors"]["LegendaryColor"],1],
+                                 ["Greed Color - Currently at "+str(configJSON["UI"]["Colors"]["GreedColor"]),configJSON["UI"]["Colors"]["GreedColor"],1]]
+                        choice = scrollSelectMenu(promptUI,optionsUIColors)
+                        if(choice == 0):
+                            break
+                        elif(choice == 1):
+                            col = colorSelect(RARECOLOR,exampleText="Rare Item")
+                            configJSON["UI"]["Colors"]["RareColor"] = col
+                            RARECOLOR = col
+                            saveSettings()
+                        elif(choice == 2):
+                            col = colorSelect(EPICCOLOR,exampleText="Epic Item")
+                            configJSON["UI"]["Colors"]["EpicColor"] = col
+                            EPICCOLOR = col
+                            saveSettings()
+                        elif(choice == 3):
+                            col = colorSelect(LEGENDARYCOLOR,exampleText="Legendary Item")
+                            configJSON["UI"]["Colors"]["LegendaryColor"] = col
+                            LEGENDARYCOLOR = col
+                            saveSettings()
+                        elif(choice == 4):
+                            col = colorSelect(GREEDCOLOR,exampleText="Greed Item")
+                            configJSON["UI"]["Colors"]["GreedColor"] = col
+                            GREEDCOLOR = col
+                            saveSettings()
+
+def colorSelect(currentColor,exampleText = "Color Example Text",prompt = ""):
+    colors = ["Back"]
+    for i in range(1,256):
+        colors.append([exampleText+" - "+str(i),i,1])
+    choice = scrollSelectMenu(prompt,colors,buffer_size=4,startChoice=currentColor,loop=True)
+    if(choice == 0):
+        return currentColor
+    else:
+        return choice
+                     
 def loadSettings():
     global configJSON
     global TermHeight
     global owd
     global TermWidth
+    global RARECOLOR
+    global EPICCOLOR
+    global LEGENDARYCOLOR
+    global GREEDCOLOR
     defaultJSON = "{\"Start_Up\":{\"Terminal_Size\":{\"Height\":30,\"Width\":120}}}"
     configPath = owd+"/CrabChampionSaveManager/config.json"
     
@@ -1068,6 +1098,67 @@ def loadSettings():
     except:
         configJSON["Start_Up"]["Terminal_Size"]["Width"] = 120  
         TermWidth = 120
+        
+    try:
+        RARECOLOR = configJSON["UI"]["Colors"]["RareColor"]
+        RARECOLOR = clamp(RARECOLOR,1,255)
+    except:
+        try:
+            configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR  
+        except:
+            try:
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR   
+            except:
+                configJSON["UI"] = {}
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR  
+        
+    try:
+        EPICCOLOR = configJSON["UI"]["Colors"]["EpicColor"]
+        EPICCOLOR = clamp(EPICCOLOR,1,255)
+    except:
+        try:
+            configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR  
+        except:
+            try:
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR   
+            except:
+                configJSON["UI"] = {}
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR  
+        
+    try:
+        LEGENDARYCOLOR = configJSON["UI"]["Colors"]["LegendaryColor"]
+        LEGENDARYCOLOR = clamp(LEGENDARYCOLOR,1,255)
+    except:
+        try:
+            configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR  
+        except:
+            try:
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR   
+            except:
+                configJSON["UI"] = {}
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR  
+        
+    try:
+        GREEDCOLOR = configJSON["UI"]["Colors"]["GreedColor"]
+        GREEDCOLOR = clamp(GREEDCOLOR,1,255)
+    except:
+        try:
+            configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR  
+        except:
+            try:
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR   
+            except:
+                configJSON["UI"] = {}
+                configJSON["UI"]["Colors"] = {}
+                configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR  
+        
     file.seek(0)
     file.write(json.dumps(configJSON,indent=4))
     file.truncate()
@@ -1165,6 +1256,7 @@ def loadCache():
         threads.append(t)
     for t in threads:
         t.join()
+    cacheJSON["Version"] = Version
     file.seek(0)
     file.truncate()
     file.write(json.dumps(cacheJSON,indent=4))
@@ -1752,7 +1844,7 @@ def backupDetailsScreen(backupName):
     info += "\n"+str(ensureLength("Difficulty: ",leng))+str(backupJSON["Diff"])
     info += "\n"+str(ensureLength("Biome: ",leng))+str(backupJSON["Biome"])
     if(str(backupJSON["LootType"]) != "New Biome"):
-        info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"])
+        info += "\n"+ensureLength("Loot Type: ",leng)+str(backupJSON["LootType"].replace("SpikedChest","Spiked Chest"))
     info += "\n"+ensureLength("Island Name: ",leng)+str(backupJSON["IslandName"])
     info += "\n"+ensureLength("Island Type: ",leng)+str(backupJSON["IslandType"])
     info += "\n"+ensureLength("Health:",leng)+str(formatNumber(backupJSON["Health"],0))
@@ -1824,13 +1916,13 @@ def backupDetailsScreen(backupName):
 
 def manageBackups():
     prompt = "Managing Backups\n"
-    options = """Back-Returns you to the main menu
-Edit Save-Edit your current save or any of your backups using uesave
-Backup Save-Backup up your current save with a name of your choice
-Update Backup-Choose a backup to update using your current save
-Restore Save-Set your current save using a backup
-Delete Backup-Delete a backup
-List Backups and Backup Details-List backups and some details about, choose a backup to learn more about it"""
+    options = [["Back-Returns you to the main menu",0,2],
+["Edit Save-Edit your current save or any of your backups using uesave",0,2],
+["Backup Save-Backup up your current save with a name of your choice",0,2],
+["Update Backup-Choose a backup to update using your current save",0,2],
+["Restore Save-Set your current save using a backup",0,2],
+["Delete Backup-Delete a backup",0,2],
+["List Backups and Backup Details-List backups and some details about, choose a backup to learn more about it",0,2]]
     while True:
         choice = scrollSelectMenu(prompt,options)
         if(choice == 0):
@@ -1850,12 +1942,12 @@ List Backups and Backup Details-List backups and some details about, choose a ba
 
 def managePresets():
     prompt = "Managing Presets\n"
-    options = """Back-Returns you to the main menu
-Create Preset-Create a new preset
-Use Preset-Set current save or backup using a preset
-Edit Presets-Edit one of your presets
-Delete Preset-Delete a preset
-List Presets and Preset Details-List all your presets, select a preset to see it's settings"""
+    options = [["Back-Returns you to the main menu",0,3],
+               ["Create Preset-Create a new preset",0,3],
+               ["Use Preset-Set current save or backup using a preset",0,3],
+               ["Edit Presets-Edit one of your presets",0,3],
+               ["Delete Preset-Delete a preset",0,3],
+               ["List Presets and Preset Details-List all your presets, select a preset to see it's settings",0,3]]
     while True:
         choice = scrollSelectMenu(prompt,options)
         if(choice == 0):
@@ -2117,13 +2209,13 @@ def genPlayerData(saveJSON,checksum):
     stop = time.time()
     
 def createPreset():
-    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"HealthMultiplier\":1,\"DamageMultiplier\":1,\"keyTotemItem\":false,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
+    defaultPreset = "{\"Diff\":\"Normal\",\"IslandNum\":1,\"DiffMods\":[],\"Blessing\":[],\"Challenges\":[],\"Crystals\":0,\"Biome\":\"Tropical\",\"LootType\":\"Random Loot Type\",\"IslandName\":\"Tropical Arena Island\",\"IslandType\":\"Automatic\",\"Health\":100,\"MaxHealth\":100,\"ArmorPlates\":0,\"ArmorPlatesHealth\":0,\"HealthMultiplier\":1,\"DamageMultiplier\":1,\"keyTotemItem\":false,\"Inventory\":{\"Weapon\":\"Lobby Dependant\",\"WeaponMods\":{\"Slots\":24,\"Mods\":[]},\"GrenadeMods\":{\"Slots\":24,\"Mods\":[]},\"Perks\":{\"Slots\":24,\"Perks\":[]}}}"
     preset = json.loads(defaultPreset)
     prompt = "What should the preset be named?\nEnter nothing to go back"
-    name = backupNameMenu(prompt)
+    name = backupNameMenu(prompt,escape="",escapeReturn="")
     if(name.replace(" ","") == ""):
         return
-    preset = editPreset(preset,name)
+    preset = editPreset(preset,name,cancel=False)
     
 def listPresets():
 
@@ -2138,7 +2230,7 @@ def listPresets():
         else:
             presets += "\n"+str(name)
             
-    choice = scrollSelectMenu(prompt,presets,wrapMode=2,detailsSelected = False)
+    choice = scrollSelectMenu(prompt,presets,wrapMode=2)
     if(choice == 0):
         return
     choice -=1
@@ -2234,14 +2326,6 @@ def presetDetailsScreen(preset):
     
     
     leng = 22
-    try:
-        curses.init_pair(1, 3, -1)
-        curses.init_pair(2, 13, -1)
-        curses.init_pair(3, 14, -1)
-        curses.init_pair(4, 12, -1)
-        colors = "BackupDetails"
-    except:
-        colors = "None"
     indent = ensureLength("",2)
     disbetween = 4
     presetJSON = presetsJSON[preset]
@@ -2307,7 +2391,7 @@ def deletePreset():
     options="Back"
     for preset in presetsDetails:
         options+="\n"+preset
-    choice = scrollSelectMenu(prompt,options,detailsSelected=False)
+    choice = scrollSelectMenu(prompt,options)
     if choice == 0:
         return
     preset = presets[choice-1]
@@ -2349,7 +2433,7 @@ def presetNameMenu(prompt):
         else:
             presetName += chr(key)
             
-def editPreset(preset,name,overriade = False):
+def editPreset(preset,name,overriade = False,cancel = True):
     getUnlocked()
     global WEAPONS
     global WEAPONMODS
@@ -2372,6 +2456,8 @@ def editPreset(preset,name,overriade = False):
     oname = name
     while True:
         info = "Finish"
+        if(cancel):
+            info +="\nCancel"
         info +="\n"+ensureLength("Preset Name: ",leng)+str(name)
         info += "\n"+str(ensureLength("Island: ",leng))+str(formatNumber(presetJSON["IslandNum"],0))
         info += "\n"+str(ensureLength("Crystals: ",leng))+str(formatNumber(presetJSON["Crystals"],0))
@@ -2390,8 +2476,15 @@ def editPreset(preset,name,overriade = False):
         if(len(presetJSON["DiffMods"])>0):
             for diffMod in presetJSON["DiffMods"]:
                 info += "\n"+indent+str(diffMod)+" - "+DIFFMODSDETAILS[DIFFMODS.index(diffMod)]
-        if(len(presetJSON["DiffMods"])<12):
+        if(len(presetJSON["DiffMods"])<len(DIFFMODS)):
             info += "\n"+indent+str("Add Difficulty Modifer")
+        info += "\n"
+        info += "\nChallenges: "
+        if(len(presetJSON["Challenges"])>0):
+            for diffMod in presetJSON["Challenges"]:
+                info += "\n"+indent+diffMod+" - "+ChallengesDetails(diffMod)
+        if(len(presetJSON["Challenges"])<len(CHALLENGES)):
+            info += "\n"+indent+str("Add Challenge")
         info += "\n"
         info += "\n"+ensureLength("Weapon:",leng)+str(presetJSON["Inventory"]["Weapon"])
         info += "\n"+ensureLength("Weapon Mod Slots:",leng)+str(presetJSON["Inventory"]["WeaponMods"]["Slots"])
@@ -2433,7 +2526,7 @@ def editPreset(preset,name,overriade = False):
         if(len(presetJSON["Inventory"]["Perks"]["Perks"])<= 64):
             info += "\nAdd Perk" 
 
-        choice , window = scrollSelectMenu("",info,skip=["",str(indent+ensureLength("Type",10+disbetween)+ensureLength("Rarity",maxRarity)+ensureLength("Name",maxName)+ensureLength("Level",maxLevel)),"Difficulty Modifiers: ","Items:"],startChoice = choice,scrollWindowStart=window,returnMore=True,checkForRarityColor=True,useItemColors=True)
+        choice , window = scrollSelectMenu("",info,skip=["",str(indent+ensureLength("Type",10+disbetween)+ensureLength("Rarity",maxRarity)+ensureLength("Name",maxName)+ensureLength("Level",maxLevel)),"Difficulty Modifiers: ","Items:","Challenges: "],startChoice = choice,scrollWindowStart=window,returnMore=True,autoItemRarityColors=True,buffer_size=2,skipColor=["Spike Strikes","Energy Rings"])
         info = info.split("\n")
         
         if(":" in info[choice] and "Preset Name" in info[choice][:info[choice].index(":")]):
@@ -2466,7 +2559,7 @@ def editPreset(preset,name,overriade = False):
             
         elif(":" in info[choice] and "Loot Type" in info[choice][:info[choice].index(":")]):
             prompt = "Select Loot Type\nCurrent Loot Type is "+presetJSON["LootType"]
-            lootType = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade","Random Loot Type"]
+            lootType = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade","Spiked Chest","Random Loot Type"]
             presetJSON["LootType"] = lootType[scrollSelectMenu(prompt,lootType,startChoice=lootType.index(presetJSON["LootType"]))]
         
         elif(":" in info[choice] and "Island Type" in info[choice][:info[choice].index(":")]):
@@ -2496,6 +2589,11 @@ def editPreset(preset,name,overriade = False):
             diffmods = presetJSON["DiffMods"]
             diffmods.remove(info[choice].replace(indent,"")[:info[choice].replace(indent,"").index(" - ")])
             presetJSON["DiffMods"] = diffmods
+        
+        elif(info[choice].replace(indent,"") in CHALLENGES):
+            diffmods = presetJSON["Challenges"]
+            diffmods.remove(info[choice].replace(indent,"")[:info[choice].replace(indent,"").index(" - ")])
+            presetJSON["Challenges"] = diffmods
             
         elif("Add Difficulty Modifer" in info[choice]):
             diffmods = DIFFMODS.copy()
@@ -2505,11 +2603,25 @@ def editPreset(preset,name,overriade = False):
             odiffmods = diffmods.copy()
             for i in range(len(diffmods)):
                 diffmods[i] = diffmods[i]+" - "+DIFFMODSDETAILS[DIFFMODS.index(diffmods[i])]
-            diffmod = odiffmods[scrollSelectMenu(prompt,diffmods)]
+            diffmod = odiffmods[scrollSelectMenu(prompt,diffmods,defaultDetails=2)]
             odiffmods = presetJSON["DiffMods"]
             odiffmods.append(diffmod)
             presetJSON["DiffMods"] = odiffmods
-                    
+         
+        elif("Add Challenge" in info[choice]):
+            diffmods = CHALLENGES.copy()
+            for diffmod in presetJSON["Challenges"]:
+                diffmods.remove(diffmod+" - "+ChallengesDetails(diffmod))
+            prompt = "Select Challenge to add\n"
+            odiffmods = diffmods.copy()
+            for i in range(len(diffmods)):
+                diffmods[i] = diffmods[i]
+            diffmod = odiffmods[scrollSelectMenu(prompt,diffmods,defaultDetails=2)]
+            diffmod = diffmod[:diffmod.index(" - ")]
+            odiffmods = presetJSON["Challenges"]
+            odiffmods.append(diffmod)
+            presetJSON["Challenges"] = odiffmods
+                   
         elif(":" in info[choice] and "Weapon" in info[choice][:info[choice].index(":")] and not "Mod" in info[choice][:info[choice].index(":")]):
             prompt = "Select Weapon\nCurrent Weapon is "+presetJSON["Inventory"]["Weapon"]+"\n"
             wep = WEAPONS.copy()
@@ -2552,7 +2664,7 @@ def editPreset(preset,name,overriade = False):
             #     wepmods[i] = wepmods[i]
             wepmods.insert(0,"Back")
             while True:
-                wepmod = scrollSelectMenu(prompt,wepmods,useItemColors=True,loop=True)
+                wepmod = scrollSelectMenu(prompt,wepmods,loop=True,autoItemRarityColors=True,buffer_size=4)
                 if(wepmod == 0):
                     break
                 wepmod = owepmods[wepmod-1]
@@ -2589,7 +2701,7 @@ def editPreset(preset,name,overriade = False):
             #     gremods[i] = gremods[i]
             gremods.insert(0,"Back")
             while True:
-                gremod = scrollSelectMenu(prompt,gremods,useItemColors=True,loop=True)
+                gremod = scrollSelectMenu(prompt,gremods,loop=True,autoItemRarityColors=True,buffer_size=4)
                 if(gremod == 0):
                     break
                 gremod = ogremods[gremod-1]
@@ -2626,7 +2738,7 @@ def editPreset(preset,name,overriade = False):
             #     perks[i] = perks[i]
             perks.insert(0,"Back")
             while True:
-                perk = scrollSelectMenu(prompt,perks,useItemColors=True,loop=True)
+                perk = scrollSelectMenu(prompt,perks,loop=True,autoItemRarityColors=True,buffer_size=4)
                 if(perk == 0):
                     break
                 perk = operks[perk-1]
@@ -2643,21 +2755,32 @@ def editPreset(preset,name,overriade = False):
                 presetJSON["Inventory"]["Perks"]["Perks"] = mods
                 break
         elif(choice == 0):
+            can = False
             if(os.path.exists(owd+"/CrabChampionSaveManager/Presets/"+name+".ccsm") and (not overriade or (overriade and oname != name))):
                 perm = yornMenu("There is already a preset by that name, Overwrite")
                 if(perm):
                     break
             else:
                 break
-    presetJSON
-    
-    f = open(owd+"/CrabChampionSaveManager/Presets/"+name+".ccsm","w")
-    f.write(json.dumps(presetJSON,indent=4))
-    f.close()
-    
-    if(oname != name):
-        os.remove(owd+"/CrabChampionSaveManager/Presets/"+oname+".ccsm")
-    
+        elif("Cancel" in info[choice]):
+            can = True
+            break
+    if(not can):
+        presetJSON
+        
+        f = open(owd+"/CrabChampionSaveManager/Presets/"+name+".ccsm","w")
+        f.write(json.dumps(presetJSON,indent=4))
+        f.close()
+        
+        if(oname != name):
+            os.remove(owd+"/CrabChampionSaveManager/Presets/"+oname+".ccsm")
+
+def ChallengesDetails(chall):
+    for ch in CHALLENGES:
+        if(chall in ch):
+            return ch[ch.index(" - ")+3:]
+    return None
+   
 def usePreset():
     global presetsJSON
     loadPresets()
@@ -2671,7 +2794,7 @@ def usePreset():
         else:
             presets += "\n"+str(name)
             
-    choice = scrollSelectMenu(prompt,presets,wrapMode=2,detailsSelected = False)
+    choice = scrollSelectMenu(prompt,presets,wrapMode=2)
     if(choice == 0):
         return
     choice -=1
@@ -2737,7 +2860,7 @@ def editPresetMenu():
         else:
             presets += "\n"+str(name)
             
-    choice = scrollSelectMenu(prompt,presets,wrapMode=2,detailsSelected = False)
+    choice = scrollSelectMenu(prompt,presets,wrapMode=2)
     if(choice == 0):
         return
     choice -=1
@@ -2749,6 +2872,7 @@ def getUnlocked():
     global GRENADEMODS
     global PERKS
     global WEAPONS
+    global ITEMS
     global cacheJSON
     loadCache()
         #in cache json
@@ -2781,12 +2905,14 @@ def getUnlocked():
     leg = []
     greed = []
     names = []
+    ITEMS = json.loads("{}")
 
     #print((cacheJSON["PlayerData"]["UnlockedWeaponMods"]))
     for wepMod in cacheJSON["PlayerData"]["UnlockedWeaponMods"]:
         wepMod = str(wepMod).replace("'","\"")
         wepMod = json.loads(wepMod)
         WEAPONMODS[wepMod["Name"]] = wepMod["Rarity"]
+        ITEMS[wepMod["Name"]] = wepMod["Rarity"]
         names.append(wepMod["Name"])
         if(wepMod["Rarity"] == "Rare"):
             rare.append(wepMod["Name"])
@@ -2827,6 +2953,7 @@ def getUnlocked():
         wepMod = str(wepMod).replace("'","\"")
         wepMod = json.loads(wepMod)
         GRENADEMODS[wepMod["Name"]] = wepMod["Rarity"]
+        ITEMS[wepMod["Name"]] = wepMod["Rarity"]
         names.append(wepMod["Name"])
         if(wepMod["Rarity"] == "Rare"):
             rare.append(wepMod["Name"])
@@ -2867,6 +2994,7 @@ def getUnlocked():
         wepMod = str(wepMod).replace("'","\"")
         wepMod = json.loads(wepMod)
         PERKS[wepMod["Name"]] = wepMod["Rarity"]
+        ITEMS[wepMod["Name"]] = wepMod["Rarity"]
         names.append(wepMod["Name"])
         if(wepMod["Rarity"] == "Rare"):
             rare.append(wepMod["Name"])
@@ -2891,6 +3019,38 @@ def getUnlocked():
     PERKS["Legendary"] = leg
     PERKS["Greed"] = greed
     PERKS["Names"] = names
+    
+    
+    ar = []
+    ar.append(WEAPONMODS["Rare"])
+    ar.append(GRENADEMODS["Rare"])
+    ar.append(PERKS["Rare"])
+    ITEMS["Rare"] = ar
+    
+    ar = []
+    ar.append(WEAPONMODS["Epic"])
+    ar.append(GRENADEMODS["Epic"])
+    ar.append(PERKS["Epic"])
+    ITEMS["Epic"] = ar
+    
+    ar = []
+    ar.append(WEAPONMODS["Legendary"])
+    ar.append(GRENADEMODS["Legendary"])
+    ar.append(PERKS["Legendary"])
+    ITEMS["Legendary"] = ar
+    
+    ar = []
+    ar.append(WEAPONMODS["Greed"])
+    ar.append(GRENADEMODS["Greed"])
+    ar.append(PERKS["Greed"])
+    ITEMS["Greed"] = ar
+    
+    ar = []
+    ar.extend(WEAPONMODS["Names"])
+    ar.extend(GRENADEMODS["Names"])
+    ar.extend(PERKS["Names"])
+    ITEMS["Names"] = ar
+    
     # f = open("perk.json","w")
     # f.write(json.dumps(PERKS,indent=4))
     # f.close()
@@ -2944,7 +3104,7 @@ def convertMyItemtoGameItem(MyItemJson):
         return GameItemJson
 
 def convertPresetToGameSave(preset):
-    GameJSON = "{\"AutoSave\":{\"Struct\":{\"value\":{\"Struct\":{\"Difficulty\":{\"Enum\":{\"value\":\"ECrabDifficulty::Normal\",\"enum_type\":\"ECrabDifficulty\"}},\"DifficultyModifiers\":{\"Array\":{\"array_type\":\"EnumProperty\",\"value\":{\"Base\":{\"Enum\":[]}}}},\"NextIslandInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"Biome\":{\"Enum\":{\"value\":\"ECrabBiome::Tropical\",\"enum_type\":\"ECrabBiome\"}},\"CurrentIsland\":{\"Int\":{\"value\":1}},\"IslandName\":{\"Name\":{\"value\":\"Tropical_Arena_01\"}},\"IslandType\":{\"Enum\":{\"value\":\"ECrabIslandType::Arena\",\"enum_type\":\"ECrabIslandType\"}},\"RewardLootPool\":{\"Enum\":{\"value\":\"ECrabLootPool::Random\",\"enum_type\":\"ECrabLootPool\"}}}},\"struct_type\":{\"Struct\":\"CrabNextIslandInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"CurrentArmorPlates\":{\"Int\":{\"value\":0}},\"CurrentArmorPlateHealth\":{\"Float\":{\"value\":0}},\"CurrentHealth\":{\"Float\":{\"value\":100}},\"CurrentMaxHealth\":{\"Float\":{\"value\":100}}}},\"struct_type\":{\"Struct\":\"CrabHealthInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthMultiplier\":{\"Float\":{\"value\":1}},\"DamageMultiplier\":{\"Float\":{\"value\":1}},\"WeaponDA\":{\"Object\":{\"value\":\"\"}},\"NumWeaponModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"WeaponMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"WeaponMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabWeaponMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumGrenadeModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"GrenadeMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"GrenadeMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabGrenadeMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumPerkSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"Perks\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"Perks\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabPerk\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"Crystals\":{\"UInt32\":{\"value\":0}}}},\"struct_type\":{\"Struct\":\"CrabAutoSave\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}}}"
+    GameJSON = "{\"AutoSave\":{\"Struct\":{\"value\":{\"Struct\":{\"Difficulty\":{\"Enum\":{\"value\":\"ECrabDifficulty::Normal\",\"enum_type\":\"ECrabDifficulty\"}},\"DifficultyModifiers\":{\"Array\":{\"array_type\":\"EnumProperty\",\"value\":{\"Base\":{\"Enum\":[]}}}},\"NextIslandInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"Biome\":{\"Enum\":{\"value\":\"ECrabBiome::Tropical\",\"enum_type\":\"ECrabBiome\"}},\"CurrentIsland\":{\"Int\":{\"value\":1}},\"IslandName\":{\"Name\":{\"value\":\"Tropical_Arena_01\"}},\"IslandType\":{\"Enum\":{\"value\":\"ECrabIslandType::Arena\",\"enum_type\":\"ECrabIslandType\"}},\"Blessing\":{\"Enum\":{\"value\":\"\",\"enum_type\":\"ECrabBlessing\"}},\"ChallengeModifiers\":{\"Array\":{\"array_type\":\"EnumProperty\",\"value\":{\"Base\":{\"Enum\":[]}}}},\"RewardLootPool\":{\"Enum\":{\"value\":\"ECrabLootPool::Random\",\"enum_type\":\"ECrabLootPool\"}}}},\"struct_type\":{\"Struct\":\"CrabNextIslandInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthInfo\":{\"Struct\":{\"value\":{\"Struct\":{\"CurrentArmorPlates\":{\"Int\":{\"value\":0}},\"CurrentArmorPlateHealth\":{\"Float\":{\"value\":0}},\"CurrentHealth\":{\"Float\":{\"value\":100}},\"CurrentMaxHealth\":{\"Float\":{\"value\":100}}}},\"struct_type\":{\"Struct\":\"CrabHealthInfo\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}},\"HealthMultiplier\":{\"Float\":{\"value\":1}},\"DamageMultiplier\":{\"Float\":{\"value\":1}},\"WeaponDA\":{\"Object\":{\"value\":\"\"}},\"NumWeaponModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"WeaponMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"WeaponMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabWeaponMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumGrenadeModSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"GrenadeMods\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"GrenadeMods\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabGrenadeMod\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"NumPerkSlots\":{\"Byte\":{\"value\":{\"Byte\":24},\"enum_type\":\"None\"}},\"Perks\":{\"Array\":{\"array_type\":\"StructProperty\",\"value\":{\"Struct\":{\"_type\":\"Perks\",\"name\":\"StructProperty\",\"struct_type\":{\"Struct\":\"CrabPerk\"},\"id\":\"00000000-0000-0000-0000-000000000000\",\"value\":[]}}}},\"Crystals\":{\"UInt32\":{\"value\":0}}}},\"struct_type\":{\"Struct\":\"CrabAutoSave\"},\"struct_id\":\"00000000-0000-0000-0000-000000000000\"}}}"
     GameJSON = json.loads(GameJSON)
     #saveJSON = saveJSON["AutoSave"]
     #difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override 
@@ -2992,10 +3152,27 @@ def convertPresetToGameSave(preset):
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"] = preset["ArmorPlatesHealth"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthMultiplier"]["Float"]["value"] = preset["HealthMultiplier"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DamageMultiplier"]["Float"]["value"] = preset["DamageMultiplier"]
+    
     array = []
     for dif in preset["DiffMods"]:
         array.append("ECrabDifficultyModifier::"+dif.replace(" ",""))
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"] = array
+    
+    
+    # array = []
+    # for dif in preset["Blessing"]:
+    #     array.append("ECrabDifficultyModifier:0:"+dif.replace(" ",""))
+    # GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"] = array
+    
+    if(preset["Blessing"] != ""):
+        GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["Blessing"]["Enum"]["value"] = "ECrabBlessing::"+ preset["Blessing"]
+    else:
+        GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"].pop("Blessing",None)
+    array = []
+    for dif in preset["Challenges"]:
+        array.append("ECrabChallengeModifier::"+dif.replace(" ",""))
+    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"]["value"]["Struct"]["ChallengeModifiers"]["Array"]["value"]["Base"]["Enum"] = array
+    
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponDA"]["Object"]["value"] = dynamicWeapon(preset["Inventory"]["Weapon"])
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumWeaponModSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["WeaponMods"]["Slots"]
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumGrenadeModSlots"]["Byte"]["value"]["Byte"] = preset["Inventory"]["GrenadeMods"]["Slots"]
@@ -3042,11 +3219,12 @@ def convertPresetToGameSave(preset):
     return GameJSON
 
 def dynamicLootType(lootType):
-    Types = ["Critical","Damage","Economy","Elemental","Greed","Health","Luck","Random","Skill","Speed","Upgrade"]
+    Types = ["Economy","Speed","Skill","Greed","Critical","Damage","Health","Elemental","Luck","Random","Upgrade","SpikedChest"]
+    lootType = lootType.replace(" ","")
     if(lootType in Types):
         return lootType
     else:
-        return Types[random.randint(0,len(Types))]
+        return Types[random.randint(0,len(Types)-1)]
     
 def dynamicIslandName(name):
     global ISLANDS
@@ -3114,6 +3292,16 @@ def updatePreset(preset):
         preset["keyTotemItem"]
     except:
         preset["keyTotemItem"] = False
+        
+    try:
+        preset["Blessing"]
+    except:
+        preset["Blessing"] = ""
+    
+    try:
+        preset["Challenges"]
+    except:
+        preset["Challenges"] = []
     
     return preset
     
@@ -3158,17 +3346,28 @@ def getKeyTotemItem():
         elif(rare == 1):
             return PERKS["Legendary"][random.randint(0,len(PERKS["Legendary"])-1)]
 
+def clamp(num,minn=0,maxx=1):
+    return max(min(num,maxx),minn)
+
 global DIFFMODS
-DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
 global DIFFMODSDETAILS
 global ISLANDTYPE
-ISLANDTYPE = ["Automatic","Arena","Horde","Elite","Boss","Shop","Parkour","CrabIsland"]
-DIFFMODSDETAILS = ["Island types are chosen randomly instead of in a set order","Enemies regenarate health a short time after taking damage","Some inventory slot are locked and must be unlocked with crystals","Enemies have a chance to spawn with a powerful buff","Crystals must be manually picked up by walking near them before they expire","Double challenge modifiers on challenge portals","Enemies have a chance to spawn copies of themselves when eliminated","New enemies appear","All elite and boss islands have double the enmeies to fight","Taking damage lowers max health","No damage immunity when eliminating exploding enemies at close range","No more death prevention when reaching 1 health"]
 global WEAPONMODS
 global GRENADEMODS
 global PERKS
 global WEAPONS
 global ISLANDS
+global BLESSINGS
+global CHALLENAGES
+global RARECOLOR
+global EPICCOLOR
+global LEGENDARYCOLOR
+global GREEDCOLOR
+BLESSINGS = ["Flawless"]
+CHALLENGES = ["One Hit - Enemies can be eliminated in one hit but so can you","Energy Rings - Enemies spawn energy rings when eliminated","Shrapnel - Enemies explode into a burst of projectiles when eliminated","Spike Strikes - Enemies spawn spike strikes when eliminated","Elemental Explosions - Enemies explode into a random elemental damage area when elminated ","Mirrored Projectiles - Enemies fire projectiles back at you when hit","Homing Thorns - Enemies explode into a cluster of homing thorns when eliminated","Homing Barrels - Enemies spawn homing explosive barrels when eliminated"]
+DIFFMODS = ["Random Islands","Regenerating Enemies","Locked Slots","Buffed Enemies","Manual Collection","Double Challenge","Resurrecting Enemies","Evolved Enemies","Unfair Bosses","Eternal Punishment","Volatile Explosions","No Safety Net"]
+ISLANDTYPE = ["Automatic","Arena","Horde","Elite","Boss","Shop","Parkour","CrabIsland"]
+DIFFMODSDETAILS = ["Island types are chosen randomly instead of in a set order","Enemies regenarate health a short time after taking damage","Some inventory slot are locked and must be unlocked with crystals","Enemies have a chance to spawn with a powerful buff","Crystals must be manually picked up by walking near them before they expire","Double challenge modifiers on challenge portals","Enemies have a chance to spawn copies of themselves when eliminated","New enemies appear","All elite and boss islands have double the enmeies to fight","Taking damage lowers max health","No damage immunity when eliminating exploding enemies at close range","No more death prevention when reaching 1 health"]
 setUpIslands()
 WEAPONMODS = json.loads("{}")
 GRENADEMODS = json.loads("{}")
@@ -3179,14 +3378,7 @@ EPICCOLOR = 13
 LEGENDARYCOLOR = 14
 GREEDCOLOR = 12
 
-try:
-    curses.init_pair(1, RARECOLOR, -1)
-    curses.init_pair(2, EPICCOLOR, -1)
-    curses.init_pair(3, LEGENDARYCOLOR, -1)
-    curses.init_pair(4, GREEDCOLOR, -1)
-    colors = "ItemRarityColor"
-except:
-    colors = "None"
+
 
 
 global owd
@@ -3207,9 +3399,10 @@ owd = owd.replace("\\","/")
 # time.sleep(1)
 
 makeScreen()
+for i in range(1,256):
+    curses.init_pair(i,i, -1)
 infoScreen("Starting Crab Champion Save Manager\nThis may take a few seconds")
 loadSettings()
-
 
 
 
@@ -3235,9 +3428,11 @@ if(uepath == ""):
 else:
     start = time.time()
     loadCache()
-    loadPresets()
     stop = time.time()
-# print(round(stop-start,2))
+    start2 = time.time()
+    loadPresets()
+    stop2 = time.time()
+#print(round(stop2-start,2),"\n","Cache - ",round(stop-start,2),"\n","presets - ",round(stop2-start2,2))
 # exiting(0)
 start = time.time()
 getUnlocked()
