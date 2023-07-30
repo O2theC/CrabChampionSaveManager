@@ -1169,6 +1169,7 @@ def settings():
     global TermHeight
     global TermWidth
     global owd
+    global SaveGamePath
     global RARECOLOR
     global EPICCOLOR
     global LEGENDARYCOLOR
@@ -1347,10 +1348,29 @@ def settings():
                 if choice == 0:
                     break
                 if choice == 1:
-                    folder = folderSelect(SaveGamePath)
+                    while True:
+                        promptUI = "Select option - Currently at " + str(SaveGamePath)
+                        custom = "Choose folder"
+                        optionsUI = [
+                            ["Back", 0, 0],
+                            ["Automatic", 0, 0],
+                        ]  # [custom,0,0]
+                        choice = scrollSelectMenu(promptUI, optionsUI)
+                        if choice == 0:
+                            break
+                        elif choice == 1:
+                            SaveGamePath = "Automatic"
+                            configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
+                            saveSettings()
+                        elif choice == 2:
+                            folder = folderSelect(SaveGamePath)
+                            configJSON["CustomPaths"]["SaveGamePath"] = folder
+                            SaveGamePath = folder
+                            saveSettings()
 
 
 def folderSelect(startDir="Automatic"):
+    closeScreen()
     # Create the main window
     root = tk.Tk()
 
@@ -1359,21 +1379,26 @@ def folderSelect(startDir="Automatic"):
 
     # Show the folder select dialog based on the platform
     if isLinux:
-        folder_dialog = filedialog.Directory()
+        if startDir == "Automatic":
+            folder_dialog = filedialog.Directory()
+        else:
+            folder_dialog = filedialog.Directory(initialdir=startDir)
         root.wait_window(folder_dialog.top)
         folder_path = folder_dialog.path
     else:
-        folder_path = filedialog.askdirectory(
-            initialdir="C:/Users/O2C/AppData/Local/CrabChampions/Saved"
-        )
+        if startDir == "Automatic":
+            # infoScreen("Waiting for folder to be selected")
+            folder_path = filedialog.askdirectory()
+        else:
+            folder_path = filedialog.askdirectory(initialdir=startDir)
 
+    root.destroy()  # Use root.destroy() instead of root.quit()
+    makeScreen()
     if folder_path:
-        with open("selected_folder.txt", "w") as file:
-            file.write(folder_path)
-            print("Folder path saved to 'selected_folder.txt'")
-            print("Folder path is " + str(folder_path))
-
-    root.quit()
+        folder_path = folder_path.replace("\\", "/")
+        return folder_path
+    else:
+        return "Automatic"
 
 
 def colorSelect(currentColor, exampleText="Color Example Text", prompt=""):
