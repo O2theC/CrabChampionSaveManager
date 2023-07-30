@@ -1,6 +1,4 @@
 import os
-import subprocess
-import time
 
 if not os.path.exists("CrabChampionSaveManagerUpdated.exe"):
     print("Update Error: Invalid execution of updater.exe.")
@@ -12,16 +10,10 @@ print("\nUpdating CCSM\nThis may take a few minutes\n3/4")
 try:
     os.remove("CrabChampionSaveManager.exe")
 except:
-    # f = open("no .exe", "w")
-    # f.write("s")
-    # f.close()
     None
 try:
     os.rename("CrabChampionSaveManagerUpdated.exe", "CrabChampionSaveManager.exe")
 except:
-    # f = open("no update.exe", "w")
-    # f.write("s")
-    # f.close()
     None
 
 os.system("start CrabChampionSaveManager.exe")
