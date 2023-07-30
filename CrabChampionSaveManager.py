@@ -10,6 +10,8 @@ import sys
 import json
 import threading
 import re
+import tkinter as tk
+from tkinter import filedialog
 
 
 global isExe
@@ -18,7 +20,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.3.0"
+Version = "3.4.1"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -595,7 +597,7 @@ def ensureLength(string, length):
     return str(string)
 
 
-def currentDirCheck():
+def currentDirCheck(path=os.getcwd()):
     """Checks if the required folders are present in the current directory.
 
     Checks if the folders SaveGames, Logs, and Config exist in the current directory.
@@ -605,7 +607,7 @@ def currentDirCheck():
 
     folder_names = ["SaveGames", "Logs", "Config"]
     for folder_name in folder_names:
-        folder_path = os.path.join(os.getcwd(), folder_name)
+        folder_path = os.path.join(path, folder_name)
         if os.path.exists(folder_path) and os.path.isdir(folder_path):
             None
         else:
@@ -656,13 +658,14 @@ def updateScript():
         "There is a newer version available\nWould you like to update to the latest version?"
     )
     if perm:
-        infoScreen("Updating CCSM\nThis may take a few minutes\n1/3")
-        print("\nUpdating CCSM\nThis may take a few minutes\n2/3")
+        infoScreen("Updating CCSM\nThis may take a few minutes\n1/4")
+        print("\nUpdating CCSM\nThis may take a few minutes\n2/4")
         if isExe:
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe"
         else:
             downloadLatestURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py"
         try:
+            os.chdir(owd)
             updaterURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManagerUpdater.exe"
             meow = False
             response = requests.get(downloadLatestURL)
@@ -680,9 +683,9 @@ def updateScript():
                 propath = os.path.join(owd, updaterURL[updaterURL.rindex("/") + 1 :])
                 with open(propath, "wb") as file:
                     file.write(response.content)
-                os.chdir(owd)
-                subprocess.Popen(["CrabChampionSaveManagerUpdater.exe"], shell=True)
+                os.system("start CrabChampionSaveManagerUpdater.exe")
                 meow = True
+
         except:
             infoScreen(
                 "Could not download latest version\nThis program may be corrupted"
@@ -730,6 +733,14 @@ def scrollSelectMenu(
     defaultColor=0,
     defaultDetails=0,
 ):
+    """
+    details-
+    0 - color text , bold select
+    1 - color text , color select
+    2 - color text , bold select details
+    3 - color text , color select details
+
+    """
     global screen
 
     def moreDeatils(opt, details=False):
@@ -1162,7 +1173,7 @@ def settings():
     global EPICCOLOR
     global LEGENDARYCOLOR
     global GREEDCOLOR
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}}}'
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
     configPath = configPath.replace("\\", "/")
     # Create the directory if it doesn't exist
@@ -1177,7 +1188,7 @@ def settings():
         configJSON = json.loads(defaultJSON)
 
     prompt = "Select setting to edit"
-    options = "Back to main menu\nStart Up Settings\nUI"
+    options = "Back to main menu\nStart Up Settings\nUI\nCustom Paths"
     while True:
         choice = scrollSelectMenu(prompt, options)
         if choice == 0:
@@ -1325,6 +1336,45 @@ def settings():
                             GREEDCOLOR = col
                             saveSettings()
 
+        elif choice == 3:
+            while True:
+                promptUI = "Select setting to edit"
+                optionsUI = [
+                    ["Back", 0, 0],
+                    ["Save Game Path - Currently at " + str(SaveGamePath), 0, 2],
+                ]
+                choice = scrollSelectMenu(promptUI, optionsUI)
+                if choice == 0:
+                    break
+                if choice == 1:
+                    folder = folderSelect(SaveGamePath)
+
+
+def folderSelect(startDir="Automatic"):
+    # Create the main window
+    root = tk.Tk()
+
+    # Hide the main window
+    root.withdraw()
+
+    # Show the folder select dialog based on the platform
+    if isLinux:
+        folder_dialog = filedialog.Directory()
+        root.wait_window(folder_dialog.top)
+        folder_path = folder_dialog.path
+    else:
+        folder_path = filedialog.askdirectory(
+            initialdir="C:/Users/O2C/AppData/Local/CrabChampions/Saved"
+        )
+
+    if folder_path:
+        with open("selected_folder.txt", "w") as file:
+            file.write(folder_path)
+            print("Folder path saved to 'selected_folder.txt'")
+            print("Folder path is " + str(folder_path))
+
+    root.quit()
+
 
 def colorSelect(currentColor, exampleText="Color Example Text", prompt=""):
     colors = ["Back"]
@@ -1348,7 +1398,8 @@ def loadSettings():
     global EPICCOLOR
     global LEGENDARYCOLOR
     global GREEDCOLOR
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}}}'
+    global SaveGamePath
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
 
     configPath = configPath.replace("\\", "/")
@@ -1388,61 +1439,45 @@ def loadSettings():
         RARECOLOR = configJSON["UI"]["Colors"]["RareColor"]
         RARECOLOR = clamp(RARECOLOR, 1, 255)
     except:
-        try:
-            configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
 
     try:
         EPICCOLOR = configJSON["UI"]["Colors"]["EpicColor"]
         EPICCOLOR = clamp(EPICCOLOR, 1, 255)
     except:
-        try:
-            configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
 
     try:
         LEGENDARYCOLOR = configJSON["UI"]["Colors"]["LegendaryColor"]
         LEGENDARYCOLOR = clamp(LEGENDARYCOLOR, 1, 255)
     except:
-        try:
-            configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
 
     try:
         GREEDCOLOR = configJSON["UI"]["Colors"]["GreedColor"]
         GREEDCOLOR = clamp(GREEDCOLOR, 1, 255)
     except:
-        try:
-            configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
+
+    try:
+        SaveGamePath = configJSON["CustomPaths"]["SaveGamePath"]
+        SaveGamePath = SaveGamePath.replace("\\", "/")
+        configJSON["CustomPaths"]["SaveGamePath"] = SaveGamePath
+        if not os.path.exists(SaveGamePath) or not os.path.isdir(SaveGamePath):
+            configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
+            SaveGamePath = "Automatic"
+    except:
+        configJSON.setdefault("CustomPaths", {})
+        configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
+        SaveGamePath = "Automatic"
 
     file.seek(0)
     file.write(json.dumps(configJSON, indent=4))
@@ -4775,20 +4810,25 @@ loadSettings()
 
 
 if currentDirCheck():
-    try:
-        if isLinux:
-            new_dir = os.path.expandvars(
-                "$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved"
+    if SaveGamePath == "Automatic" or currentDirCheck(SaveGamePath):
+        try:
+            if isLinux:
+                new_dir = os.path.expandvars(
+                    "$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved"
+                )
+            else:
+                new_dir = os.path.expandvars(
+                    "%APPDATA%\\..\\Local\\CrabChampions\\Saved"
+                )
+            os.chdir(new_dir)
+        except:
+            infoScreen(
+                "Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . ."
             )
-        else:
-            new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
-        os.chdir(new_dir)
-    except:
-        infoScreen(
-            "Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . ."
-        )
-        screen.getch()
-        exiting(0)
+            screen.getch()
+            exiting(0)
+    else:
+        os.chdir(SaveGamePath)
 
 
 uepath = getUesavePath()
@@ -4837,7 +4877,17 @@ if LatestValue == -1:
 elif VersionValue < LatestValue:
     updateScript()
 elif VersionValue > LatestValue:
-    mainMenuPrompt += "\n\nooohh , you have a version that isn't released yet, nice"
+    mainMenuPrompt += """\n\n
+┌───────────────────────────────────────────────────────────┐
+│                                                           │
+│                   Here be Dragons!                        │
+│                                                           │
+│     This is a development version. Use with caution.      │
+│        Report bugs and provide feedback on GitHub.        │
+│                                                           │
+└───────────────────────────────────────────────────────────┘
+"""
+
 else:
     mainMenuPrompt += "\n\nYou have the latest version"
 
