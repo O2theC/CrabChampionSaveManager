@@ -12,6 +12,7 @@ import threading
 import re
 import tkinter as tk
 from tkinter import filedialog
+import tkinter
 
 
 global isExe
@@ -1354,6 +1355,7 @@ def settings():
                         optionsUI = [
                             ["Back", 0, 0],
                             ["Automatic", 0, 0],
+                            [custom, 0, 0],
                         ]  # [custom,0,0]
                         choice = scrollSelectMenu(promptUI, optionsUI)
                         if choice == 0:
@@ -1370,9 +1372,13 @@ def settings():
 
 
 def folderSelect(startDir="Automatic"):
-    closeScreen()
+    global isLinux
+    global screen
+    # Suspend the curses window
+    curses.endwin()
+
     # Create the main window
-    root = tk.Tk()
+    root = tkinter.Tk()
 
     # Hide the main window
     root.withdraw()
@@ -1387,13 +1393,17 @@ def folderSelect(startDir="Automatic"):
         folder_path = folder_dialog.path
     else:
         if startDir == "Automatic":
-            # infoScreen("Waiting for folder to be selected")
+            print("meow")
             folder_path = filedialog.askdirectory()
         else:
             folder_path = filedialog.askdirectory(initialdir=startDir)
 
-    root.destroy()  # Use root.destroy() instead of root.quit()
-    makeScreen()
+    # Destroy the Tkinter window
+    root.destroy()
+
+    # Restore the curses window
+    screen.refresh()  # or curses.doupdate()
+
     if folder_path:
         folder_path = folder_path.replace("\\", "/")
         return folder_path
