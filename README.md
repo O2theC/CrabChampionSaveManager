@@ -16,14 +16,19 @@ download the program and then run it
 [Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe)  
 ### Linux
 [Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py)  
+# Use:
+just run the file and it should start up
+# Wiki
+i am making a wiki for the program and parts of the game as it relates to CCSM  
+List of maps with pictures : [Maps](https://github.com/O2theC/CrabChampionSaveManager/wiki/Maps)
 <br>  
 <br>  
-use:<br>
+# Use:<br>
   just start the program and it should open a cmd window<br>
 
 
 
-FAQ:<br>
+# FAQ:<br>
 Q: Can I help write and commit code?<br>
 
 A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome<br>
