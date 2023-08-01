@@ -1685,194 +1685,6 @@ def genBackupData(backupName):
         cacheLock.release()
         return
     backupJSON = json.loads("{}")
-    # saveJSON = saveJSON["AutoSave"]
-    # run time in seconds (int) ["CurrentTime"]["Int"]["value"]
-    # score                     ["Points"]["Int"]["value"]
-    # difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override
-    # island num                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
-    # diff mods                ["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
-    # stat elmins              ["Eliminations"]["Int"]["value"]
-    # stat shots fired         ["ShotsFired"]["Int"]["value"]
-    # stat damage dealt        ["DamageDealt"]["Int"]["value"]
-    # stat highest dmg delt    ["HighestDamageDealt"]["Int"]["value"]
-    # stat damage Taken        ["DamageTaken"]["Int"]["value"]
-    # stat flawless islands    ["NumFlawlessIslands"]["Int"]["value"]
-    # stat Items Salvaged      ["NumTimesSalvaged"]["Int"]["value"]
-    # stat Items Purchased     ["NumShopPurchases"]["Int"]["value"]
-    # stat Shop Rerolls        ["NumShopRerolls"]["Int"]["value"]
-    # stat Totems Destroyed    ["NumTotemsDestroyed"]["Int"]["value"]
-    # Crystals                 ["Crystals"]["UInt32"]["value"]
-    # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
-    # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
-    # island name              ["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"]
-    # island type              ["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"]["Name"]["value"]
-    # Health                   ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
-    # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
-    # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
-    # Armor Plate Health       ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
-
-    # Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
-
-    # Items
-    # Weapon Mod Slots           ["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
-    # Weapon Mod Array           ["WeaponMods"]["Array"]["value"]["Struct"]["value"]
-    # Weapon Mod in array item   ["Struct"]["WeaponModDA"]["Object"]["value"] - use parseWeaponMod() to get parsed and formated name
-    # Weapon Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
-
-    # Grenade Mod Slots           ["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
-    # Grenade Mod Array           ["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
-    # Grenade Mod in array item   ["Struct"]["GrenadeModDA"]["Object"]["value"] - use parseGrenadeMod() to get parsed and formated name
-    # Grenade Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
-
-    # Perk Slots           ["NumPerkSlots"]["Byte"]["value"]["Byte"]
-    # Perk Array           ["Perks"]["Array"]["value"]["Struct"]["value"]
-    # Perk in array item   ["Struct"]["PerkDA"]["Object"]["value"] - use parsePerk() to get parsed and formated name
-    # Perk in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
-
-    # for the config json
-    # run time seconds        - ["BackupData"][BackupName]["RunTime"]
-    # score                   - ["BackupData"][BackupName]["Score"]
-    # difficulty              - ["BackupData"][BackupName]["Diff"]
-    # island num              - ["BackupData"][BackupName]["IslandNum"]
-    # diff mods               - ["BackupData"][BackupName]["DiffMods"]
-    # checksum                - ["BackupData"][BackupName]["CheckSum"]
-    # nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
-    # Eliminations            - ["BackupData"][BackupName]["Elimns"]
-    # Shots Fired             - ["BackupData"][BackupName]["ShotsFired"]
-    # Damage Dealt            - ["BackupData"][BackupName]["DmgDealt"]
-    # Most Damage Dealt       - ["BackupData"][BackupName]["MostDmgDealt"]
-    # Damage Taken            - ["BackupData"][BackupName]["DmgTaken"]
-    # Flawless Islands        - ["BackupData"][BackupName]["FlawlessIslands"]
-    # Items Salvaged          - ["BackupData"][BackupName]["ItemsSalvaged"]
-    # Items Purchased         - ["BackupData"][BackupName]["ItemsPurchased"]
-    # Shop Rerolls            - ["BackupData"][BackupName]["ShopRerolls"]
-    # Totems Destroyed        - ["BackupData"][BackupName]["TotemsDestroyed"]
-    # Current Biome           - ["BackupData"][BackupName]["Biome"]
-    # Current Loot Type       - ["BackupData"][BackupName]["LootType"]
-    # island name             - ["BackupData"][BackupName]["IslandName"]
-    # island type             - ["BackupData"][BackupName]["IslandType"]
-    # Crystals                - ["BackupData"][BackupName]["Crystals"]
-    # Heath                   - ["BackupData"][BackupName]["Health"]
-    # Max Health              - ["BackupData"][BackupName]["MaxHealth"]
-    # Armor Plates            - ["BackupData"][BackupName]["ArmorPlates"]
-    # Armor Plate Health      - ["BackupData"][BackupName]["ArmorPlatesHealth"]
-
-    # Inventory               - [backupName]["Inventory"]
-    # Weapon                  - [backupName]["Inventory"]["Weapon"]
-
-    # Weapon Mod Slots        - [backupName]["Inventory"]["WeaponMods"]["Slots"]
-    # Weapon Mods             - [backupName]["Inventory"]["WeaponMods"]["Mods"]
-    # Weapon Mod Name         - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Name"]
-    # Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
-    # Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
-
-    # Grenade Mod Slots       - [backupName]["Inventory"]["GrenadeMods"]["Slots"]
-    # Grenade Mods            - [backupName]["Inventory"]["GrenadeMods"]["Mods"]
-    # Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
-    # Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
-    # Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
-
-    # Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
-    # Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
-    # Perk Name               - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Name"]
-    # Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
-    # Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
-
-    # Island types
-
-    # Arctic
-
-    # Arctic_Arena_01
-    # Arctic_Arena_02
-    # Arctic_Boss_01
-    # Arctic_Boss_02
-    # Arctic_Boss_03
-    # Arctic_Horde_01
-    # Arctic_Horde_02
-    # Arctic_Horde_03
-    # Arctic_Horde_04
-    # Arctic_Horde_05
-    # Arctic_Horde_06
-    # Arctic_Horde_07
-    # Arctic_Horde_08
-    # Arctic_Parkour_01
-
-    # Other
-
-    # Animation
-    # DebugPersistent
-    # MedalLightroom
-
-    # Tropical
-
-    # Tropical_Arena_01
-    # Tropical_Arena_02
-    # Tropical_Arena_03
-    # Tropical_Arena_04
-    # Tropical_Arena_05
-    # Tropical_Arena_06
-    # Tropical_Arena_07
-    # Tropical_Arena_08
-    # Tropical_Boss_01
-    # Tropical_Boss_02
-    # Tropical_Horde_01
-    # Tropical_Horde_02
-    # Tropical_Horde_03
-    # Tropical_Horde_04
-    # Tropical_Horde_05
-    # Tropical_Horde_06
-    # Tropical_Horde_07
-    # Tropical_Parkour_01
-    # Tropical_Shop_01
-
-    # Volcanic
-
-    # Volcanic_Arena_01
-    # Volcanic_Arena_02
-    # Volcanic_Arena_03
-    # Volcanic_Arena_04
-    # Volcanic_Arena_05
-    # Volcanic_Arena_06
-    # Volcanic_Boss_01
-    # Volcanic_Horde_01
-    # Volcanic_Horde_02
-    # Volcanic_Horde_03
-    # Volcanic_Horde_04
-    # Volcanic_Horde_05
-
-    # Island
-
-    # CrabIsland
-    # Lobby
-    # Persistent
-    # Splash
-    # TemplateIsland
-
-    # Island Type
-
-    # Boss - used when going to a Boss battle island, ie lvl 30 boss
-    # Elite - used when going to a Elite battel island , ie not lvl 30 boss
-    # CrabIsland - used when going to crab island for a victory
-    # Arena - used when going to a Arena battle island
-    # Horde - used when going to a Horde battle island
-    # Shop - used when going to a Shop island
-    # Parkour - used when going to a parkour island
-
-    # LootPool
-
-    # ECrabLootPool_MAX
-    # Economy
-    # Elemental
-    # Skill
-    # Health
-    # Random
-    # Upgrade
-    # Critical
-    # Greed
-    # Speed
-    # Damage
-    # Luck
-
     backupJSON[backupName] = {}
     try:
         backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
@@ -2517,21 +2329,103 @@ def backupDetailsScreen(backupName):
     scrollInfoMenu(info, itemRarityColors=True)
     return
 
+def convertSave(save):
+    
+    # By: CJendantix
+    # Original Code
+
+    # To make things simpler, right now this only uses "saves" collected & pre-converted from the cache
+    # but in the future if it's needed this will be changes to work on full saves converted with UESave
+
+    # This is just a JSON preset file which all values were changed to be a placeholder
+    # so that we can create a new preset where we only change specific values,
+    # using a string just happened to be way shorter & more readable rather
+    # than creating an entire dictionary from scratch
+    base = '{"Diff": "","IslandNum": 0,"DiffMods": [],"Crystals": 0,"Biome": "","LootType": "","IslandName": "","IslandType": "","Health": 0,"MaxHealth": 0,"ArmorPlates": 0,"ArmorPlatesHealth": 0,"HealthMultiplier": 0,"DamageMultiplier": 0,"keyTotemItem": false,"Inventory": {"Weapon": "","WeaponMods": {"Slots": 0,"Mods": []},"GrenadeMods": {"Slots": 0,"Mods": []},"Perks": {"Slots": 0,"Perks": []}},"Blessing": "","Challenges": []}'
+    base = json.loads(base)
+
+    # There are a few things in base that we don't want to change or remove so we have to change the values
+    # we want individually
+    base["Diff"] = save["Diff"]
+    base["IslandNum"] = save["IslandNum"]
+    base["DiffMods"] = save["DiffMods"]
+    base["Crystals"] = save["Crystals"]
+    base["Biome"] = save["Biome"]
+    base["LootType"] = save["LootType"]
+    base["IslandName"] = save["IslandName"]
+    base["IslandType"] = save["IslandType"]
+    base["Health"] = save["Health"]
+    base["MaxHealth"] = save["MaxHealth"]
+    base["ArmorPlates"] = save["ArmorPlates"]
+    base["ArmorPlatesHealth"] = save["ArmorPlatesHealth"]
+    base["Inventory"] = save["Inventory"]
+
+    return base
+    
+
+def convertSaveMenu():
+
+    # By: CJendantix
+    # Some code was C+P from other parts as well
+    # Mostly Original
+
+    uesavePath = getUesavePath()
+    current_directory = os.getcwd()
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
+    prompt = "Choose Backup to convert\n(Can't convert current save, try making a backup!)\n"
+    options = "Go back to main menu"
+    for i in range(len(foldersInfo)):
+        options += "\n" + str(foldersInfo[i])
+    choice = scrollSelectMenu(prompt, options, -1, 1)
+    if parseInt(choice) == 0:
+        return
+    backup = copy.deepcopy(cacheJSON["BackupData"][str(folders[parseInt(choice) - 1])])
+    preset = convertSave(backup)
+
+    with open(f"{__file__[:__file__.rfind('/') + 1]}CrabChampionSaveManager/Presets/{str(folders[parseInt(choice) - 1])}.ccsm", 'w') as file:
+        json.dump(preset, file)
+
+def editBackupTUI():
+
+    # By: CJendantix
+    # Some code was C+P from other parts as well
+    # Mostly Original
+
+    current_directory = os.getcwd()
+    foldersInfo = getBackups(moreInfo=1)
+    folders = getBackups()
+    loadPresets()
+    prompt = "Choose Backup to edit\n(Can't edit the current save with our TUI, try making a backup!)\n"
+    options = "Go back to main menu"
+    for i in range(len(foldersInfo)):
+        options += "\n" + str(foldersInfo[i])
+    choice = scrollSelectMenu(prompt, options, -1, 1)
+    if choice == 0:
+        return
+    save = ""
+    savePath = ""
+    save = copy.deepcopy(cacheJSON["BackupData"][str(folders[parseInt(choice) - 2])])
+    savePath = os.path.join(os.path.join(current_directory, str(folders[parseInt(choice) - 2])), "SaveSlot.sav")
+    converted = convertSave(save)
+    editPreset(converted, str(folders[parseInt(choice) - 2]), overriade=True)
+    save = convertPresetToGameSave(converted)
+    with open(savePath, 'w') as file:
+        json.dump(save, file)
+
+    
 
 def manageBackups():
     prompt = "Managing Backups\n"
     options = [
         ["Back-Returns you to the main menu", 0, 2],
-        ["Edit Save-Edit your current save or any of your backups using uesave", 0, 2],
+        ["Edit Save (Raw)-Edit your current save or any of your backups in JSON with your default editor", 0, 2],
+        ["Edit Save (Editor)-Edit your current save or any of your backups with our TUI graphical editor", 0, 2],
         ["Backup Save-Backup up your current save with a name of your choice", 0, 2],
         ["Update Backup-Choose a backup to update using your current save", 0, 2],
         ["Restore Save-Set your current save using a backup", 0, 2],
         ["Delete Backup-Delete a backup", 0, 2],
-        [
-            "List Backups and Backup Details-List backups and some details about, choose a backup to learn more about it",
-            0,
-            2,
-        ],
+        ["List Backups and Backup Details-List backups and some details about, choose a backup to learn more about it", 0, 2]
     ]
     while True:
         choice = scrollSelectMenu(prompt, options)
@@ -2540,14 +2434,16 @@ def manageBackups():
         elif choice == 1:
             editBackupRaw()
         elif choice == 2:
-            backupSave()
+            editBackupTUI()
         elif choice == 3:
-            updateBackup()
+            backupSave()
         elif choice == 4:
-            restoreBackup()
+            updateBackup()
         elif choice == 5:
-            deleteBackup()
+            restoreBackup()
         elif choice == 6:
+            deleteBackup()
+        elif choice == 7:
             listBackups()
 
 
@@ -2559,11 +2455,8 @@ def managePresets():
         ["Use Preset-Set current save or backup using a preset", 0, 3],
         ["Edit Presets-Edit one of your presets", 0, 3],
         ["Delete Preset-Delete a preset", 0, 3],
-        [
-            "List Presets and Preset Details-List all your presets, select a preset to see it's settings",
-            0,
-            3,
-        ],
+        ["Convert Preset-Convert a backup into a preset", 0, 3],
+        ["List Presets and Preset Details-List all your presets, select a preset to see it's settings", 0, 3]
     ]
     while True:
         choice = scrollSelectMenu(prompt, options)
@@ -2578,6 +2471,8 @@ def managePresets():
         elif choice == 4:
             deletePreset()
         elif choice == 5:
+            convertSaveMenu()
+        elif choice == 6:
             listPresets()
 
 
@@ -4281,38 +4176,6 @@ def convertMyItemtoGameItem(MyItemJson):
 def convertPresetToGameSave(preset):
     GameJSON = '{"AutoSave":{"Struct":{"value":{"Struct":{"Difficulty":{"Enum":{"value":"ECrabDifficulty::Normal","enum_type":"ECrabDifficulty"}},"DifficultyModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"NextIslandInfo":{"Struct":{"value":{"Struct":{"Biome":{"Enum":{"value":"ECrabBiome::Tropical","enum_type":"ECrabBiome"}},"CurrentIsland":{"Int":{"value":1}},"IslandName":{"Name":{"value":"Tropical_Arena_01"}},"IslandType":{"Enum":{"value":"ECrabIslandType::Arena","enum_type":"ECrabIslandType"}},"Blessing":{"Enum":{"value":"","enum_type":"ECrabBlessing"}},"ChallengeModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"RewardLootPool":{"Enum":{"value":"ECrabLootPool::Random","enum_type":"ECrabLootPool"}}}},"struct_type":{"Struct":"CrabNextIslandInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthInfo":{"Struct":{"value":{"Struct":{"CurrentArmorPlates":{"Int":{"value":0}},"CurrentArmorPlateHealth":{"Float":{"value":0}},"CurrentHealth":{"Float":{"value":100}},"CurrentMaxHealth":{"Float":{"value":100}}}},"struct_type":{"Struct":"CrabHealthInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthMultiplier":{"Float":{"value":1}},"DamageMultiplier":{"Float":{"value":1}},"WeaponDA":{"Object":{"value":""}},"NumWeaponModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"WeaponMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"WeaponMods","name":"StructProperty","struct_type":{"Struct":"CrabWeaponMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumGrenadeModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"GrenadeMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"GrenadeMods","name":"StructProperty","struct_type":{"Struct":"CrabGrenadeMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumPerkSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"Perks":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"Perks","name":"StructProperty","struct_type":{"Struct":"CrabPerk"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"Crystals":{"UInt32":{"value":0}}}},"struct_type":{"Struct":"CrabAutoSave"},"struct_id":"00000000-0000-0000-0000-000000000000"}}}'
     GameJSON = json.loads(GameJSON)
-    # saveJSON = saveJSON["AutoSave"]
-    # difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override
-    # island num                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
-    # diff mods                ["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
-    # Crystals                 ["Crystals"]["UInt32"]["value"]
-    # Biome                    ["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"]["value"]
-    # Loot Type                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"]["Enum"]["value"]
-    # island name              ["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandName"]["Name"]["value"]
-    # Health                   ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
-    # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
-    # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
-    # Armor Plate Health       ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
-    # HealthMultiplier         ["HealthMultiplier"]["Float"]["value"]
-    # DamageMultiplier         ["DamageMultiplier"]["Float"]["value"]
-
-    # Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
-
-    # Items
-    # Weapon Mod Slots           ["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
-    # Weapon Mod Array           ["WeaponMods"]["Array"]["value"]["Struct"]["value"]
-    # Weapon Mod in array item   ["Struct"]["WeaponModDA"]["Object"]["value"] - use parseWeaponMod() to get parsed and formated name
-    # Weapon Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
-
-    # Grenade Mod Slots           ["NumGrenadeModSlots"]["Byte"]["value"]["Byte"]
-    # Grenade Mod Array           ["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
-    # Grenade Mod in array item   ["Struct"]["GrenadeModDA"]["Object"]["value"] - use parseGrenadeMod() to get parsed and formated name
-    # Grenade Mod in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
-
-    # Perk Slots           ["NumPerkSlots"]["Byte"]["value"]["Byte"]
-    # Perk Array           ["Perks"]["Array"]["value"]["Struct"]["value"]
-    # Perk in array item   ["Struct"]["PerkDA"]["Object"]["value"] - use parsePerk() to get parsed and formated name
-    # Perk in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
     # print(GameJSON.keys())
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
         "value"
@@ -4935,20 +4798,6 @@ while True:
     # options = "Manage Backups\nInfo/How to use\nSettings\nExit"
     # options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
     choice = scrollSelectMenu(mainMenuPrompt, options, -1, 1) + 1
-    # if(choice == 1):
-    #     editBackup() # turned to curse
-    # elif(choice == 2):
-    #     backupSave()
-    # elif(choice == 3):
-    #     updateBackup() # turned to curse
-    # elif(choice == 4):
-    #     restoreBackup()# turned to curse
-    # elif(choice == 5):
-    #     deleteBackup() # turned to curse
-    # elif(choice == 6):
-    #     listBackups()
-    # if(choice>1):
-    #     choice+=1
     if choice == 1:
         manageBackups()
     elif choice == 2:
