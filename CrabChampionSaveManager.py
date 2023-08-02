@@ -22,7 +22,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.4.0"
+Version = "3.5.0"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -1632,7 +1632,9 @@ def loadCache():
         CurrentSaveCacheCS = cacheJSON["BackupData"]["Current Save"]["CheckSum"]
     except BaseException:
         CurrentSaveCacheCS = ""
-    if CurrentSaveCS != CurrentSaveCacheCS:
+    if CurrentSaveCS != CurrentSaveCacheCS or versionToValue(
+        cacheVersion
+    ) < versionToValue(Version):
         t = threading.Thread(target=genBackupData, args=("SaveGames",))
         t.start()
         threads.append(t)
@@ -1931,28 +1933,36 @@ def genBackupData(backupName):
     except BaseException:
         backupJSON[backupName]["DiffMods"] = []
     try:
-        backupJSON[backupName]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
+        backupJSON[backupName]["Elimns"] = toUInt32(
+            saveJSON["Eliminations"]["Int"]["value"]
+        )
     except BaseException:
         backupJSON[backupName]["Elimns"] = 0
     try:
-        backupJSON[backupName]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
+        backupJSON[backupName]["ShotsFired"] = toUInt32(
+            saveJSON["ShotsFired"]["Int"]["value"]
+        )
     except BaseException:
         backupJSON[backupName]["ShotsFired"] = 0
 
     try:
-        backupJSON[backupName]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
+        backupJSON[backupName]["DmgDealt"] = toUInt32(
+            saveJSON["DamageDealt"]["Int"]["value"]
+        )
     except BaseException:
         backupJSON[backupName]["DmgDealt"] = 0
 
     try:
-        backupJSON[backupName]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"][
-            "value"
-        ]
+        backupJSON[backupName]["MostDmgDealt"] = toUInt32(
+            saveJSON["HighestDamageDealt"]["Int"]["value"]
+        )
     except BaseException:
         backupJSON[backupName]["MostDmgDealt"] = 0
 
     try:
-        backupJSON[backupName]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
+        backupJSON[backupName]["DmgTaken"] = toUInt32(
+            saveJSON["DamageTaken"]["Int"]["value"]
+        )
     except BaseException:
         backupJSON[backupName]["DmgTaken"] = 0
 
@@ -1993,18 +2003,21 @@ def genBackupData(backupName):
     ]
 
     try:
-        backupJSON[backupName]["Blessings"] = saveJSON["NextIslandInfo"]["Struct"][
-            "value"
-        ]["Struct"]["Blessing"]["Enum"]["value"][len("ECrabBlessing::") :]
+        backupJSON[backupName]["Blessings"] = [
+            saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Blessing"]["Enum"][
+                "value"
+            ][len("ECrabBlessing::") :]
+        ]
     except BaseException:
-        backupJSON[backupName]["Blessings"] = "None"
+        backupJSON[backupName]["Blessings"] = []
 
     try:
         array = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"][
             "ChallengeModifiers"
         ]["Array"]["value"]["Base"]["Enum"]
         for i in range(len(array)):
-            array[i] = spaceBeforeUpper(array[i][len("ECrabChallengeModifier") :])
+            array[i] = spaceBeforeUpper(array[i][len("ECrabChallengeModifier") + 2 :])
+        backupJSON[backupName]["Challenges"] = array
     except BaseException:
         backupJSON[backupName]["Challenges"] = []
 
@@ -2143,6 +2156,27 @@ def genBackupData(backupName):
     cacheLock.release()
     stop = time.time()
     # print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -ue  ")+str(round(ueStop-ueStart,2)))
+
+
+def toUInt32(value):
+    """
+    Converts a signed 32-bit integer to its equivalent unsigned 32-bit integer representation.
+
+    Args:
+        value (int): The signed 32-bit integer value to be converted. It should be in the range of -2147483648 to 2147483647.
+
+    Returns:
+        int: The unsigned 32-bit integer equivalent of the input value.
+
+    Example:
+        >>> toUInt32(123)
+        123
+        >>> toUInt32(-456)
+        4294966840
+    """
+    if value < 0:
+        return abs(value) + 2147483647
+    return value
 
 
 def formatTime(s):
@@ -2305,6 +2339,16 @@ def parseWeaponRank(rank):
 
 
 def formatNumber(num=0, decimal_places=0):
+    """
+    Formats a number with the specified number of decimal places and adds comma separators for thousands.
+
+    Parameters:
+    num (float): The number to be formatted (default is 0).
+    decimal_places (int): The number of decimal places to display (default is 0).
+
+    Returns:
+    str: A string representation of the formatted number.
+    """
     return "{:,.{}f}".format(num, decimal_places)
 
 
@@ -2391,6 +2435,16 @@ def backupDetailsScreen(backupName):
         "\n"
         + ensureLength("Armor Plate Health:", leng)
         + str(formatNumber(backupJSON["ArmorPlatesHealth"], 0))
+    )
+    info += (
+        "\n"
+        + ensureLength("Health Multiplier:", leng)
+        + str(formatNumber(backupJSON["HealthMultiplier"], 3))
+    )
+    info += (
+        "\n"
+        + ensureLength("Damage Multiplier:", leng)
+        + str(formatNumber(backupJSON["DamageMultiplier"], 3))
     )
     info += (
         "\n"
@@ -2482,6 +2536,16 @@ def backupDetailsScreen(backupName):
     if len(backupJSON["DiffMods"]) > 0:
         info += "\nDifficulty Modifiers: "
         for diffMod in backupJSON["DiffMods"]:
+            info += "\n" + indent + str(diffMod)
+    info += "\n"
+    if len(backupJSON["Challenges"]) > 0:
+        info += "\nChallenges: "
+        for diffMod in backupJSON["Challenges"]:
+            info += "\n" + indent + str(diffMod)
+    info += "\n"
+    if len(backupJSON["Blessings"]) > 0:
+        info += "\nBlessings: "
+        for diffMod in backupJSON["Blessings"]:
             info += "\n" + indent + str(diffMod)
     info += "\n"
     info += "\n" + ensureLength("Weapon:", leng) + str(backupJSON["Inventory"]["Weapon"])
@@ -2909,7 +2973,7 @@ def genPlayerData(saveJSON, checksum):
 
 
 def createPreset():
-    defaultPreset = '{"Diff":"Normal","IslandNum":1,"DiffMods":[],"Blessing":[],"Challenges":[],"Crystals":0,"Biome":"Tropical","LootType":"Random Loot Type","IslandName":"Tropical Arena Island","IslandType":"Automatic","Health":100,"MaxHealth":100,"ArmorPlates":0,"ArmorPlatesHealth":0,"HealthMultiplier":1,"DamageMultiplier":1,"keyTotemItem":false,"Inventory":{"Weapon":"Lobby Dependant","WeaponMods":{"Slots":24,"Mods":[]},"GrenadeMods":{"Slots":24,"Mods":[]},"Perks":{"Slots":24,"Perks":[]}}}'
+    defaultPreset = '{"Diff":"Normal","IslandNum":1,"DiffMods":[],"Blessings":[],"Challenges":[],"Crystals":0,"Biome":"Tropical","LootType":"Random Loot Type","IslandName":"Tropical Arena Island","IslandType":"Automatic","Health":100,"MaxHealth":100,"ArmorPlates":0,"ArmorPlatesHealth":0,"HealthMultiplier":1,"DamageMultiplier":1,"keyTotemItem":false,"Inventory":{"Weapon":"Lobby Dependant","WeaponMods":{"Slots":24,"Mods":[]},"GrenadeMods":{"Slots":24,"Mods":[]},"Perks":{"Slots":24,"Perks":[]}}}'
     preset = json.loads(defaultPreset)
     prompt = "What should the preset be named?\nEnter nothing to go back"
     name = backupNameMenu(prompt, escape="", escapeReturn="")
@@ -3318,6 +3382,13 @@ def editPreset(preset, name, overriade=False, cancel=True):
         if len(presetJSON["Challenges"]) < len(CHALLENGES):
             info += "\n" + indent + str("Add Challenge")
         info += "\n"
+        info += "\nBlessings: "
+        if len(presetJSON["Blessings"]) > 0:
+            for diffMod in presetJSON["Blessings"]:
+                info += "\n" + indent + diffMod + " - " + BlessingsDetails(diffMod)
+        if len(presetJSON["Blessings"]) < len("1"):
+            info += "\n" + indent + str("Add Blessing")
+        info += "\n"
         info += (
             "\n" + ensureLength("Weapon:", leng) + str(presetJSON["Inventory"]["Weapon"])
         )
@@ -3415,6 +3486,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 "Difficulty Modifiers: ",
                 "Items:",
                 "Challenges: ",
+                "Blessings: ",
             ],
             startChoice=choice,
             scrollWindowStart=window,
@@ -3696,6 +3768,15 @@ def editPreset(preset, name, overriade=False, cancel=True):
             )
             presetJSON["Challenges"] = diffmods
 
+        elif info[choice].replace(indent, "") in BLESSINGS:
+            diffmods = presetJSON["Blessings"]
+            diffmods.remove(
+                info[choice].replace(indent, "")[
+                    : info[choice].replace(indent, "").index(" - ")
+                ]
+            )
+            presetJSON["Blessings"] = diffmods
+
         elif "Add Difficulty Modifer" in info[choice]:
             diffmods = DIFFMODS.copy()
             for diffmod in presetJSON["DiffMods"]:
@@ -3724,6 +3805,20 @@ def editPreset(preset, name, overriade=False, cancel=True):
             odiffmods = presetJSON["Challenges"]
             odiffmods.append(diffmod)
             presetJSON["Challenges"] = odiffmods
+
+        elif "Add Blessing" in info[choice]:
+            diffmods = BLESSINGS.copy()
+            for diffmod in presetJSON["Blessings"]:
+                diffmods.remove(diffmod + " - " + BlessingsDetails(diffmod))
+            prompt = "Select Blessing to add\n"
+            odiffmods = diffmods.copy()
+            for i in range(len(diffmods)):
+                diffmods[i] = diffmods[i]
+            diffmod = odiffmods[scrollSelectMenu(prompt, diffmods, defaultDetails=2)]
+            diffmod = diffmod[: diffmod.index(" - ")]
+            odiffmods = presetJSON["Blessings"]
+            odiffmods.append(diffmod)
+            presetJSON["Blessings"] = odiffmods
 
         elif (
             ":" in info[choice]
@@ -3931,6 +4026,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 mods.append(mod)
                 presetJSON["Inventory"]["Perks"]["Perks"] = mods
                 break
+
         elif choice == 0:
             can = False
             if os.path.exists(
@@ -3941,6 +4037,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
                     break
             else:
                 break
+
         elif "Cancel" in info[choice]:
             can = True
             break
@@ -3957,6 +4054,13 @@ def editPreset(preset, name, overriade=False, cancel=True):
 
 def ChallengesDetails(chall):
     for ch in CHALLENGES:
+        if chall in ch:
+            return ch[ch.index(" - ") + 3 :]
+    return None
+
+
+def BlessingsDetails(chall):
+    for ch in BLESSINGS:
         if chall in ch:
             return ch[ch.index(" - ") + 3 :]
     return None
@@ -4390,12 +4494,17 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
     #     array.append("ECrabDifficultyModifier:0:"+dif.replace(" ",""))
     # GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"] = array
 
-    if preset["Blessing"] != "":
-        GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-            "value"
-        ]["Struct"]["Blessing"]["Enum"]["value"] = (
-            "ECrabBlessing::" + preset["Blessing"]
-        )
+    if preset["Blessings"] != []:
+        if "Flawless" in preset["Blessings"]:
+            GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
+                "value"
+            ]["Struct"]["Blessing"]["Enum"]["value"] = "ECrabBlessing::Flawless"
+        else:
+            GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
+                "value"
+            ]["Struct"]["Blessing"]["Enum"]["value"] = (
+                "ECrabBlessing::" + preset["Blessings"][0]
+            )
     else:
         GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
             "value"
@@ -4654,9 +4763,9 @@ def updatePreset(preset):
         preset["keyTotemItem"] = False
 
     try:
-        preset["Blessing"]
+        preset["Blessings"]
     except BaseException:
-        preset["Blessing"] = ""
+        preset["Blessings"] = []
 
     try:
         preset["Challenges"]
@@ -4780,7 +4889,7 @@ global RARECOLOR
 global EPICCOLOR
 global LEGENDARYCOLOR
 global GREEDCOLOR
-BLESSINGS = ["Flawless"]
+BLESSINGS = ["Flawless - Get an extra reward chest if you don't take any damage"]
 CHALLENGES = [
     "One Hit - Enemies can be eliminated in one hit but so can you",
     "Energy Rings - Enemies spawn energy rings when eliminated",
