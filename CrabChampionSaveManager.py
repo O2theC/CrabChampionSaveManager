@@ -10,6 +10,10 @@ import sys
 import json
 import threading
 import re
+import tkinter as tk
+from tkinter import filedialog
+import tkinter
+import traceback
 
 
 global isExe
@@ -18,13 +22,32 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.3.1"
+Version = "3.4.0"
 
 if platform.system() == "Linux":
     isLinux = True
 
 if getattr(sys, "frozen", False):
     isExe = True
+
+
+def unhandledExeceptionHandle(exc_type, exc_value, exc_traceback):
+    infoScreen(
+        "Execption\nType : "
+        + str(exc_type)
+        + "\nValue : "
+        + str(exc_value)
+        + "\nTraceback : "
+        + str(exc_traceback)
+    )
+    f = open("traceback.log", "w")
+    f.write(str(exc_traceback))
+    f.close()
+    time.sleep(10)
+    pass
+
+
+sys.excepthook = unhandledExeceptionHandle
 
 
 def closeScreen():
@@ -41,7 +64,7 @@ def exiting(var):
         screen.clear()
         closeScreen()
         saveSettings()
-    except:
+    except BaseException:
         None
     if var == 0:
         sys.exit(0)
@@ -52,7 +75,7 @@ def exiting(var):
 try:
     import requests
     import curses
-except:
+except BaseException:
     print("Not all libraries are installed")
     perm = input("Permission to download libraries? [y/N]\n")
     if "y" in perm.lower():
@@ -111,7 +134,7 @@ def parseInt(input_string):
     """Converts the input string to an integer if possible, otherwise returns -1."""
     try:
         return int(input_string)
-    except:
+    except BaseException:
         return -1
 
 
@@ -209,7 +232,7 @@ def isValidFolderName(folder_name):
 def backupNameMenu(prompt, escape=None, name="", escapeReturn=None):
     global screen
 
-    if type(prompt) == type(""):
+    if isinstance(prompt, type("")):
         prompt = prompt.split("\n")
 
     curstate = curses.curs_set(1)
@@ -258,7 +281,7 @@ def backupSave():
             escape="",
             escapeReturn="",
         )
-        if not saveName in folders:
+        if saveName not in folders:
             confirm = True
         else:
             ans = yornMenu("There is already a backup by that name. Overwrite?")
@@ -332,10 +355,8 @@ def restoreBackup():
     infoScreen("3/8")
     try:
         autoSaveJson = copy.deepcopy(backupJSON["root"]["properties"]["AutoSave"])
-    except:
-        scrollInfoMenu(
-            "Selected backup has no save\nPress Enter to return to main menu"
-        )
+    except BaseException:
+        scrollInfoMenu("Selected backup has no save\nPress Enter to return to main menu")
         return
     infoScreen("4/8")
     try:
@@ -373,7 +394,7 @@ def restoreBackup():
 def editBackupRaw():
     global isExe
     """Edits a backup of the save game.
-    
+
     Displays the available backups and prompts the user to choose one.
     If a backup is selected, it opens the SaveSlot.sav file for editing
     using the uesave tool. Two backup copies (SaveSlotBackupA.sav and SaveSlotBackupB.sav)
@@ -419,7 +440,7 @@ def editBackupRaw():
     try:
         os.remove(saveBackA)
         os.remove(saveBackB)
-    except:
+    except BaseException:
         None
     shutil.copy(sf, saveBackA)
     shutil.copy(sf, saveBackB)
@@ -458,11 +479,12 @@ def deleteBackup():
 def listBackups():
     global screen
     """Lists all the available backups of the save game.
-    
+
     Retrieves the list of backup folders and displays them to the user.
     """
 
-    # current time in seconds - ["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]["CurrentTime"]["Int"]["value"]
+    # current time in seconds -
+    # ["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]["CurrentTime"]["Int"]["value"]
 
     loadCache()
     current_directory = os.getcwd()
@@ -490,7 +512,7 @@ def listBackups():
 def getBackups(moreInfo=0, currentSave=False):
     global cacheJSON
     """Retrieves the list of backup folders.
-    
+
     Searches the current directory for backup folders and returns a list of their names.
     """
 
@@ -500,7 +522,7 @@ def getBackups(moreInfo=0, currentSave=False):
         items.remove("SaveGames")
         items.remove("Config")
         items.remove("Logs")
-    except:
+    except BaseException:
         None
     folders = [
         item for item in items if os.path.isdir(os.path.join(current_directory, item))
@@ -548,9 +570,7 @@ def getBackups(moreInfo=0, currentSave=False):
                     )
                     maxLenIsland = max(
                         maxLenIsland,
-                        len(
-                            "Island: " + str(cacheJSON["BackupData"][name]["IslandNum"])
-                        ),
+                        len("Island: " + str(cacheJSON["BackupData"][name]["IslandNum"])),
                     )
                     maxLenScore = max(
                         maxLenScore,
@@ -595,7 +615,7 @@ def ensureLength(string, length):
     return str(string)
 
 
-def currentDirCheck():
+def currentDirCheck(path=os.getcwd()):
     """Checks if the required folders are present in the current directory.
 
     Checks if the folders SaveGames, Logs, and Config exist in the current directory.
@@ -605,7 +625,7 @@ def currentDirCheck():
 
     folder_names = ["SaveGames", "Logs", "Config"]
     for folder_name in folder_names:
-        folder_path = os.path.join(os.getcwd(), folder_name)
+        folder_path = os.path.join(path, folder_name)
         if os.path.exists(folder_path) and os.path.isdir(folder_path):
             None
         else:
@@ -645,7 +665,7 @@ def versionToValue(version):
         value += int(points[1]) * 1000
         value += int(points[2])
         return int(value)
-    except:
+    except BaseException:
         return -1
 
 
@@ -684,10 +704,8 @@ def updateScript():
                 os.system("start CrabChampionSaveManagerUpdater.exe")
                 meow = True
 
-        except:
-            infoScreen(
-                "Could not download latest version\nThis program may be corrupted"
-            )
+        except BaseException:
+            infoScreen("Could not download latest version\nThis program may be corrupted")
             time.sleep(2)
             exiting(1)
         if meow:
@@ -710,7 +728,7 @@ def makeScreen():
     try:
         curses.start_color()
         curses.use_default_colors()
-    except:
+    except BaseException:
         None
 
 
@@ -730,7 +748,16 @@ def scrollSelectMenu(
     skipColor=[],
     defaultColor=0,
     defaultDetails=0,
+    returnAnything=False,
 ):
+    """
+    details-
+    0 - color text , bold select
+    1 - color text , color select
+    2 - color text , bold select details
+    3 - color text , color select details
+
+    """
     global screen
 
     def moreDeatils(opt, details=False):
@@ -739,7 +766,7 @@ def scrollSelectMenu(
         try:
             optio = opt[: opt.index("-")]
             detail = opt[opt.index("-") + 1 :]
-        except:
+        except BaseException:
             optio = opt
             detail = ""
             details = False
@@ -767,9 +794,9 @@ def scrollSelectMenu(
                     return GREEDCOLOR
         return 0
 
-    if type(options) == type(""):
+    if isinstance(options, type("")):
         options = options.split("\n")
-    if type(prompt) == type(""):
+    if isinstance(prompt, type("")):
         prompt = prompt.split("\n")
 
     if win_height == -1:
@@ -803,26 +830,26 @@ def scrollSelectMenu(
         for i, option in enumerate(options):
             if i >= scroll_window and i < scroll_window + win_height:
                 textArray = [["text", defaultColor, defaultDetails]]
-                if type(option) != type([]):
+                if not isinstance(option, type([])):
                     textArray[0][0] = str(option)
                     option = textArray.copy()
-                elif type(option[0]) != type([]) and type(option) == type([]):
+                elif not isinstance(option[0], type([])) and isinstance(option, type([])):
                     option = [option]
                 else:
                     for ii in range(len(option)):
-                        if type(option[ii]) != type([]) or len(option[ii]) == 0:
+                        if not isinstance(option[ii], type([])) or len(option[ii]) == 0:
                             option[ii] = [str(option[ii]), 0, 0]
                         else:
                             ar = option[ii]
                             l = len(ar)
                             option[ii] = [str(ar[0]), 0, 0]
                             if l > 1:
-                                if type(ar[1]) == type(1):
+                                if isinstance(ar[1], type(1)):
                                     option[ii][1] = ar[ii]
                                 else:
                                     option[ii][1] = 0
                             if l > 2:
-                                if type(ar[2]) == type(1):
+                                if isinstance(ar[2], type(1)):
                                     option[ii][2] = ar[2]
                                 else:
                                     option[ii][2] = 0
@@ -969,7 +996,15 @@ def scrollSelectMenu(
             selected_option = len(options) - 1
         elif key == curses.KEY_DOWN and selected_option == len(options) - 1 and loop:
             selected_option = 0
-        # if the selected item goes out of the effective window then the scrolling window moves up or down to keep the selective item in the effective window, the effective window is in the center of the scrolling window and is scrolling_window_size-(buffer_size*2) = effective_window_size, and effective window size can not be smaller than 1 and not any larger than scrolling_window_size
+        elif key != -1 and returnAnything:
+            return key
+
+        # if the selected item goes out of the effective window then the scrolling
+        # window moves up or down to keep the selective item in the effective
+        # window, the effective window is in the center of the scrolling window
+        # and is scrolling_window_size-(buffer_size*2) = effective_window_size,
+        # and effective window size can not be smaller than 1 and not any larger
+        # than scrolling_window_size
         if selected_option < scroll_window + buffer_size and scroll_window > 0:
             while selected_option < scroll_window + buffer_size and scroll_window > 0:
                 scroll_window -= 1
@@ -995,7 +1030,7 @@ def scrollInfoMenu(
 ):
     global screen
 
-    if type(info) == type(""):
+    if isinstance(info, type("")):
         info = info.split("\n")
     if window_height == -1:
         autoSize = True
@@ -1098,7 +1133,7 @@ def userInputMenuNum(
 ):
     global screen
 
-    if type(prompt) == type(""):
+    if isinstance(prompt, type("")):
         prompt = prompt.split("\n")
 
     curstate = curses.curs_set(1)
@@ -1128,12 +1163,12 @@ def userInputMenuNum(
                         return int(num)
                     elif int(num) == escape:
                         return default
-            except:
+            except BaseException:
                 if num == escape:
                     return default
         else:
             if key in range(48, 58) or (key == 46 and decimal):
-                if not "." in num:
+                if "." not in num:
                     num += chr(key)
                 elif key != 46:
                     num += chr(key)
@@ -1150,7 +1185,7 @@ def userInputMenuNum(
                     num = str(lowLimit + 1)
                 elif not numint < highLimit:
                     num = str(highLimit - 1)
-        except:
+        except BaseException:
             None
 
 
@@ -1159,11 +1194,12 @@ def settings():
     global TermHeight
     global TermWidth
     global owd
+    global SaveGamePath
     global RARECOLOR
     global EPICCOLOR
     global LEGENDARYCOLOR
     global GREEDCOLOR
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}}}'
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
     configPath = configPath.replace("\\", "/")
     # Create the directory if it doesn't exist
@@ -1174,11 +1210,11 @@ def settings():
     file = open(configPath, "r+")
     try:
         configJSON = json.loads(file.read())
-    except:
+    except BaseException:
         configJSON = json.loads(defaultJSON)
 
     prompt = "Select setting to edit"
-    options = "Back to main menu\nStart Up Settings\nUI"
+    options = "Back to main menu\nStart Up Settings\nUI\nCustom Paths"
     while True:
         choice = scrollSelectMenu(prompt, options)
         if choice == 0:
@@ -1209,7 +1245,7 @@ def settings():
                                     prompt, escape=0, lowLimit=-1, default=TermHeight
                                 )
                                 saveSettings()
-                            except:
+                            except BaseException:
                                 None
                         elif choice == 2:
                             try:
@@ -1220,15 +1256,15 @@ def settings():
                                     prompt, escape=0, lowLimit=-1, defailt=TermWidth
                                 )
                                 saveSettings()
-                            except:
+                            except BaseException:
                                 None
                         elif choice == 3:
                             screen.nodelay(True)
                             curstate = curses.curs_set(0)
                             while True:
-                                time.sleep(
-                                    0.05
-                                )  # limits loop speed , should fix terminal flickering noticed on linux
+                                # limits loop speed , should fix terminal flickering
+                                # noticed on linux
+                                time.sleep(0.05)
                                 screen.clear()
 
                                 screen.addstr(
@@ -1238,9 +1274,7 @@ def settings():
                                     1, 0, "Current Width : " + str(screen.getmaxyx()[1])
                                 )
                                 screen.addstr(
-                                    2,
-                                    0,
-                                    "Current Height : " + str(screen.getmaxyx()[0]),
+                                    2, 0, "Current Height : " + str(screen.getmaxyx()[0])
                                 )
                                 screen.addstr(
                                     3,
@@ -1326,6 +1360,78 @@ def settings():
                             GREEDCOLOR = col
                             saveSettings()
 
+        elif choice == 3:
+            while True:
+                promptUI = "Select setting to edit"
+                optionsUI = [
+                    ["Back", 0, 0],
+                    ["Save Game Path - Currently at " + str(SaveGamePath), 0, 2],
+                ]
+                choice = scrollSelectMenu(promptUI, optionsUI)
+                if choice == 0:
+                    break
+                if choice == 1:
+                    while True:
+                        promptUI = "Select option - Currently at " + str(SaveGamePath)
+                        custom = "Choose folder"
+                        optionsUI = [["Back", 0, 0], ["Automatic", 0, 0]]  # [custom,0,0]
+                        choice = scrollSelectMenu(promptUI, optionsUI)
+                        if choice == 0:
+                            break
+                        elif choice == 1:
+                            SaveGamePath = "Automatic"
+                            configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
+                            saveSettings()
+                        elif choice == 2:
+                            folder = folderSelect(SaveGamePath)
+                            configJSON["CustomPaths"]["SaveGamePath"] = folder
+                            SaveGamePath = folder
+                            saveSettings()
+
+
+def folderSelect(startDir="Automatic"):
+    global isLinux
+    global screen
+    # Suspend the curses window
+    # curses.endwin()
+
+    # Create the main window
+    root = tkinter.Tk()
+
+    # Hide the main window
+    root.withdraw()
+
+    # Show the folder select dialog based on the platform
+    if isLinux:
+        if startDir == "Automatic":
+            folder_dialog = filedialog.Directory()
+        else:
+            folder_dialog = filedialog.Directory(initialdir=startDir)
+        root.wait_window(folder_dialog.top)
+        folder_path = folder_dialog.path
+    else:
+        if startDir == "Automatic":
+            print("meow")
+            infoScreen("meowasd")
+            folder_path = filedialog.askdirectory(
+                title="Select Save Game Folder", mustexist=True
+            )
+            print(":123123")
+        else:
+            folder_path = filedialog.askdirectory(initialdir=startDir)
+
+    # Destroy the Tkinter window
+    root.destroy()
+
+    # Restore the curses window
+    # screen.refresh()  # or curses.doupdate()
+
+    if folder_path:
+        folder_path = folder_path.replace("\\", "/")
+        return folder_path
+    else:
+        return "Automatic"
+
 
 def colorSelect(currentColor, exampleText="Color Example Text", prompt=""):
     colors = ["Back"]
@@ -1349,7 +1455,8 @@ def loadSettings():
     global EPICCOLOR
     global LEGENDARYCOLOR
     global GREEDCOLOR
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}}}'
+    global SaveGamePath
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
 
     configPath = configPath.replace("\\", "/")
@@ -1362,7 +1469,7 @@ def loadSettings():
 
     try:
         file = open(configPath, "r+")
-    except:
+    except BaseException:
         file = open(configPath, "w")
         file.close()
         file = open(configPath, "r+")
@@ -1374,76 +1481,60 @@ def loadSettings():
     try:
         TermHeight = configJSON["Start_Up"]["Terminal_Size"]["Height"]
         TermHeight = max(TermHeight, 1)
-    except:
+    except BaseException:
         configJSON["Start_Up"]["Terminal_Size"]["Height"] = 30
         TermHeight = 30
 
     try:
         TermWidth = configJSON["Start_Up"]["Terminal_Size"]["Width"]
         TermWidth = max(TermWidth, 1)
-    except:
+    except BaseException:
         configJSON["Start_Up"]["Terminal_Size"]["Width"] = 120
         TermWidth = 120
 
     try:
         RARECOLOR = configJSON["UI"]["Colors"]["RareColor"]
         RARECOLOR = clamp(RARECOLOR, 1, 255)
-    except:
-        try:
-            configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
+    except BaseException:
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["RareColor"] = RARECOLOR
 
     try:
         EPICCOLOR = configJSON["UI"]["Colors"]["EpicColor"]
         EPICCOLOR = clamp(EPICCOLOR, 1, 255)
-    except:
-        try:
-            configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
+    except BaseException:
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["EpicColor"] = EPICCOLOR
 
     try:
         LEGENDARYCOLOR = configJSON["UI"]["Colors"]["LegendaryColor"]
         LEGENDARYCOLOR = clamp(LEGENDARYCOLOR, 1, 255)
-    except:
-        try:
-            configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
+    except BaseException:
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["LegendaryColor"] = LEGENDARYCOLOR
 
     try:
         GREEDCOLOR = configJSON["UI"]["Colors"]["GreedColor"]
         GREEDCOLOR = clamp(GREEDCOLOR, 1, 255)
-    except:
-        try:
-            configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
-        except:
-            try:
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
-            except:
-                configJSON["UI"] = {}
-                configJSON["UI"]["Colors"] = {}
-                configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
+    except BaseException:
+        configJSON.setdefault("UI", {})
+        configJSON.setdefault("Colors", {})
+        configJSON["UI"]["Colors"]["GreedColor"] = GREEDCOLOR
+
+    try:
+        SaveGamePath = configJSON["CustomPaths"]["SaveGamePath"]
+        SaveGamePath = SaveGamePath.replace("\\", "/")
+        configJSON["CustomPaths"]["SaveGamePath"] = SaveGamePath
+        if not os.path.exists(SaveGamePath) or not os.path.isdir(SaveGamePath):
+            configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
+            SaveGamePath = "Automatic"
+    except BaseException:
+        configJSON.setdefault("CustomPaths", {})
+        configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
+        SaveGamePath = "Automatic"
 
     file.seek(0)
     file.write(json.dumps(configJSON, indent=4))
@@ -1505,14 +1596,14 @@ def loadCache():
 
     try:
         file = open(cachePath, "r+")
-    except:
+    except BaseException:
         file = open(cachePath, "w")
         file.close()
         noCache = True
         file = open(cachePath, "r+")
     try:
         cacheJSON = json.loads(file.read())
-    except:
+    except BaseException:
         cacheJSON = json.loads("{}")
         noCache = True
     if noCache:
@@ -1521,18 +1612,16 @@ def loadCache():
     threads = []
     try:
         cacheVersion = cacheJSON["Version"]
-    except:
+    except BaseException:
         cacheJSON["Version"] = Version
         cacheVersion = "0.0.0"
     for backup in backups:
         currentCS = getChecksum(backup + "/SaveSlot.sav")
         try:
             cacheCS = cacheJSON["BackupData"][backup]["CheckSum"]
-        except:
+        except BaseException:
             cacheCS = ""
-        if currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(
-            Version
-        ):
+        if currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(Version):
             t = threading.Thread(target=genBackupData, args=(backup,))
             t.start()
             threads.append(t)
@@ -1541,7 +1630,7 @@ def loadCache():
     )
     try:
         CurrentSaveCacheCS = cacheJSON["BackupData"]["Current Save"]["CheckSum"]
-    except:
+    except BaseException:
         CurrentSaveCacheCS = ""
     if CurrentSaveCS != CurrentSaveCacheCS:
         t = threading.Thread(target=genBackupData, args=("SaveGames",))
@@ -1556,6 +1645,10 @@ def loadCache():
 
 
 def spaceBeforeUpper(string):
+    """puts spaces before every upper case letter in the string except for the first character in the string
+
+    returns the result
+    """
     if string == "FMJ":
         return string
     result = string[0]  # The first uppercase letter should not have a space before it
@@ -1605,10 +1698,14 @@ def genBackupData(backupName):
         backupName = "Current Save"
         genPlayerData(saveJSON, checksum)
     try:
-        saveJSON = saveJSON["root"]["properties"]["AutoSave"]["Struct"]["value"][
-            "Struct"
-        ]
-    except:
+        raw = saveJSON["root"]["properties"]
+        saveJSON = saveJSON["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]
+        for k in raw.copy().keys():
+            if k != "AutoSave":
+                raw.pop(k)
+    except BaseException as e:
+        traceback.print_exception(e)
+        traceback.print_stack(e)
         cacheLock.acquire()
         cacheJSON["BackupData"][backupName] = {}
         cacheJSON["BackupData"][backupName]["CheckSum"] = checksum
@@ -1640,9 +1737,11 @@ def genBackupData(backupName):
     # Health                   ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentHealth"]["Float"]["value"]
     # Max Health               ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentMaxHealth"]["Float"]["value"]
     # Armor Plates             ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
-    # Armor Plate Health       ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
+    # Armor Plate Health
+    # ["HealthInfo"]["Struct"]["value"]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
 
-    # Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
+    # Weapon                    ["WeaponDA"]["Object"]["value"]  -  use
+    # parseWeapon() to get proper name
 
     # Items
     # Weapon Mod Slots           ["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
@@ -1695,19 +1794,22 @@ def genBackupData(backupName):
     # Weapon Mods             - [backupName]["Inventory"]["WeaponMods"]["Mods"]
     # Weapon Mod Name         - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Name"]
     # Weapon Mod Rarity       - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Rarity"]
-    # Weapon Mod Level        - [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
+    # Weapon Mod Level        -
+    # [backupName]["Inventory"]["WeaponMods"]["Mods"][index of WMod]["Level"]
 
     # Grenade Mod Slots       - [backupName]["Inventory"]["GrenadeMods"]["Slots"]
     # Grenade Mods            - [backupName]["Inventory"]["GrenadeMods"]["Mods"]
     # Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
     # Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
-    # Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
+    # Grenade Mod Level       -
+    # [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
 
     # Perk Slots              - [backupName]["Inventory"]["Perks"]["Slots"]
     # Perks                   - [backupName]["Inventory"]["Perks"]["Perks"]
     # Perk Name               - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Name"]
     # Perk Rarity             - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Rarity"]
-    # Perk Level              - [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
+    # Perk Level              -
+    # [backupName]["Inventory"]["Perks"]["Perks"][index of WMod]["Level"]
 
     # Island types
 
@@ -1807,16 +1909,16 @@ def genBackupData(backupName):
     backupJSON[backupName] = {}
     try:
         backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["RunTime"] = 0
     try:
         backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["Score"] = 0
     try:
         diff = saveJSON["Difficulty"]["Enum"]["value"]
         diff = diff[diff.index("::") + 2 :]
-    except:
+    except BaseException:
         diff = "Normal"
     backupJSON[backupName]["Diff"] = diff
     backupJSON[backupName]["IslandNum"] = saveJSON["NextIslandInfo"]["Struct"]["value"][
@@ -1826,68 +1928,89 @@ def genBackupData(backupName):
         backupJSON[backupName]["DiffMods"] = parseDiffMods(
             saveJSON["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
         )
-    except:
+    except BaseException:
         backupJSON[backupName]["DiffMods"] = []
     try:
         backupJSON[backupName]["Elimns"] = saveJSON["Eliminations"]["Int"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["Elimns"] = 0
     try:
         backupJSON[backupName]["ShotsFired"] = saveJSON["ShotsFired"]["Int"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["ShotsFired"] = 0
 
     try:
         backupJSON[backupName]["DmgDealt"] = saveJSON["DamageDealt"]["Int"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["DmgDealt"] = 0
 
     try:
         backupJSON[backupName]["MostDmgDealt"] = saveJSON["HighestDamageDealt"]["Int"][
             "value"
         ]
-    except:
+    except BaseException:
         backupJSON[backupName]["MostDmgDealt"] = 0
 
     try:
         backupJSON[backupName]["DmgTaken"] = saveJSON["DamageTaken"]["Int"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["DmgTaken"] = 0
 
     try:
-        backupJSON[backupName]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"][
-            "Int"
-        ]["value"]
-    except:
+        backupJSON[backupName]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"][
+            "value"
+        ]
+    except BaseException:
         backupJSON[backupName]["FlawlessIslands"] = 0
     try:
         backupJSON[backupName]["ItemsSalvaged"] = saveJSON["NumTimesSalvaged"]["Int"][
             "value"
         ]
-    except:
+    except BaseException:
         backupJSON[backupName]["ItemsSalvaged"] = 0
     try:
         backupJSON[backupName]["ItemsPurchased"] = saveJSON["NumShopPurchases"]["Int"][
             "value"
         ]
-    except:
+    except BaseException:
         backupJSON[backupName]["ItemsPurchased"] = 0
     try:
-        backupJSON[backupName]["ShopRerolls"] = saveJSON["NumShopRerolls"]["Int"][
-            "value"
-        ]
-    except:
+        backupJSON[backupName]["ShopRerolls"] = saveJSON["NumShopRerolls"]["Int"]["value"]
+    except BaseException:
         backupJSON[backupName]["ShopRerolls"] = 0
     try:
-        backupJSON[backupName]["TotemsDestroyed"] = saveJSON["NumTotemsDestroyed"][
-            "Int"
-        ]["value"]
-    except:
+        backupJSON[backupName]["TotemsDestroyed"] = saveJSON["NumTotemsDestroyed"]["Int"][
+            "value"
+        ]
+    except BaseException:
         backupJSON[backupName]["TotemsDestroyed"] = 0
+
+    backupJSON[backupName]["HealthMultiplier"] = saveJSON["HealthMultiplier"]["Float"][
+        "value"
+    ]
+    backupJSON[backupName]["DamageMultiplier"] = saveJSON["DamageMultiplier"]["Float"][
+        "value"
+    ]
+
+    try:
+        backupJSON[backupName]["Blessings"] = saveJSON["NextIslandInfo"]["Struct"][
+            "value"
+        ]["Struct"]["Blessing"]["Enum"]["value"][len("ECrabBlessing::") :]
+    except BaseException:
+        backupJSON[backupName]["Blessings"] = "None"
+
+    try:
+        array = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"][
+            "ChallengeModifiers"
+        ]["Array"]["value"]["Base"]["Enum"]
+        for i in range(len(array)):
+            array[i] = spaceBeforeUpper(array[i][len("ECrabChallengeModifier") :])
+    except BaseException:
+        backupJSON[backupName]["Challenges"] = []
 
     try:
         backupJSON[backupName]["Crystals"] = saveJSON["Crystals"]["UInt32"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["Crystals"] = 0
 
     diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"][
@@ -1897,19 +2020,19 @@ def genBackupData(backupName):
     backupJSON[backupName]["Biome"] = diff
 
     try:
-        diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"][
-            "RewardLootPool"
-        ]["Enum"]["value"]
+        diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"][
+            "Enum"
+        ]["value"]
         diff = diff[diff.index("::") + 2 :]
-    except:
-        diff = "New Biome"
+    except BaseException:
+        diff = "Damage"
     backupJSON[backupName]["LootType"] = diff
-    backupJSON[backupName]["IslandName"] = saveJSON["NextIslandInfo"]["Struct"][
+    backupJSON[backupName]["IslandName"] = saveJSON["NextIslandInfo"]["Struct"]["value"][
+        "Struct"
+    ]["IslandName"]["Name"]["value"]
+    diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"]["Enum"][
         "value"
-    ]["Struct"]["IslandName"]["Name"]["value"]
-    diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"][
-        "Enum"
-    ]["value"]
+    ]
     diff = diff[diff.index("::") + 2 :]
     backupJSON[backupName]["IslandType"] = diff
 
@@ -1920,13 +2043,13 @@ def genBackupData(backupName):
         "Struct"
     ]["CurrentMaxHealth"]["Float"]["value"]
     try:
-        backupJSON[backupName]["ArmorPlates"] = saveJSON["HealthInfo"]["Struct"][
-            "value"
-        ]["Struct"]["CurrentArmorPlates"]["Int"]["value"]
+        backupJSON[backupName]["ArmorPlates"] = saveJSON["HealthInfo"]["Struct"]["value"][
+            "Struct"
+        ]["CurrentArmorPlates"]["Int"]["value"]
         backupJSON[backupName]["ArmorPlatesHealth"] = saveJSON["HealthInfo"]["Struct"][
             "value"
         ]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
-    except:
+    except BaseException:
         backupJSON[backupName]["ArmorPlates"] = 0
         backupJSON[backupName]["ArmorPlatesHealth"] = 0
 
@@ -1935,7 +2058,7 @@ def genBackupData(backupName):
         backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(
             saveJSON["WeaponDA"]["Object"]["value"]
         )
-    except:
+    except BaseException:
         backupJSON[backupName]["Inventory"]["Weapon"] = "Lobby Dependant"
 
     backupJSON[backupName]["Inventory"]["WeaponMods"] = {}
@@ -1956,11 +2079,9 @@ def genBackupData(backupName):
             WeaponModArray[i]["Rarity"] = parseWeaponMod(
                 name["Struct"]["WeaponModDA"]["Object"]["value"]
             )[1]
-            WeaponModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"][
-                "Byte"
-            ]
+            WeaponModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
         backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = WeaponModArray
-    except:
+    except BaseException:
         backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = []
 
     backupJSON[backupName]["Inventory"]["GrenadeMods"] = {}
@@ -1981,11 +2102,9 @@ def genBackupData(backupName):
             GrenadeModArray[i]["Rarity"] = parseGrenadeMod(
                 name["Struct"]["GrenadeModDA"]["Object"]["value"]
             )[1]
-            GrenadeModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"][
-                "Byte"
-            ]
+            GrenadeModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
         backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = GrenadeModArray
-    except:
+    except BaseException:
         backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = []
 
     backupJSON[backupName]["Inventory"]["Perks"] = {}
@@ -2000,24 +2119,25 @@ def genBackupData(backupName):
             PerkArray.append("")
         for i, name in enumerate(WeaponMods):
             PerkArray[i] = json.loads("{}")
-            PerkArray[i]["Name"] = parsePerk(
-                name["Struct"]["PerkDA"]["Object"]["value"]
-            )[0]
+            PerkArray[i]["Name"] = parsePerk(name["Struct"]["PerkDA"]["Object"]["value"])[
+                0
+            ]
             PerkArray[i]["Rarity"] = parsePerk(
                 name["Struct"]["PerkDA"]["Object"]["value"]
             )[1]
             PerkArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
         backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = PerkArray
-    except:
+    except BaseException:
         backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = []
 
     backupJSON[backupName]["CheckSum"] = checksum
     backupJSON[backupName]["NoSave"] = False
+    backupJSON[backupName]["Raw"] = json.dumps(raw)
     cacheLock.acquire()
 
     try:
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
-    except:
+    except BaseException:
         cacheJSON["BackupData"] = {}
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     cacheLock.release()
@@ -2085,7 +2205,7 @@ def backupListInfo(backupName, maxLength):
                 f"Time: {runtime}\tDiff: {diff}\tIsland: {islandNum}\tScore: {score}"
             )
             return infoString
-    except:
+    except BaseException:
         None
     return ""
 
@@ -2134,7 +2254,7 @@ def getUesavePath():
 
 def lengthLimit(dict, wid):
     None
-    if type(dict) == type(""):
+    if isinstance(dict, type("")):
         if len(dict) < wid:
             return dict
         for i in range(wid, 0, -1):
@@ -2142,14 +2262,14 @@ def lengthLimit(dict, wid):
                 if dict.index(" ", i) <= wid:
                     space = dict.index(" ", i)
                     return [dict[:space], dict[space + 1 :]]
-            except:
+            except BaseException:
                 None
         return dict
     else:
         di = []
         for d in dict:
             d = lengthLimit(d, wid)
-            if type(d) == type(""):
+            if isinstance(d, type("")):
                 di.append(d)
             else:
                 for ad in d:
@@ -2255,9 +2375,7 @@ def backupDetailsScreen(backupName):
     info += "\n" + ensureLength("Island Name: ", leng) + str(backupJSON["IslandName"])
     info += "\n" + ensureLength("Island Type: ", leng) + str(backupJSON["IslandType"])
     info += (
-        "\n"
-        + ensureLength("Health:", leng)
-        + str(formatNumber(backupJSON["Health"], 0))
+        "\n" + ensureLength("Health:", leng) + str(formatNumber(backupJSON["Health"], 0))
     )
     info += (
         "\n"
@@ -2357,7 +2475,7 @@ def backupDetailsScreen(backupName):
                 )
             )
         )
-    except:
+    except BaseException:
         info += "\n" + ensureLength("Average DPB:", leng) + "0"
         info += "\n" + ensureLength("Average SPS:", leng) + "0"
         info += "\n" + ensureLength("Average DPS:", leng) + "0"
@@ -2366,9 +2484,7 @@ def backupDetailsScreen(backupName):
         for diffMod in backupJSON["DiffMods"]:
             info += "\n" + indent + str(diffMod)
     info += "\n"
-    info += (
-        "\n" + ensureLength("Weapon:", leng) + str(backupJSON["Inventory"]["Weapon"])
-    )
+    info += "\n" + ensureLength("Weapon:", leng) + str(backupJSON["Inventory"]["Weapon"])
     info += (
         "\n"
         + ensureLength("Weapon Mod Slots:", leng)
@@ -2390,7 +2506,8 @@ def backupDetailsScreen(backupName):
     maxLevel = 0
     # Grenade Mod Name        - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Name"]
     # Grenade Mod Rarity      - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Rarity"]
-    # Grenade Mod Level       - [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
+    # Grenade Mod Level       -
+    # [backupName]["Inventory"]["GrenadeMods"]["Mods"][index of WMod]["Level"]
     for WMod in backupJSON["Inventory"]["WeaponMods"]["Mods"]:
         maxName = max(maxName, len(WMod["Name"]))
         maxRarity = max(maxRarity, len(WMod["Rarity"]))
@@ -2519,7 +2636,7 @@ def genPlayerData(saveJSON, checksum):
     try:
         cacheJSON["PlayerData"] = {}
         saveJSON = saveJSON["root"]["properties"]
-    except:
+    except BaseException:
         cacheLock.acquire()
         cacheJSON["PlayerData"] = {}
         cacheLock.release()
@@ -2599,7 +2716,7 @@ def genPlayerData(saveJSON, checksum):
 
     try:
         PlayerDataJSON["XPToNextLevelUp"] = saveJSON["XPToNextLevelUp"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["XPToNextLevelUp"] = 0
     PlayerDataJSON["RankedWeapons"] = []
     RWArray = []
@@ -2616,16 +2733,14 @@ def genPlayerData(saveJSON, checksum):
     PlayerDataJSON["RankedWeapons"] = RWArray
     try:
         PlayerDataJSON["AccountLevel"] = saveJSON["AccountLevel"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["AccountLevel"] = 0
     try:
         PlayerDataJSON["Keys"] = saveJSON["Keys"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["Keys"] = 0
     PlayerDataJSON["Skin"] = parseSkin(saveJSON["CrabSkin"]["Object"]["value"])
-    PlayerDataJSON["CurrentWeapon"] = parseWeapon(
-        saveJSON["WeaponDA"]["Object"]["value"]
-    )
+    PlayerDataJSON["CurrentWeapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
     PlayerDataJSON["Challenges"] = []
     ChallengeArray = []
     ChallengeArrayRaw = saveJSON["Challenges"]["Array"]["value"]["Struct"]["value"]
@@ -2635,9 +2750,9 @@ def genPlayerData(saveJSON, checksum):
         Challenge["Name"] = parseChallenageName(
             ChallengeArrayObject["Struct"]["ChallengeID"]["Name"]["value"]
         )
-        Challenge["Description"] = ChallengeArrayObject["Struct"][
-            "ChallengeDescription"
-        ]["Str"]["value"]
+        Challenge["Description"] = ChallengeArrayObject["Struct"]["ChallengeDescription"][
+            "Str"
+        ]["value"]
         Challenge["Progress"] = ChallengeArrayObject["Struct"]["ChallengeProgress"][
             "Int"
         ]["value"]
@@ -2664,9 +2779,9 @@ def genPlayerData(saveJSON, checksum):
 
     PlayerDataJSON["UnlockedWeaponMods"] = []
     UnlockedWeaponModsArray = []
-    UnlockedWeaponModsArrayRaw = saveJSON["UnlockedWeaponMods"]["Array"]["value"][
-        "Base"
-    ]["Object"]
+    UnlockedWeaponModsArrayRaw = saveJSON["UnlockedWeaponMods"]["Array"]["value"]["Base"][
+        "Object"
+    ]
     for UnlockedWeaponMod in UnlockedWeaponModsArrayRaw:
         WeaponMod = json.loads("{}")
         WeaponMod["Name"] = parseWeaponMod(UnlockedWeaponMod)[0]
@@ -2688,9 +2803,7 @@ def genPlayerData(saveJSON, checksum):
 
     PlayerDataJSON["UnlockedPerks"] = []
     UnlockedPerksArray = []
-    UnlockedPerksArrayRaw = saveJSON["UnlockedPerks"]["Array"]["value"]["Base"][
-        "Object"
-    ]
+    UnlockedPerksArrayRaw = saveJSON["UnlockedPerks"]["Array"]["value"]["Base"]["Object"]
     for UnlockedPerk in UnlockedPerksArrayRaw:
         Perk = json.loads("{}")
         Perk["Name"] = parsePerk(UnlockedPerk)[0]
@@ -2700,95 +2813,95 @@ def genPlayerData(saveJSON, checksum):
 
     try:
         PlayerDataJSON["EasyAttempts"] = saveJSON["EasyAttempts"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["EasyAttempts"] = 0
 
     try:
         PlayerDataJSON["EasyWins"] = saveJSON["EasyWins"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["EasyWins"] = 0
 
     try:
         PlayerDataJSON["EasyHighScore"] = saveJSON["EasyHighScore"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["EasyHighScore"] = 0
 
     try:
         PlayerDataJSON["EasyWinStreak"] = saveJSON["EasyWinStreak"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["EasyWinStreak"] = 0
 
     try:
-        PlayerDataJSON["EasyHighestIslandReached"] = saveJSON[
-            "EasyHighestIslandReached"
-        ]["Int"]["value"]
-    except:
+        PlayerDataJSON["EasyHighestIslandReached"] = saveJSON["EasyHighestIslandReached"][
+            "Int"
+        ]["value"]
+    except BaseException:
         PlayerDataJSON["EasyHighestIslandReached"] = 0
 
     try:
         PlayerDataJSON["NormalAttempts"] = saveJSON["NormalAttempts"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NormalAttempts"] = 0
 
     try:
         PlayerDataJSON["NormalWins"] = saveJSON["NormalWins"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NormalWins"] = 0
 
     try:
         PlayerDataJSON["NormalHighScore"] = saveJSON["NormalHighScore"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NormalHighScore"] = 0
 
     try:
         PlayerDataJSON["NormalWinStreak"] = saveJSON["NormalWinStreak"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NormalWinStreak"] = 0
 
     try:
         PlayerDataJSON["NormalHighestIslandReached"] = saveJSON[
             "NormalHighestIslandReached"
         ]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NormalHighestIslandReached"] = 0
 
     try:
         PlayerDataJSON["NightmareAttempts"] = saveJSON["NightmareAttempts"]["Int"][
             "value"
         ]
-    except:
+    except BaseException:
         PlayerDataJSON["NightmareAttempts"] = 0
 
     try:
         PlayerDataJSON["NightmareWins"] = saveJSON["NightmareWins"]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NightmareWins"] = 0
 
     try:
         PlayerDataJSON["NightmareHighScore"] = saveJSON["NightmareHighScore"]["Int"][
             "value"
         ]
-    except:
+    except BaseException:
         PlayerDataJSON["NightmareHighScore"] = 0
 
     try:
         PlayerDataJSON["NightmareWinStreak"] = saveJSON["NightmareWinStreak"]["Int"][
             "value"
         ]
-    except:
+    except BaseException:
         PlayerDataJSON["NightmareWinStreak"] = 0
 
     try:
         PlayerDataJSON["NightmareHighestIslandReached"] = saveJSON[
             "NightmareHighestIslandReached"
         ]["Int"]["value"]
-    except:
+    except BaseException:
         PlayerDataJSON["NightmareHighestIslandReached"] = 0
 
     cacheLock.acquire()
     try:
         cacheJSON["PlayerData"] = PlayerDataJSON
-    except:
+    except BaseException:
         cacheJSON["PlayerData"] = {}
         cacheJSON["PlayerData"] = PlayerDataJSON
     cacheLock.release()
@@ -2844,7 +2957,7 @@ def getPresets(moreInfo=False):
         f = open(owd + "/CrabChampionSaveManager/Presets/" + pre, "r")
         try:
             json.loads(f.read())
-        except:
+        except BaseException:
             pres.remove(pre)
     presets = pres.copy()
     f = open("debug.txt", "w")
@@ -2853,9 +2966,7 @@ def getPresets(moreInfo=False):
     for i, pre in enumerate(presets):
         if ".json" in pre:
             f = open(
-                owd
-                + "/CrabChampionSaveManager/Presets/"
-                + pre.replace(".json", ".ccsm"),
+                owd + "/CrabChampionSaveManager/Presets/" + pre.replace(".json", ".ccsm"),
                 "w",
             )
             f.write(open(owd + "/CrabChampionSaveManager/Presets/" + pre, "r").read())
@@ -2878,8 +2989,7 @@ def getPresets(moreInfo=False):
                     maxLenDiff, len("Diff: " + str(presetsJSON[preset]["Diff"]))
                 )
                 maxLenIsland = max(
-                    maxLenIsland,
-                    len("Island: " + str(presetsJSON[preset]["IslandNum"])),
+                    maxLenIsland, len("Island: " + str(presetsJSON[preset]["IslandNum"]))
                 )
             distance = 4
             maxLenDiff += distance
@@ -2916,7 +3026,7 @@ def loadPresets():
                     "r",
                 ).read()
             )
-        except:
+        except BaseException:
             None
         opreset = presetsJSON[preset].copy()
         presetsJSON[preset] = updatePreset(presetsJSON[preset].copy())
@@ -2958,9 +3068,7 @@ def presetDetailsScreen(preset):
     info += "\n" + ensureLength("Loot Type: ", leng) + str(presetJSON["LootType"])
     info += "\n" + ensureLength("Island Type: ", leng) + str(presetJSON["IslandType"])
     info += (
-        "\n"
-        + ensureLength("Health:", leng)
-        + str(formatNumber(presetJSON["Health"], 0))
+        "\n" + ensureLength("Health:", leng) + str(formatNumber(presetJSON["Health"], 0))
     )
     info += (
         "\n"
@@ -2982,9 +3090,7 @@ def presetDetailsScreen(preset):
         for diffMod in presetJSON["DiffMods"]:
             info += "\n" + indent + str(diffMod)
     info += "\n"
-    info += (
-        "\n" + ensureLength("Weapon:", leng) + str(presetJSON["Inventory"]["Weapon"])
-    )
+    info += "\n" + ensureLength("Weapon:", leng) + str(presetJSON["Inventory"]["Weapon"])
     info += (
         "\n"
         + ensureLength("Weapon Mod Slots:", leng)
@@ -3077,7 +3183,7 @@ def deletePreset():
     preset = presets[choice - 1]
     try:
         os.remove(owd + "/CrabChampionSaveManager/Presets/" + preset + ".ccsm")
-    except:
+    except BaseException:
         os.remove(owd + "/CrabChampionSaveManager/Presets/" + preset + ".ccsm")
     return
 
@@ -3085,7 +3191,7 @@ def deletePreset():
 def presetNameMenu(prompt):
     global screen
 
-    if type(prompt) == type(""):
+    if isinstance(prompt, type("")):
         prompt = prompt.split("\n")
 
     curstate = curses.curs_set(1)
@@ -3108,7 +3214,7 @@ def presetNameMenu(prompt):
                 return presetName
             else:
                 infoScreen(
-                    'Invaild preset name\Preset name can not contain any of these characters \\ / : * ? " < > | .'
+                    'Invaild preset name\\Preset name can not contain any of these characters \\ / : * ? " < > | .'
                 )
                 screen.refresh()
                 curses.napms(2000)  # Display the error message for 2 seconds
@@ -3161,9 +3267,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             + str(presetJSON["IslandName"])
         )
         info += "\n" + ensureLength("Loot Type: ", leng) + str(presetJSON["LootType"])
-        info += (
-            "\n" + ensureLength("Island Type: ", leng) + str(presetJSON["IslandType"])
-        )
+        info += "\n" + ensureLength("Island Type: ", leng) + str(presetJSON["IslandType"])
         info += (
             "\n"
             + ensureLength("Health:", leng)
@@ -3215,9 +3319,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             info += "\n" + indent + str("Add Challenge")
         info += "\n"
         info += (
-            "\n"
-            + ensureLength("Weapon:", leng)
-            + str(presetJSON["Inventory"]["Weapon"])
+            "\n" + ensureLength("Weapon:", leng) + str(presetJSON["Inventory"]["Weapon"])
         )
         info += (
             "\n"
@@ -3234,9 +3336,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             + ensureLength("Perk Slots:", leng)
             + str(presetJSON["Inventory"]["Perks"]["Slots"])
         )
-        info += (
-            "\n" + ensureLength("Key Totem:", leng) + str(presetJSON["keyTotemItem"])
-        )
+        info += "\n" + ensureLength("Key Totem:", leng) + str(presetJSON["keyTotemItem"])
         info += "\nItems:"
         maxName = 6
         maxRarity = 8
@@ -3337,8 +3437,8 @@ def editPreset(preset, name, overriade=False, cancel=True):
         elif (
             ":" in info[choice]
             and "Island" in info[choice][: info[choice].index(":")]
-            and not "Name" in info[choice][: info[choice].index(":")]
-            and not "Type" in info[choice][: info[choice].index(":")]
+            and "Name" not in info[choice][: info[choice].index(":")]
+            and "Type" not in info[choice][: info[choice].index(":")]
         ):
             presetJSON["IslandNum"] = userInputMenuNum(
                 "Enter number for island\nEnter nothing to not change anything",
@@ -3350,8 +3450,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             )
 
         elif (
-            ":" in info[choice]
-            and "Crystals" in info[choice][: info[choice].index(":")]
+            ":" in info[choice] and "Crystals" in info[choice][: info[choice].index(":")]
         ):
             presetJSON["Crystals"] = userInputMenuNum(
                 "Enter number for crystals\nEnter nothing to not change anything",
@@ -3372,9 +3471,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             diff = ["Easy", "Normal", "Nightmare"]
 
             presetJSON["Diff"] = diff[
-                scrollSelectMenu(
-                    prompt, diff, startChoice=diff.index(presetJSON["Diff"])
-                )
+                scrollSelectMenu(prompt, diff, startChoice=diff.index(presetJSON["Diff"]))
             ]
 
         elif ":" in info[choice] and "Biome" in info[choice][: info[choice].index(":")]:
@@ -3390,9 +3487,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             ":" in info[choice]
             and "Island Name" in info[choice][: info[choice].index(":")]
         ):
-            prompt = (
-                "Select Island\nCurrent Island is " + presetJSON["IslandName"] + "\n"
-            )
+            prompt = "Select Island\nCurrent Island is " + presetJSON["IslandName"] + "\n"
             islandName = [
                 "Tropical Arena Island",
                 "Tropical Horde Island",
@@ -3413,8 +3508,6 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 "Tropical_Arena_06",
                 "Tropical_Arena_07",
                 "Tropical_Arena_08",
-                "Tropical_Boss_01",
-                "Tropical_Boss_02",
                 "Tropical_Horde_01",
                 "Tropical_Horde_02",
                 "Tropical_Horde_03",
@@ -3423,11 +3516,10 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 "Tropical_Horde_06",
                 "Tropical_Horde_07",
                 "Tropical_Parkour_01",
-                "Tropical_Shop_01",
+                "Tropical_Boss_01",
+                "Tropical_Boss_02",
                 "Arctic_Arena_01",
                 "Arctic_Arena_02",
-                "Arctic_Boss_01",
-                "Arctic_Boss_02",
                 "Arctic_Boss_03",
                 "Arctic_Horde_01",
                 "Arctic_Horde_02",
@@ -3438,20 +3530,23 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 "Arctic_Horde_07",
                 "Arctic_Horde_08",
                 "Arctic_Parkour_01",
+                "Arctic_Boss_01",
+                "Arctic_Boss_02",
                 "Volcanic_Arena_01",
                 "Volcanic_Arena_02",
                 "Volcanic_Arena_03",
                 "Volcanic_Arena_04",
                 "Volcanic_Arena_05",
                 "Volcanic_Arena_06",
-                "Volcanic_Boss_01",
-                "Volcanic_Horde_01",
                 "Volcanic_Horde_02",
                 "Volcanic_Horde_03",
                 "Volcanic_Horde_04",
                 "Volcanic_Horde_05",
+                "Volcanic_Boss_01",
+                "Volcanic_Horde_01",
                 "CrabIsland",
                 "Lobby",
+                "Tropical_Shop_01",
             ]
             presetJSON["IslandName"] = islandName[
                 scrollSelectMenu(
@@ -3464,8 +3559,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             ]
 
         elif (
-            ":" in info[choice]
-            and "Loot Type" in info[choice][: info[choice].index(":")]
+            ":" in info[choice] and "Loot Type" in info[choice][: info[choice].index(":")]
         ):
             prompt = "Select Loot Type\nCurrent Loot Type is " + presetJSON["LootType"]
             lootType = [
@@ -3493,24 +3587,20 @@ def editPreset(preset, name, overriade=False, cancel=True):
             ":" in info[choice]
             and "Island Type" in info[choice][: info[choice].index(":")]
         ):
-            prompt = (
-                "Select Loot Type\nCurrent Loot Type is " + presetJSON["IslandType"]
-            )
+            prompt = "Select Loot Type\nCurrent Loot Type is " + presetJSON["IslandType"]
             lootType = ISLANDTYPE.copy()
             presetJSON["IslandType"] = lootType[
                 scrollSelectMenu(
-                    prompt,
-                    lootType,
-                    startChoice=lootType.index(presetJSON["IslandType"]),
+                    prompt, lootType, startChoice=lootType.index(presetJSON["IslandType"])
                 )
             ]
 
         elif (
             ":" in info[choice]
             and "Health" in info[choice][: info[choice].index(":")]
-            and not "Max" in info[choice][: info[choice].index(":")]
-            and not "Armor" in info[choice][: info[choice].index(":")]
-            and not "Multiplier" in info[choice][: info[choice].index(":")]
+            and "Max" not in info[choice][: info[choice].index(":")]
+            and "Armor" not in info[choice][: info[choice].index(":")]
+            and "Multiplier" not in info[choice][: info[choice].index(":")]
         ):
             presetJSON["Health"] = userInputMenuNum(
                 "Enter number for health\nEnter nothing to not change anything",
@@ -3638,7 +3728,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
         elif (
             ":" in info[choice]
             and "Weapon" in info[choice][: info[choice].index(":")]
-            and not "Mod" in info[choice][: info[choice].index(":")]
+            and "Mod" not in info[choice][: info[choice].index(":")]
         ):
             prompt = (
                 "Select Weapon\nCurrent Weapon is "
@@ -3650,9 +3740,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             wep.append("Lobby Dependant")
             presetJSON["Inventory"]["Weapon"] = wep[
                 scrollSelectMenu(
-                    prompt,
-                    wep,
-                    startChoice=wep.index(presetJSON["Inventory"]["Weapon"]),
+                    prompt, wep, startChoice=wep.index(presetJSON["Inventory"]["Weapon"])
                 )
             ]
 
@@ -3696,8 +3784,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
             )
 
         elif (
-            ":" in info[choice]
-            and "Key Totem" in info[choice][: info[choice].index(":")]
+            ":" in info[choice] and "Key Totem" in info[choice][: info[choice].index(":")]
         ):
             if presetJSON["keyTotemItem"]:
                 presetJSON["keyTotemItem"] = False
@@ -3934,8 +4021,7 @@ def usePreset():
         JSON_File.write(json.dumps(saveJSON, indent=4))
     infoScreen("6/8")
     proc1 = subprocess.Popen(
-        uesavePath + " from-json -i usedPreset.json -o SaveGames/SaveSlot.sav",
-        shell=True,
+        uesavePath + " from-json -i usedPreset.json -o SaveGames/SaveSlot.sav", shell=True
     )
     proc1.wait()
     os.remove("usedPreset.json")
@@ -4209,8 +4295,10 @@ def convertMyItemtoGameItem(MyItemJson):
         return GameItemJson
 
 
-def convertPresetToGameSave(preset):
+def convertPresetToGameSave(preset, defaultJSONOverride=""):
     GameJSON = '{"AutoSave":{"Struct":{"value":{"Struct":{"Difficulty":{"Enum":{"value":"ECrabDifficulty::Normal","enum_type":"ECrabDifficulty"}},"DifficultyModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"NextIslandInfo":{"Struct":{"value":{"Struct":{"Biome":{"Enum":{"value":"ECrabBiome::Tropical","enum_type":"ECrabBiome"}},"CurrentIsland":{"Int":{"value":1}},"IslandName":{"Name":{"value":"Tropical_Arena_01"}},"IslandType":{"Enum":{"value":"ECrabIslandType::Arena","enum_type":"ECrabIslandType"}},"Blessing":{"Enum":{"value":"","enum_type":"ECrabBlessing"}},"ChallengeModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"RewardLootPool":{"Enum":{"value":"ECrabLootPool::Random","enum_type":"ECrabLootPool"}}}},"struct_type":{"Struct":"CrabNextIslandInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthInfo":{"Struct":{"value":{"Struct":{"CurrentArmorPlates":{"Int":{"value":0}},"CurrentArmorPlateHealth":{"Float":{"value":0}},"CurrentHealth":{"Float":{"value":100}},"CurrentMaxHealth":{"Float":{"value":100}}}},"struct_type":{"Struct":"CrabHealthInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthMultiplier":{"Float":{"value":1}},"DamageMultiplier":{"Float":{"value":1}},"WeaponDA":{"Object":{"value":""}},"NumWeaponModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"WeaponMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"WeaponMods","name":"StructProperty","struct_type":{"Struct":"CrabWeaponMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumGrenadeModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"GrenadeMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"GrenadeMods","name":"StructProperty","struct_type":{"Struct":"CrabGrenadeMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumPerkSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"Perks":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"Perks","name":"StructProperty","struct_type":{"Struct":"CrabPerk"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"Crystals":{"UInt32":{"value":0}}}},"struct_type":{"Struct":"CrabAutoSave"},"struct_id":"00000000-0000-0000-0000-000000000000"}}}'
+    if defaultJSONOverride != "":
+        GameJSON = defaultJSONOverride
     GameJSON = json.loads(GameJSON)
     # saveJSON = saveJSON["AutoSave"]
     # difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override
@@ -4227,7 +4315,8 @@ def convertPresetToGameSave(preset):
     # HealthMultiplier         ["HealthMultiplier"]["Float"]["value"]
     # DamageMultiplier         ["DamageMultiplier"]["Float"]["value"]
 
-    # Weapon                    ["WeaponDA"]["Object"]["value"]  -  use parseWeapon() to get proper name
+    # Weapon                    ["WeaponDA"]["Object"]["value"]  -  use
+    # parseWeapon() to get proper name
 
     # Items
     # Weapon Mod Slots           ["NumWeaponModSlots"]["Byte"]["value"]["Byte"]
@@ -4262,16 +4351,12 @@ def convertPresetToGameSave(preset):
     ]["Struct"]["IslandName"]["Name"]["value"] = dynamicIslandName(preset["IslandName"])
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
         "value"
-    ]["Struct"]["RewardLootPool"]["Enum"][
-        "value"
-    ] = "ECrabLootPool::" + dynamicLootType(
+    ]["Struct"]["RewardLootPool"]["Enum"]["value"] = "ECrabLootPool::" + dynamicLootType(
         preset["LootType"]
     )
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
         "value"
-    ]["Struct"]["IslandType"]["Enum"][
-        "value"
-    ] = "ECrabIslandType::" + dynamicIslandType(
+    ]["Struct"]["IslandType"]["Enum"]["value"] = "ECrabIslandType::" + dynamicIslandType(
         preset["IslandType"], preset["IslandName"]
     )
     GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"][
@@ -4409,7 +4494,7 @@ def dynamicIslandName(name):
     try:
         options = ISLANDS[name]
         return options[random.randint(0, len(options) - 1)]
-    except:
+    except BaseException:
         return name
 
 
@@ -4426,8 +4511,6 @@ def setUpIslands():
         "Tropical_Arena_06",
         "Tropical_Arena_07",
         "Tropical_Arena_08",
-        "Tropical_Boss_01",
-        "Tropical_Boss_02",
         "Tropical_Horde_01",
         "Tropical_Horde_02",
         "Tropical_Horde_03",
@@ -4436,14 +4519,13 @@ def setUpIslands():
         "Tropical_Horde_06",
         "Tropical_Horde_07",
         "Tropical_Parkour_01",
-        "Tropical_Shop_01",
+        "Tropical_Boss_01",
+        "Tropical_Boss_02",
     ]
 
     ISLANDS["Arctic"] = [
         "Arctic_Arena_01",
         "Arctic_Arena_02",
-        "Arctic_Boss_01",
-        "Arctic_Boss_02",
         "Arctic_Boss_03",
         "Arctic_Horde_01",
         "Arctic_Horde_02",
@@ -4454,6 +4536,8 @@ def setUpIslands():
         "Arctic_Horde_07",
         "Arctic_Horde_08",
         "Arctic_Parkour_01",
+        "Arctic_Boss_01",
+        "Arctic_Boss_02",
     ]
 
     ISLANDS["Volcanic"] = [
@@ -4463,63 +4547,22 @@ def setUpIslands():
         "Volcanic_Arena_04",
         "Volcanic_Arena_05",
         "Volcanic_Arena_06",
-        "Volcanic_Boss_01",
-        "Volcanic_Horde_01",
         "Volcanic_Horde_02",
         "Volcanic_Horde_03",
         "Volcanic_Horde_04",
         "Volcanic_Horde_05",
+        "Volcanic_Boss_01",
+        "Volcanic_Horde_01",
     ]
 
-    ISLANDS["All"] = [
-        "Tropical_Arena_01",
-        "Tropical_Arena_02",
-        "Tropical_Arena_03",
-        "Tropical_Arena_04",
-        "Tropical_Arena_05",
-        "Tropical_Arena_06",
-        "Tropical_Arena_07",
-        "Tropical_Arena_08",
-        "Tropical_Boss_01",
-        "Tropical_Boss_02",
-        "Tropical_Horde_01",
-        "Tropical_Horde_02",
-        "Tropical_Horde_03",
-        "Tropical_Horde_04",
-        "Tropical_Horde_05",
-        "Tropical_Horde_06",
-        "Tropical_Horde_07",
-        "Tropical_Parkour_01",
-        "Tropical_Shop_01",
-        "Arctic_Arena_01",
-        "Arctic_Arena_02",
-        "Arctic_Boss_01",
-        "Arctic_Boss_02",
-        "Arctic_Boss_03",
-        "Arctic_Horde_01",
-        "Arctic_Horde_02",
-        "Arctic_Horde_03",
-        "Arctic_Horde_04",
-        "Arctic_Horde_05",
-        "Arctic_Horde_06",
-        "Arctic_Horde_07",
-        "Arctic_Horde_08",
-        "Arctic_Parkour_01",
-        "Volcanic_Arena_01",
-        "Volcanic_Arena_02",
-        "Volcanic_Arena_03",
-        "Volcanic_Arena_04",
-        "Volcanic_Arena_05",
-        "Volcanic_Arena_06",
-        "Volcanic_Boss_01",
-        "Volcanic_Horde_01",
-        "Volcanic_Horde_02",
-        "Volcanic_Horde_03",
-        "Volcanic_Horde_04",
-        "Volcanic_Horde_05",
-        "CrabIsland",
-        "Lobby",
-    ]
+    ISLANDS["Other"] = ["CrabIsland", "Lobby", "Tropical_Shop_01"]
+
+    a = []
+    a.extend(ISLANDS["Tropical"])
+    a.extend(ISLANDS["Arctic"])
+    a.extend(ISLANDS["Volcanic"])
+    a.extend(ISLANDS["Other"])
+    ISLANDS["All"] = a.copy()
 
     ISLANDS["Tropical Arena Island"] = [
         "Tropical_Arena_01",
@@ -4579,8 +4622,6 @@ def setUpIslands():
     ]
     ISLANDS["Volcanic Boss Island"] = ["Volcanic_Boss_01"]
 
-    ISLANDS["Other"] = ["CrabIsland", "Lobby"]
-
 
 def dynamicWeapon(wep):
     if wep == "Lobby Dependant":
@@ -4594,32 +4635,32 @@ def dynamicWeapon(wep):
 def updatePreset(preset):
     try:
         preset["IslandType"]
-    except:
+    except BaseException:
         preset["IslandType"] = "Automatic"
 
     try:
         preset["HealthMultiplier"]
-    except:
+    except BaseException:
         preset["HealthMultiplier"] = 1.0
 
     try:
         preset["DamageMultiplier"]
-    except:
+    except BaseException:
         preset["DamageMultiplier"] = 1.0
 
     try:
         preset["keyTotemItem"]
-    except:
+    except BaseException:
         preset["keyTotemItem"] = False
 
     try:
         preset["Blessing"]
-    except:
+    except BaseException:
         preset["Blessing"] = ""
 
     try:
         preset["Challenges"]
-    except:
+    except BaseException:
         preset["Challenges"] = []
 
     return preset
@@ -4676,6 +4717,53 @@ def getKeyTotemItem():
 
 def clamp(num, minn=0, maxx=1):
     return max(min(num, maxx), minn)
+
+
+def makeMainMenuPrompt(Version, LatestVersion, VersionValue, LatestValue, updatePrompt):
+    mainMenuPrompt = "Current Version : " + str(Version)
+    mainMenuPrompt += "\nLatest Version : " + str(LatestVersion)
+    if LatestValue == -1:
+        mainMenuPrompt += "\n\nCould not get latest version"
+    elif VersionValue < LatestValue:
+        mainMenuPrompt += "\n\nThere is a newer version available"
+        updateScript()
+    elif VersionValue > LatestValue:
+        prefix = (screen.getmaxyx()[1] // 2 - 30) * " "
+        mainMenuPrompt += "\n\n\n"
+        mainMenuPrompt += (
+            prefix + "┌───────────────────────────────────────────────────────────┐\n"
+        )
+        mainMenuPrompt += (
+            prefix + "│                                                           │\n"
+        )
+        mainMenuPrompt += (
+            prefix + "│                   Here be Dragons!                        │\n"
+        )
+        mainMenuPrompt += (
+            prefix + "│                                                           │\n"
+        )
+        mainMenuPrompt += (
+            prefix + "│     This is a development version. Use with caution.      │\n"
+        )
+        mainMenuPrompt += (
+            prefix + "│        Report bugs and provide feedback on GitHub.        │\n"
+        )
+        mainMenuPrompt += (
+            prefix + "│                                                           │\n"
+        )
+        mainMenuPrompt += (
+            prefix + "└───────────────────────────────────────────────────────────┘\n"
+        )
+        # mainMenuPrompt += prefix + "Height :       " + str((screen.getmaxyx()[0]))+"\n"
+        # mainMenuPrompt += prefix + "Width :       " + str((screen.getmaxyx()[1]))+"\n"
+        # mainMenuPrompt += prefix + "Width//2 :    " + str((screen.getmaxyx()[1]//2))+"\n"
+        # mainMenuPrompt += prefix + "Width//2-30 : " + str((screen.getmaxyx()[1]//2-30))
+
+    else:
+        mainMenuPrompt += "\n\nYou have the latest version"
+    mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
+    mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
+    return mainMenuPrompt
 
 
 global DIFFMODS
@@ -4776,20 +4864,23 @@ loadSettings()
 
 
 if currentDirCheck():
-    try:
-        if isLinux:
-            new_dir = os.path.expandvars(
-                "$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved"
+    if SaveGamePath == "Automatic" or currentDirCheck(SaveGamePath):
+        try:
+            if isLinux:
+                new_dir = os.path.expandvars(
+                    "$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved"
+                )
+            else:
+                new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
+            os.chdir(new_dir)
+        except BaseException:
+            infoScreen(
+                "Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\\Saved\nPress any key to continue . . ."
             )
-        else:
-            new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
-        os.chdir(new_dir)
-    except:
-        infoScreen(
-            "Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\Saved\nPress any key to continue . . ."
-        )
-        screen.getch()
-        exiting(0)
+            screen.getch()
+            exiting(0)
+    else:
+        os.chdir(SaveGamePath)
 
 
 uepath = getUesavePath()
@@ -4825,32 +4916,26 @@ try:
         "https://github.com/O2theC/CrabChampionSaveManager/releases/tag/"
     )
     LatestVersion = final_url
-except:
+except BaseException:
     None
 
-mainMenuPrompt = "Current Version : " + str(Version)
-mainMenuPrompt += "\nLatest Version : " + str(LatestVersion)
 VersionValue = versionToValue(Version)
 LatestValue = versionToValue(LatestVersion)
 
-if LatestValue == -1:
-    mainMenuPrompt += "\n\nCould not get latest version"
-elif VersionValue < LatestValue:
-    updateScript()
-elif VersionValue > LatestValue:
-    mainMenuPrompt += "\n\n                               Dev Branch\n*************************** Here be Dragons ***************************\n                         report bugs on github"
-else:
-    mainMenuPrompt += "\n\nYou have the latest version"
+
+updatePrompt = True
 
 
 # time.sleep(20)
-mainMenuPrompt += "\n\nWelcome to Crab Champion Save Manager"
-mainMenuPrompt += "\nMade By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager\nWhat do you want to do\n"
 while True:
+    mainMenuPrompt = makeMainMenuPrompt(
+        Version, LatestVersion, VersionValue, LatestValue, updatePrompt
+    )
+    updatePrompt = False
     options = "Manage Backups\nManage Presets\nInfo/How to use\nSettings\nExit"
     # options = "Manage Backups\nInfo/How to use\nSettings\nExit"
     # options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
-    choice = scrollSelectMenu(mainMenuPrompt, options, -1, 1) + 1
+    choice = scrollSelectMenu(mainMenuPrompt, options, -1, 1, returnAnything=True) + 1
     # if(choice == 1):
     #     editBackup() # turned to curse
     # elif(choice == 2):
