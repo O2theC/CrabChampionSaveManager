@@ -44,6 +44,10 @@ A: great, make an issue with your suggestion and why you think it would be usefu
 Q: i have a problem with the program
 
 A: check the wiki, it may or may not have info about common issues, other wise make an issue or contact me on discord at o2c
+
+Q: my antivirus flags this as malware / virus
+
+A: this is not malware or a virus , check it on virustotal (it has been known to get hit by a few vendors but last i checked, it was at max 4 out of 70 vendors ), plus if you want then look through the source code / use the source code
 <br>
 <br>
 <br>
