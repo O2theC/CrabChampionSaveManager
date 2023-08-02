@@ -1,32 +1,34 @@
-# CrabChampionSaveManager
-a save manager for Crab Champions, made in Python 
+# CCSM
 
-made this for a group of friends to manage saves easier 
-feel free to use it yourself, it is text-based, just run the file
+The best save manager for Crab Champions <br>
+allows for:
+  - The transfer of saved runs without losing global data
+  - The creation of presets which can be used to create new runs with a twist
+  - Save editing using our custom TUI, or through basic text editing
 
-Main Credits:<br>
-Pyinstaller - used to make .exe versions of the script so that it can be run without having to get python or uesave<br>
-uesave - https://github.com/trumank/uesave-rs, all credit for this goes to trumank, this is a program made in rust but compiled to .exe , allows translating Unreal Engine .sav files to json and back again<br>
-ChatGPT - used for some comments and code snippets , i am still learning about python after all<br>
+## Main Credits:
+UESave - By Trumank - Allows for the conversion of Unreal Engine save files to and from JSON format - https://github.com/trumank/uesave-rs
 
-install:<br>
-  if you have crab champions installed at the default location then you don't need to do anything<br>
-  if crab champions is installed in a different location then you need to put the script in the save game location<br>
-  you would put it at %LOCALAPPDATA%\CrabChampions\Saved for the default location , use that to try to determine what the location is for you if it is a custom location <br>
-
-use:<br>
+## Install:  
+Create a new directory anywhere, and put the desired version of the program in it.
+If you are using the .exe version, simply double click the file, the .py version is required to be run via the terminal (Windows 10: Powershell, Windows 11: Terminal)
+### Windows: 
+[Executable download (.exe)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe) - Generally simpler as you don't have to deal with a seperate UESave binary<br>
+[Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe) - Program in its purest form. Requires the UESave binary in the same directory
+### Linux
+[Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py) - On linux it will download a version of UESave for linux, but it is likely that it isn't compatible with your distro, and, as such, you should compile it yourself
+## Wiki
+i am making a wiki for the program and parts of the game as it relates to CCSM  
+List of maps with pictures : [Maps](https://github.com/O2theC/CrabChampionSaveManager/wiki/Maps)
+<br>  
+<br>  
+## Use:<br>
   just start the program and it should open a cmd window<br>
-  this program is cmd line based so just type in the number that links to the option you want and then press enter<br>
-  both the .py and .exe versions work very similar <br>
 
 
-FAQ:<br>
-Q: Can I help write and commit code?<br>
 
-A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome<br>
-<br>
-<br>
-<br>
-Some other projects that are kind of similar to this one, in no particular order<br><br>
-a web-based save converter to turn your .sav to JSON and back - https://afkaf.github.io/Crab-Champion-Save-Manager/ - https://github.com/afkaf/Crab-Champion-Save-Manager<br>
-item wiki for the game - https://crabchampions.info
+# FAQ:<br>
+Q: Can I write code rather than creating an issue waiting?<br>
+
+A: 100%! If you tested it and it works, feel free to submit a pull request! I'll test it and give the verdict, but please create an issue as well<br>
+and link the pull request to it.
