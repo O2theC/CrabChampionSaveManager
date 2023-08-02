@@ -2,7 +2,7 @@
 a save manager for Crab Champions, made in Python 
 
 made this for a group of friends to manage saves easier 
-feel free to use it yourself, it is text-based, just run the file
+feel free to use it yourself
 
 Main Credits:<br>
 Pyinstaller - used to make .exe versions of the script so that it can be run without having to get python or uesave<br>
@@ -31,7 +31,19 @@ List of maps with pictures : [Maps](https://github.com/O2theC/CrabChampionSaveMa
 # FAQ:<br>
 Q: Can I help write and commit code?<br>
 
-A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome<br>
+A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome  
+
+Q: I have questions about the program, how can i contact you?
+
+A: either submit an issue with your question or send me a msg to my discord( o2c )
+
+Q: i have suggestions for the program
+
+A: great, make an issue with your suggestion and why you think it would be useful or send my a msg to my discord( o2c ) and i will check it out
+
+Q: i have a problem with the program
+
+A: check the wiki, it may or may not have info about common issues, other wise make an issue or contact me on discord at o2c
 <br>
 <br>
 <br>
