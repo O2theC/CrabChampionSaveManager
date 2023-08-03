@@ -2666,15 +2666,15 @@ def manageBackups():
 def managePresets():
     prompt = "Managing Presets\n"
     options = [
-        ["Back-Returns you to the main menu", 0, 3],
-        ["Create Preset-Create a new preset", 0, 3],
-        ["Use Preset-Set current save or backup using a preset", 0, 3],
-        ["Edit Presets-Edit one of your presets", 0, 3],
-        ["Delete Preset-Delete a preset", 0, 3],
+        ["Back-Returns you to the main menu", 0, 2],
+        ["Create Preset-Create a new preset", 0, 2],
+        ["Use Preset-Set current save or backup using a preset", 0, 2],
+        ["Edit Presets-Edit one of your presets", 0, 2],
+        ["Delete Preset-Delete a preset", 0, 2],
         [
             "List Presets and Preset Details-List all your presets, select a preset to see it's settings",
             0,
-            3,
+            2,
         ],
     ]
     while True:
@@ -3592,7 +3592,6 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 "Tropical_Boss_02",
                 "Arctic_Arena_01",
                 "Arctic_Arena_02",
-                "Arctic_Boss_03",
                 "Arctic_Horde_01",
                 "Arctic_Horde_02",
                 "Arctic_Horde_03",
@@ -3604,6 +3603,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
                 "Arctic_Parkour_01",
                 "Arctic_Boss_01",
                 "Arctic_Boss_02",
+                "Arctic_Boss_03",
                 "Volcanic_Arena_01",
                 "Volcanic_Arena_02",
                 "Volcanic_Arena_03",
