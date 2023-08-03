@@ -2,28 +2,52 @@
 a save manager for Crab Champions, made in Python 
 
 made this for a group of friends to manage saves easier 
-feel free to use it yourself, it is text-based, just run the file
+feel free to use it yourself
 
 Main Credits:<br>
 Pyinstaller - used to make .exe versions of the script so that it can be run without having to get python or uesave<br>
 uesave - https://github.com/trumank/uesave-rs, all credit for this goes to trumank, this is a program made in rust but compiled to .exe , allows translating Unreal Engine .sav files to json and back again<br>
 ChatGPT - used for some comments and code snippets , i am still learning about python after all<br>
 
-install:<br>
-  if you have crab champions installed at the default location then you don't need to do anything<br>
-  if crab champions is installed in a different location then you need to put the script in the save game location<br>
-  you would put it at %LOCALAPPDATA%\CrabChampions\Saved for the default location , use that to try to determine what the location is for you if it is a custom location <br>
-
-use:<br>
+# Install:  
+download the program and then run it
+### Windows: 
+[Executable download (.exe)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe) - do this if you don't know what to do  
+[Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe)  
+### Linux
+[Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py)  
+# Use:
+just run the file and it should start up
+# Wiki
+i am making a wiki for the program and parts of the game as it relates to CCSM  
+List of maps with pictures : [Maps](https://github.com/O2theC/CrabChampionSaveManager/wiki/Maps)
+<br>  
+<br>  
+# Use:<br>
   just start the program and it should open a cmd window<br>
-  this program is cmd line based so just type in the number that links to the option you want and then press enter<br>
-  both the .py and .exe versions work very similar <br>
 
 
-FAQ:<br>
+
+# FAQ:<br>
 Q: Can I help write and commit code?<br>
 
-A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome<br>
+A: This is my first biggish project and as such I would rather write it myself, but that doesn't mean I won't "borrow" any code in an issue or pull request, feature requests, suggestions, and ideas are welcome  
+
+Q: I have questions about the program, how can i contact you?
+
+A: either submit an issue with your question or send me a msg to my discord( o2c )
+
+Q: i have suggestions for the program
+
+A: great, make an issue with your suggestion and why you think it would be useful or send my a msg to my discord( o2c ) and i will check it out
+
+Q: i have a problem with the program
+
+A: check the wiki, it may or may not have info about common issues, other wise make an issue or contact me on discord at o2c
+
+Q: my antivirus flags this as malware / virus
+
+A: this is not malware or a virus , check it on virustotal (it has been known to get hit by a few vendors but last i checked, it was at max 4 out of 70 vendors ), plus if you want then look through the source code / use the source code
 <br>
 <br>
 <br>
