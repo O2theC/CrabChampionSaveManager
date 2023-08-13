@@ -23,8 +23,6 @@ i am making a wiki for the program and parts of the game as it relates to CCSM
 List of maps with pictures : [Maps](https://github.com/O2theC/CrabChampionSaveManager/wiki/Maps)
 <br>  
 <br>  
-# Use:<br>
-  just start the program and it should open a cmd window<br>
 
 
 
