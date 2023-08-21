@@ -22,7 +22,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.5.0"
+Version = "3.6.0"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -32,16 +32,28 @@ if getattr(sys, "frozen", False):
 
 
 def unhandledExeceptionHandle(exc_type, exc_value, exc_traceback):
+    trace = ""
+    ar = traceback.format_tb(exc_traceback)
+    for i in ar:
+        trace += i
+
     infoScreen(
-        "Execption\nType : "
+        "An Execption/Error happened, contact dev to report or check wiki\n\nType : "
         + str(exc_type)
         + "\nValue : "
         + str(exc_value)
-        + "\nTraceback : "
-        + str(exc_traceback)
+        + "\nTraceback : \n"
+        + trace
     )
     f = open("traceback.log", "w")
-    f.write(str(exc_traceback))
+    f.write(
+        "An Execption/Error happened, contact dev to report or check wiki\n\nType : "
+        + str(exc_type)
+        + "\nValue : "
+        + str(exc_value)
+        + "\nTraceback : \n"
+        + trace
+    )
     f.close()
     time.sleep(10)
     pass
@@ -373,6 +385,7 @@ def restoreBackup():
     with open("restoredSave.json", "w") as JSON_File:
         JSON_File.write(json.dumps(saveJSON, indent=4))
     infoScreen("6/8")
+    # print(uesavePath+" from-json -i restoredSave.json -o SaveGames/SaveSlot.sav")
     proc1 = subprocess.Popen(
         uesavePath + " from-json -i restoredSave.json -o SaveGames/SaveSlot.sav",
         shell=True,
@@ -751,11 +764,21 @@ def scrollSelectMenu(
     returnAnything=False,
 ):
     """
-    details-
+    uses curses to create a UI for users to select from entered options with many optinoal arguments for different stuff
+
+    prompt - enter as a string or array of strings , sets the prompt at the top of the UI
+
+    options - enter as a string, array of strings or array of arrays in this format [ [String/text,color:int,displayType:int] ] , for display type
+
     0 - color text , bold select
+
     1 - color text , color select
+
     2 - color text , bold select details
+
     3 - color text , color select details
+
+
 
     """
     global screen
@@ -991,13 +1014,16 @@ def scrollSelectMenu(
             if returnMore:
                 return selected_option, scroll_window
             else:
-                return selected_option
+                if returnAnything:
+                    return selected_option, selected_option
+                else:
+                    return selected_option
         elif key == curses.KEY_UP and selected_option == 0 and loop:
             selected_option = len(options) - 1
         elif key == curses.KEY_DOWN and selected_option == len(options) - 1 and loop:
             selected_option = 0
         elif key != -1 and returnAnything:
-            return key
+            return key, selected_option
 
         # if the selected item goes out of the effective window then the scrolling
         # window moves up or down to keep the selective item in the effective
@@ -1576,6 +1602,7 @@ def getChecksum(file_path):
 
 
 def loadCache():
+    start = time.time()
     infoScreen("Loading Cache\nThis might take a few seconds")
     global cacheLock
     global Version
@@ -1644,6 +1671,8 @@ def loadCache():
     file.seek(0)
     file.truncate()
     file.write(json.dumps(cacheJSON, indent=4))
+    stop = time.time()
+    # print(round(stop-start,3))
 
 
 def spaceBeforeUpper(string):
@@ -2637,6 +2666,7 @@ def manageBackups():
         ["Edit Save-Edit your current save or any of your backups using uesave", 0, 2],
         ["Backup Save-Backup up your current save with a name of your choice", 0, 2],
         ["Update Backup-Choose a backup to update using your current save", 0, 2],
+        ["Convert Backup-Choose a backup to convert to a preset", 0, 2],
         ["Restore Save-Set your current save using a backup", 0, 2],
         ["Delete Backup-Delete a backup", 0, 2],
         [
@@ -2650,17 +2680,43 @@ def manageBackups():
         if choice == 0:
             return
         elif choice == 1:
-            editBackupRaw()
+            manageBackupEdit()
         elif choice == 2:
             backupSave()
         elif choice == 3:
             updateBackup()
         elif choice == 4:
-            restoreBackup()
+            convertBackupMenu()
         elif choice == 5:
-            deleteBackup()
+            restoreBackup()
         elif choice == 6:
+            deleteBackup()
+        elif choice == 7:
             listBackups()
+
+
+def convertBackupMenu():
+    cur_dir = os.getcwd()
+
+    prompt = "What backup would you like to convert to a preset?"
+    choice = selectBackupMenu(prompt, currentSave=True)
+
+    if choice == 0:
+        return
+    elif choice == 1:
+        name = presetNameMenu(
+            "What would you like the preset to be named?\nThe backup selected is Current Save"
+        )
+        f = open("CrabChampionSaveManager/Presets/" + name + ".ccsm", "w")
+        f.write(
+            json.dumps(backup2Preset(cacheJSON["BackupData"]["Current Save"]), indent=4)
+        )
+        f.close()
+    else:
+        name = presetNameMenu(
+            "What would you like the preset to be named?\nThe backup selected is "
+            + choice
+        )
 
 
 def managePresets():
@@ -2691,6 +2747,153 @@ def managePresets():
             deletePreset()
         elif choice == 5:
             listPresets()
+
+
+def manageBackupEdit():
+    # config stuff will be here soon
+
+    while True:
+        prompt = "Would you like to edit a backup using pure raw JSON or using an UI?\n"
+        options = [
+            ["Back", 0, 0],
+            ["Edit raw JSON", 0, 0],
+            ["Edit with UI (Recommended)", 0, 0],
+        ]
+        choice = scrollSelectMenu(prompt, options)
+
+        if choice == 0:
+            return
+        elif choice == 1:
+            editBackupRaw()
+        elif choice == 2:
+            editBackupUI()
+
+
+def editBackupUI():
+    global isExe
+    """Edits a backup of the save game using an UI
+
+    Displays the available backups and prompts the user to choose one.
+    If a backup is selected, it opens the SaveSlot.sav file for editing
+    using an UI. Two backup copies (SaveSlotBackupA.sav and SaveSlotBackupB.sav)
+    are created before editing.
+    """
+
+    curDir = os.getcwd()
+
+    choice = selectBackupMenu(
+        "Choose Backup to edit", back="Back to Main Menu", currentSave=True
+    )
+    if choice == 0:
+        return
+    saveFile = ""
+    if choice == 1:
+        saveFile = os.path.join(curDir, "SaveGames")
+        backupName = "Current Save"
+        folderName = "SaveGames"
+    else:
+        backupName = choice
+        saveFile = os.path.join(curDir, backupName)
+        folderName = backupName
+    saveFolder = saveFile.replace("\\", "/")
+    uePath = getUesavePath()
+    saveFile = os.path.join(saveFile, "SaveSlot.sav")
+    saveFile = saveFile.replace("\\", "/")
+    # print(uePath+" to-json -i "+saveFile+" -o "+os.path.join(saveFolder,"SaveSlot.json").replace("\\","/"))
+    # print(uePath+" to-json -i \""+saveFile+"\" -o \""+os.path.join(saveFolder,"SaveSlot.json").replace("\\","/")+"\"")
+    proc = subprocess.Popen(
+        uePath
+        + ' to-json -i "'
+        + saveFile
+        + '" -o "'
+        + os.path.join(saveFolder, "SaveSlot.json").replace("\\", "/")
+        + '"'
+    )
+    saveBackA = saveFile.replace("SaveSlot.sav", "SaveSlotBackupA.sav")
+    saveBackB = saveFile.replace("SaveSlot.sav", "SaveSlotBackupB.sav")
+    sf = saveFile
+
+    # f = open("backupTurnedPreset.ccsm","w")
+    backupJSON = cacheJSON["BackupData"][backupName]
+    rawGameJSON = json.loads(backupJSON["Raw"])
+    presetJSON = backup2Preset(backupJSON)
+    presetJSON = editPreset(presetJSON, backupName, backup=True)
+    if presetJSON is None:
+        proc.wait()
+        os.remove(os.path.join(saveFolder, "SaveSlot.json").replace("\\", "/"))
+        return
+    gameJSON = convertPresetToGameSave(presetJSON, rawGameJSON)
+    proc.wait()
+    GameJSONFile = open(os.path.join(saveFolder, "SaveSlot.json"), "r+")
+    GameJSON = json.loads(GameJSONFile.read())
+    GameJSON["root"]["properties"]["AutoSave"] = gameJSON["AutoSave"]
+    GameJSONFile.seek(0)
+    GameJSONFile.write(json.dumps(GameJSON, indent=4))
+    GameJSONFile.close()
+    # os.remove(saveFile)
+    # print(uePath+" from-json -i "+folderName+"/SaveSlot.json -o "+folderName+"/SaveSlot.sav")
+    # exiting(0)
+    proc2 = subprocess.Popen(
+        uePath
+        + " from-json -i "
+        + folderName
+        + "/SaveSlot.json -o "
+        + folderName
+        + "/SaveSlot.sav"
+    )
+    proc2.wait()
+    os.remove(os.path.join(saveFolder, "SaveSlot.json").replace("\\", "/"))
+    try:
+        os.remove(saveBackA)
+        os.remove(saveBackB)
+    except BaseException:
+        None
+    shutil.copy(sf, saveBackA)
+    shutil.copy(sf, saveBackB)
+
+    # fix for terminal text editors like nano and vim
+    # curses.noecho()  # Don't display user input
+    # curses.cbreak()  # React to keys immediately without Enter
+    # screen.keypad(True)  # Enable special keys (e.g., arrow keys)
+    # time.sleep(10)
+
+
+def selectBackupMenu(prompt="", back="Back", currentSave=False):
+    """makes having the user select a backup much easyer, by default it gives options for a back option and a current save option
+
+    it has optional arguments for different names for both the back and current save options, set either to False to disable/get rid of the option in the menu
+
+    returns 0 for the back option
+
+    returns 1 for the current save option
+
+    returns the name of the backup selected otherwise
+
+    """
+    if currentSave:
+        currentSave = not cacheJSON["BackupData"]["Current Save"]["NoSave"]
+    curDir = os.getcwd()
+    folInfo = getBackups(moreInfo=1, currentSave=currentSave)
+    fols = getBackups(currentSave=currentSave)
+    options = ""
+    if back:
+        options = back
+    for i in range(len(folInfo)):
+        options += "\n" + str(folInfo[i])
+    if options[0:1] == "\n":
+        options = options[1:]
+    choice = scrollSelectMenu(prompt, options, -1, 1)
+    if choice == 0 and back:
+        return 0
+    if choice == 0 and currentSave:
+        return 1
+    if choice == 1 and currentSave:
+        return 1
+    else:
+        s = 0
+        if back:
+            s += 1
+        return fols[parseInt(choice) - s]
 
 
 def genPlayerData(saveJSON, checksum):
@@ -3287,7 +3490,7 @@ def presetNameMenu(prompt):
             presetName += chr(key)
 
 
-def editPreset(preset, name, overriade=False, cancel=True):
+def editPreset(preset, name, overriade=False, cancel=True, backup=False):
     getUnlocked()
     global WEAPONS
     global WEAPONMODS
@@ -3407,7 +3610,10 @@ def editPreset(preset, name, overriade=False, cancel=True):
             + ensureLength("Perk Slots:", leng)
             + str(presetJSON["Inventory"]["Perks"]["Slots"])
         )
-        info += "\n" + ensureLength("Key Totem:", leng) + str(presetJSON["keyTotemItem"])
+        if not backup:
+            info += (
+                "\n" + ensureLength("Key Totem:", leng) + str(presetJSON["keyTotemItem"])
+            )
         info += "\nItems:"
         maxName = 6
         maxRarity = 8
@@ -4029,9 +4235,11 @@ def editPreset(preset, name, overriade=False, cancel=True):
 
         elif choice == 0:
             can = False
-            if os.path.exists(
-                owd + "/CrabChampionSaveManager/Presets/" + name + ".ccsm"
-            ) and (not overriade or (overriade and oname != name)):
+            if (
+                os.path.exists(owd + "/CrabChampionSaveManager/Presets/" + name + ".ccsm")
+                and (not overriade or (overriade and oname != name))
+                and not backup
+            ):
                 perm = yornMenu("There is already a preset by that name, Overwrite")
                 if perm:
                     break
@@ -4041,7 +4249,7 @@ def editPreset(preset, name, overriade=False, cancel=True):
         elif "Cancel" in info[choice]:
             can = True
             break
-    if not can:
+    if not can and not backup:
         presetJSON
 
         f = open(owd + "/CrabChampionSaveManager/Presets/" + name + ".ccsm", "w")
@@ -4050,6 +4258,8 @@ def editPreset(preset, name, overriade=False, cancel=True):
 
         if oname != name:
             os.remove(owd + "/CrabChampionSaveManager/Presets/" + oname + ".ccsm")
+    elif backup and not can:
+        return presetJSON
 
 
 def ChallengesDetails(chall):
@@ -4399,11 +4609,26 @@ def convertMyItemtoGameItem(MyItemJson):
         return GameItemJson
 
 
+def mergeJSON(dict1, dict2):
+    for key, value in dict2.items():
+        if isinstance(value, dict) and key in dict1:
+            mergeJSON(dict1[key], value)
+        else:
+            dict1[key] = value
+
+    return dict1
+
+
 def convertPresetToGameSave(preset, defaultJSONOverride=""):
     GameJSON = '{"AutoSave":{"Struct":{"value":{"Struct":{"Difficulty":{"Enum":{"value":"ECrabDifficulty::Normal","enum_type":"ECrabDifficulty"}},"DifficultyModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"NextIslandInfo":{"Struct":{"value":{"Struct":{"Biome":{"Enum":{"value":"ECrabBiome::Tropical","enum_type":"ECrabBiome"}},"CurrentIsland":{"Int":{"value":1}},"IslandName":{"Name":{"value":"Tropical_Arena_01"}},"IslandType":{"Enum":{"value":"ECrabIslandType::Arena","enum_type":"ECrabIslandType"}},"Blessing":{"Enum":{"value":"","enum_type":"ECrabBlessing"}},"ChallengeModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"RewardLootPool":{"Enum":{"value":"ECrabLootPool::Random","enum_type":"ECrabLootPool"}}}},"struct_type":{"Struct":"CrabNextIslandInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthInfo":{"Struct":{"value":{"Struct":{"CurrentArmorPlates":{"Int":{"value":0}},"CurrentArmorPlateHealth":{"Float":{"value":0}},"CurrentHealth":{"Float":{"value":100}},"CurrentMaxHealth":{"Float":{"value":100}}}},"struct_type":{"Struct":"CrabHealthInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthMultiplier":{"Float":{"value":1}},"DamageMultiplier":{"Float":{"value":1}},"WeaponDA":{"Object":{"value":""}},"NumWeaponModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"WeaponMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"WeaponMods","name":"StructProperty","struct_type":{"Struct":"CrabWeaponMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumGrenadeModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"GrenadeMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"GrenadeMods","name":"StructProperty","struct_type":{"Struct":"CrabGrenadeMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumPerkSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"Perks":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"Perks","name":"StructProperty","struct_type":{"Struct":"CrabPerk"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"Crystals":{"UInt32":{"value":0}}}},"struct_type":{"Struct":"CrabAutoSave"},"struct_id":"00000000-0000-0000-0000-000000000000"}}}'
     if defaultJSONOverride != "":
-        GameJSON = defaultJSONOverride
-    GameJSON = json.loads(GameJSON)
+        if not isinstance(defaultJSONOverride, type(dict())):
+            defaultJSONOverride = json.loads(defaultJSONOverride)
+        GameJSON = json.loads(GameJSON)
+        GameJSON = mergeJSON(GameJSON, defaultJSONOverride)
+    else:
+        GameJSON = json.loads(GameJSON)
+
     # saveJSON = saveJSON["AutoSave"]
     # difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override
     # island num                ["NextIslandInfo"]["Struct"]["value"]["Struct"]["CurrentIsland"]["Int"]["value"]
@@ -4875,6 +5100,19 @@ def makeMainMenuPrompt(Version, LatestVersion, VersionValue, LatestValue, update
     return mainMenuPrompt
 
 
+def backup2Preset(backupJSON):
+    None
+    PresetJSON = backupJSON.copy()
+    presetStuff = "Diff,IslandNum,DiffMods,Crystals,Biome,LootType,IslandName,IslandType,Health,MaxHealth,ArmorPlates,ArmorPlatesHealth,HealthMultiplier,DamageMultiplier,Inventory,Challenges,Blessings".split(
+        ","
+    )  # names of the keys that are in the backup cache that we want for the preset
+    for k in PresetJSON.copy().keys():
+        if k not in presetStuff:
+            PresetJSON.pop(k)
+
+    return PresetJSON
+
+
 global DIFFMODS
 global DIFFMODSDETAILS
 global ISLANDTYPE
@@ -5036,6 +5274,7 @@ updatePrompt = True
 
 
 # time.sleep(20)
+lastSel = 0
 while True:
     mainMenuPrompt = makeMainMenuPrompt(
         Version, LatestVersion, VersionValue, LatestValue, updatePrompt
@@ -5044,7 +5283,11 @@ while True:
     options = "Manage Backups\nManage Presets\nInfo/How to use\nSettings\nExit"
     # options = "Manage Backups\nInfo/How to use\nSettings\nExit"
     # options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
-    choice = scrollSelectMenu(mainMenuPrompt, options, -1, 1, returnAnything=True) + 1
+    choice, lastSel = scrollSelectMenu(
+        mainMenuPrompt, options, -1, 1, returnAnything=True, startChoice=lastSel
+    )
+    choice += 1
+
     # if(choice == 1):
     #     editBackup() # turned to curse
     # elif(choice == 2):
