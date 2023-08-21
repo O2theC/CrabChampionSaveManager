@@ -524,6 +524,7 @@ def listBackups():
 
 def getBackups(moreInfo=0, currentSave=False):
     global cacheJSON
+    loadCache()
     """Retrieves the list of backup folders.
 
     Searches the current directory for backup folders and returns a list of their names.
@@ -549,6 +550,13 @@ def getBackups(moreInfo=0, currentSave=False):
     ]
     if currentSave:
         folders.insert(0, "Current Save")
+
+    for i in range(folders):
+        try:
+            if cacheJSON["BackupData"][i]["NoSave"]:
+                folders.pop(i)
+        except BaseException:
+            folders.pop(i)
     if moreInfo == 0:
         return folders
     else:
@@ -562,7 +570,6 @@ def getBackups(moreInfo=0, currentSave=False):
         # nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
         ofold = folders
         try:
-            loadCache()
             maxLenName = 0
             maxLenTime = 0
             maxLenDiff = 0
