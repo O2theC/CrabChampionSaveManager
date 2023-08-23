@@ -482,6 +482,13 @@ def deleteBackup():
     choice = scrollSelectMenu(prompt, options, -1, 1)
     if parseInt(choice) == 0:
         return
+
+    perm = yornMenu(
+        "Are you sure you want to delete " + folders[parseInt(choice) - 1], False
+    )
+    if not perm:
+        return
+
     backupName = os.path.join(current_directory, folders[parseInt(choice) - 1])
     try:
         shutil.rmtree(backupName)
@@ -522,9 +529,10 @@ def listBackups():
     listBackups()
 
 
-def getBackups(moreInfo=0, currentSave=False):
+def getBackups(moreInfo=0, currentSave=False, updateCache=True):
     global cacheJSON
-    loadCache()
+    if updateCache:
+        loadCache()
     """Retrieves the list of backup folders.
 
     Searches the current directory for backup folders and returns a list of their names.
@@ -551,12 +559,13 @@ def getBackups(moreInfo=0, currentSave=False):
     if currentSave:
         folders.insert(0, "Current Save")
 
-    for i in range(folders):
-        try:
-            if cacheJSON["BackupData"][i]["NoSave"]:
-                folders.pop(i)
-        except BaseException:
-            folders.pop(i)
+    if updateCache:
+        for i in folders:
+            try:
+                if cacheJSON["BackupData"][i]["NoSave"]:
+                    folders.pop(folders.index(i))
+            except BaseException:
+                folders.pop(folders.index(i))
     if moreInfo == 0:
         return folders
     else:
@@ -1117,15 +1126,17 @@ def scrollInfoMenu(
             return
 
 
-def yornMenu(prompt):
+def yornMenu(prompt: str, defaultY=True):
     global screen
 
     curstate = curses.curs_set(1)
     ans = ""
     while True:
         screen.clear()
-
-        screen.addstr(0, 0, prompt + " [Y/n]: " + str(ans))
+        if defaultY:
+            screen.addstr(0, 0, prompt + " [Y/n]: " + str(ans))
+        else:
+            screen.addstr(0, 0, prompt + " [y/N]: " + str(ans))
         screen.refresh()
         key = screen.getch()
 
@@ -1138,7 +1149,10 @@ def yornMenu(prompt):
         elif key == curses.KEY_ENTER or key in [10, 13]:
             curses.curs_set(curstate)
             if ans == "":
-                return True
+                if defaultY:
+                    return True
+                else:
+                    return False
             elif ans == "n":
                 return False
             elif ans == "y":
@@ -1616,7 +1630,7 @@ def loadCache():
     global owd
     cacheLock = threading.Lock()
     global cacheJSON
-    backups = getBackups()
+    backups = getBackups(updateCache=False)
     cachePath = owd + "/CrabChampionSaveManager/backupDataCache.json"
     cachePath = cachePath.replace("\\", "/")
     # Create the directory if it doesn't exist
