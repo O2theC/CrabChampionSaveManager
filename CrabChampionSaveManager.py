@@ -14,6 +14,18 @@ import tkinter as tk
 from tkinter import filedialog
 import tkinter
 import traceback
+from SavConverter import (
+    sav_to_json,
+    read_sav,
+    json_to_sav,
+    load_json,
+    obj_to_json,
+    print_json,
+    get_object_by_path,
+    insert_object_by_path,
+    replace_object_by_path,
+    update_property_by_path,
+)
 
 
 global isExe
@@ -22,7 +34,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "3.6.0"
+Version = "3.6.2"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -482,6 +494,13 @@ def deleteBackup():
     choice = scrollSelectMenu(prompt, options, -1, 1)
     if parseInt(choice) == 0:
         return
+
+    perm = yornMenu(
+        "Are you sure you want to delete " + folders[parseInt(choice) - 1], False
+    )
+    if not perm:
+        return
+
     backupName = os.path.join(current_directory, folders[parseInt(choice) - 1])
     try:
         shutil.rmtree(backupName)
@@ -522,8 +541,10 @@ def listBackups():
     listBackups()
 
 
-def getBackups(moreInfo=0, currentSave=False):
+def getBackups(moreInfo=0, currentSave=False, updateCache=True):
     global cacheJSON
+    if updateCache:
+        loadCache()
     """Retrieves the list of backup folders.
 
     Searches the current directory for backup folders and returns a list of their names.
@@ -549,6 +570,14 @@ def getBackups(moreInfo=0, currentSave=False):
     ]
     if currentSave:
         folders.insert(0, "Current Save")
+
+    if updateCache:
+        for i in folders:
+            try:
+                if cacheJSON["BackupData"][i]["NoSave"]:
+                    folders.pop(folders.index(i))
+            except BaseException:
+                folders.pop(folders.index(i))
     if moreInfo == 0:
         return folders
     else:
@@ -562,7 +591,6 @@ def getBackups(moreInfo=0, currentSave=False):
         # nosave,if it has a save - ["BackupData"][BackupName]["NoSave"]
         ofold = folders
         try:
-            loadCache()
             maxLenName = 0
             maxLenTime = 0
             maxLenDiff = 0
@@ -764,11 +792,21 @@ def scrollSelectMenu(
     returnAnything=False,
 ):
     """
-    details-
+    uses curses to create a UI for users to select from entered options with many optinoal arguments for different stuff
+
+    prompt - enter as a string or array of strings , sets the prompt at the top of the UI
+
+    options - enter as a string, array of strings or array of arrays in this format [ [String/text,color:int,displayType:int] ] , for display type
+
     0 - color text , bold select
+
     1 - color text , color select
+
     2 - color text , bold select details
+
     3 - color text , color select details
+
+
 
     """
     global screen
@@ -1004,13 +1042,16 @@ def scrollSelectMenu(
             if returnMore:
                 return selected_option, scroll_window
             else:
-                return selected_option
+                if returnAnything:
+                    return selected_option, selected_option
+                else:
+                    return selected_option
         elif key == curses.KEY_UP and selected_option == 0 and loop:
             selected_option = len(options) - 1
         elif key == curses.KEY_DOWN and selected_option == len(options) - 1 and loop:
             selected_option = 0
         elif key != -1 and returnAnything:
-            return key
+            return key, selected_option
 
         # if the selected item goes out of the effective window then the scrolling
         # window moves up or down to keep the selective item in the effective
@@ -1097,15 +1138,17 @@ def scrollInfoMenu(
             return
 
 
-def yornMenu(prompt):
+def yornMenu(prompt: str, defaultY=True):
     global screen
 
     curstate = curses.curs_set(1)
     ans = ""
     while True:
         screen.clear()
-
-        screen.addstr(0, 0, prompt + " [Y/n]: " + str(ans))
+        if defaultY:
+            screen.addstr(0, 0, prompt + " [Y/n]: " + str(ans))
+        else:
+            screen.addstr(0, 0, prompt + " [y/N]: " + str(ans))
         screen.refresh()
         key = screen.getch()
 
@@ -1118,7 +1161,10 @@ def yornMenu(prompt):
         elif key == curses.KEY_ENTER or key in [10, 13]:
             curses.curs_set(curstate)
             if ans == "":
-                return True
+                if defaultY:
+                    return True
+                else:
+                    return False
             elif ans == "n":
                 return False
             elif ans == "y":
@@ -1596,7 +1642,7 @@ def loadCache():
     global owd
     cacheLock = threading.Lock()
     global cacheJSON
-    backups = getBackups()
+    backups = getBackups(updateCache=False)
     cachePath = owd + "/CrabChampionSaveManager/backupDataCache.json"
     cachePath = cachePath.replace("\\", "/")
     # Create the directory if it doesn't exist
@@ -1679,6 +1725,8 @@ def spaceBeforeUpper(string):
 
 
 def parseDiffMods(mods):
+    if mods is None:
+        return None
     for i in range(len(mods)):
         mods[i] = spaceBeforeUpper(str(mods[i][25:]))
     return mods
@@ -1689,47 +1737,22 @@ def genBackupData(backupName):
     global cacheLock
     global cacheJSON
     savFilePath = "" + backupName + "/SaveSlot.sav"
-    savFile = savFilePath
-    # print(savFile)
-    # print(savFile.replace("SaveSlot.sav","data.json"))
-    uesavePath = getUesavePath()
-    savFile = savFile.replace("\\", "/")
-    ueStart = time.time()
-    proc = subprocess.Popen(
-        uesavePath
-        + ' to-json -i "'
-        + savFile
-        + '" -o "'
-        + savFile.replace("SaveSlot.sav", "data.json")
-        + '"',
-        shell=True,
-    )
-    proc.wait()
-    ueStop = time.time()
-    start3 = time.time()
-    saveFile = open(savFile.replace("SaveSlot.sav", "data.json"), "r")
-    saveJSON = json.loads(saveFile.read())
-    saveFile.close()
-    os.remove(savFile.replace("SaveSlot.sav", "data.json"))
-    checksum = getChecksum(backupName + "/SaveSlot.sav")
+    savFilePath = savFilePath.replace("\\", "/")
+    saveJSON = getJSON(savFilePath)
+    checksum = getChecksum(savFilePath)
     if backupName == "SaveGames":
         backupName = "Current Save"
         genPlayerData(saveJSON, checksum)
-    try:
-        raw = saveJSON["root"]["properties"]
-        saveJSON = saveJSON["root"]["properties"]["AutoSave"]["Struct"]["value"]["Struct"]
-        for k in raw.copy().keys():
-            if k != "AutoSave":
-                raw.pop(k)
-    except BaseException as e:
-        traceback.print_exception(e)
-        traceback.print_stack(e)
+    saveJSON = getValue(saveJSON, Paths.Autosave)
+    hasSave = saveJSON is not None
+    if not hasSave:
         cacheLock.acquire()
         cacheJSON["BackupData"][backupName] = {}
         cacheJSON["BackupData"][backupName]["CheckSum"] = checksum
         cacheJSON["BackupData"][backupName]["NoSave"] = True
         cacheLock.release()
         return
+
     backupJSON = json.loads("{}")
     # saveJSON = saveJSON["AutoSave"]
     # run time in seconds (int) ["CurrentTime"]["Int"]["value"]
@@ -1925,107 +1948,103 @@ def genBackupData(backupName):
     # Luck
 
     backupJSON[backupName] = {}
-    try:
-        backupJSON[backupName]["RunTime"] = saveJSON["CurrentTime"]["Int"]["value"]
-    except BaseException:
+
+    backupJSON[backupName]["RunTime"] = getValue(saveJSON, Paths.CurrentTime)
+    if backupJSON[backupName]["RunTime"] is None:
         backupJSON[backupName]["RunTime"] = 0
-    try:
-        backupJSON[backupName]["Score"] = saveJSON["Points"]["Int"]["value"]
-    except BaseException:
+
+    backupJSON[backupName]["Score"] = getValue(saveJSON, Paths.Points)
+    if backupJSON[backupName]["Score"] is None:
         backupJSON[backupName]["Score"] = 0
-    try:
-        diff = saveJSON["Difficulty"]["Enum"]["value"]
+
+    diff = getValue(saveJSON, Paths.Difficulty)
+    if diff is None:
+        backupJSON[backupName]["Difficulty"] = "Normal"
+    else:
         diff = diff[diff.index("::") + 2 :]
-    except BaseException:
-        diff = "Normal"
-    backupJSON[backupName]["Diff"] = diff
-    backupJSON[backupName]["IslandNum"] = saveJSON["NextIslandInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentIsland"]["Int"]["value"]
-    try:
-        backupJSON[backupName]["DiffMods"] = parseDiffMods(
-            saveJSON["DifficultyModifiers"]["Array"]["value"]["Base"]["Enum"]
-        )
-    except BaseException:
+        backupJSON[backupName]["Difficulty"] = diff
+
+    backupJSON[backupName]["IslandNum"] = getValue(saveJSON, Paths.CurrentIsland)
+    if backupJSON[backupName]["IslandNum"] is None:
+        backupJSON[backupName]["IslandNum"] = 0
+
+    backupJSON[backupName]["DiffMods"] = parseDiffMods(
+        getValue(saveJSON, Paths.DifficultyModifiers)
+    )
+    if backupJSON[backupName]["DiffMods"] is None:
         backupJSON[backupName]["DiffMods"] = []
-    try:
-        backupJSON[backupName]["Elimns"] = toUInt32(
-            saveJSON["Eliminations"]["Int"]["value"]
-        )
-    except BaseException:
+
+    backupJSON[backupName]["Elimns"] = toUInt32(getValue(saveJSON, Paths.Eliminations))
+    if backupJSON[backupName]["Elimns"] is None:
         backupJSON[backupName]["Elimns"] = 0
-    try:
-        backupJSON[backupName]["ShotsFired"] = toUInt32(
-            saveJSON["ShotsFired"]["Int"]["value"]
-        )
-    except BaseException:
+
+    backupJSON[backupName]["ShotsFired"] = toUInt32(getValue(saveJSON, Paths.ShotsFired))
+    if backupJSON[backupName]["ShotsFired"] is None:
         backupJSON[backupName]["ShotsFired"] = 0
 
-    try:
-        backupJSON[backupName]["DmgDealt"] = toUInt32(
-            saveJSON["DamageDealt"]["Int"]["value"]
-        )
-    except BaseException:
-        backupJSON[backupName]["DmgDealt"] = 0
+    backupJSON[backupName]["DamageDealt"] = toUInt32(
+        getValue(saveJSON, Paths.DamageDealt)
+    )
+    if backupJSON[backupName]["DamageDealt"] is None:
+        backupJSON[backupName]["DamageDealt"] = 0
 
-    try:
-        backupJSON[backupName]["MostDmgDealt"] = toUInt32(
-            saveJSON["HighestDamageDealt"]["Int"]["value"]
-        )
-    except BaseException:
+    backupJSON[backupName]["MostDmgDealt"] = toUInt32(
+        getValue(saveJSON, Paths.HighestDamageDealt)
+    )
+    if backupJSON[backupName]["MostDmgDealt"] is None:
         backupJSON[backupName]["MostDmgDealt"] = 0
 
-    try:
-        backupJSON[backupName]["DmgTaken"] = toUInt32(
-            saveJSON["DamageTaken"]["Int"]["value"]
-        )
-    except BaseException:
+    backupJSON[backupName]["DmgTaken"] = toUInt32(getValue(saveJSON, Paths.DamageTaken))
+    if backupJSON[backupName]["DmgTaken"] is None:
         backupJSON[backupName]["DmgTaken"] = 0
 
-    try:
-        backupJSON[backupName]["FlawlessIslands"] = saveJSON["NumFlawlessIslands"]["Int"][
-            "value"
-        ]
-    except BaseException:
+    backupJSON[backupName]["DmgTaken"] = toUInt32(getValue(saveJSON, Paths.DamageTaken))
+    if backupJSON[backupName]["DmgTaken"] is None:
+        backupJSON[backupName]["DmgTaken"] = 0
+
+    backupJSON[backupName]["FlawlessIslands"] = getValue(
+        saveJSON, Paths.NumFlawlessIslands
+    )
+    if backupJSON[backupName]["FlawlessIslands"] is None:
         backupJSON[backupName]["FlawlessIslands"] = 0
-    try:
-        backupJSON[backupName]["ItemsSalvaged"] = saveJSON["NumTimesSalvaged"]["Int"][
-            "value"
-        ]
-    except BaseException:
+
+    backupJSON[backupName]["ItemsSalvaged"] = getValue(saveJSON, Paths.NumTimesSalvaged)
+    if backupJSON[backupName]["ItemsSalvaged"] is None:
         backupJSON[backupName]["ItemsSalvaged"] = 0
-    try:
-        backupJSON[backupName]["ItemsPurchased"] = saveJSON["NumShopPurchases"]["Int"][
-            "value"
-        ]
-    except BaseException:
+
+    backupJSON[backupName]["ItemsPurchased"] = getValue(saveJSON, Paths.NumShopPurchases)
+    if backupJSON[backupName]["ItemsPurchased"] is None:
         backupJSON[backupName]["ItemsPurchased"] = 0
-    try:
-        backupJSON[backupName]["ShopRerolls"] = saveJSON["NumShopRerolls"]["Int"]["value"]
-    except BaseException:
+
+    backupJSON[backupName]["ShopRerolls"] = getValue(saveJSON, Paths.NumShopRerolls)
+    if backupJSON[backupName]["ShopRerolls"] is None:
         backupJSON[backupName]["ShopRerolls"] = 0
-    try:
-        backupJSON[backupName]["TotemsDestroyed"] = saveJSON["NumTotemsDestroyed"]["Int"][
-            "value"
-        ]
-    except BaseException:
+
+    backupJSON[backupName]["TotemsDestroyed"] = getValue(
+        saveJSON, Paths.NumTotemsDestroyed
+    )
+    if backupJSON[backupName]["TotemsDestroyed"] is None:
         backupJSON[backupName]["TotemsDestroyed"] = 0
 
-    backupJSON[backupName]["HealthMultiplier"] = saveJSON["HealthMultiplier"]["Float"][
-        "value"
-    ]
-    backupJSON[backupName]["DamageMultiplier"] = saveJSON["DamageMultiplier"]["Float"][
-        "value"
-    ]
+    backupJSON[backupName]["HealthMultiplier"] = getValue(
+        saveJSON, Paths.HealthMultiplier
+    )
+    if backupJSON[backupName]["HealthMultiplier"] is None:
+        backupJSON[backupName]["HealthMultiplier"] = 0
 
-    try:
-        backupJSON[backupName]["Blessings"] = [
-            saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Blessing"]["Enum"][
-                "value"
-            ][len("ECrabBlessing::") :]
-        ]
-    except BaseException:
+    backupJSON[backupName]["DamageMultiplier"] = getValue(
+        saveJSON, Paths.DamageMultiplier
+    )
+    if backupJSON[backupName]["DamageMultiplier"] is None:
+        backupJSON[backupName]["DamageMultiplier"] = 0
+
+    backupJSON[backupName]["Blessings"] = getValue(saveJSON, Paths.Blessing)
+    if backupJSON[backupName]["Blessings"] is None:
         backupJSON[backupName]["Blessings"] = []
+    else:
+        backupJSON[backupName]["Blessings"] = backupJSON[backupName]["Blessings"][
+            len("ECrabBlessing::") :
+        ]
 
     try:
         array = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"][
@@ -2161,7 +2180,7 @@ def genBackupData(backupName):
 
     backupJSON[backupName]["CheckSum"] = checksum
     backupJSON[backupName]["NoSave"] = False
-    backupJSON[backupName]["Raw"] = json.dumps(raw)
+    backupJSON[backupName]["Raw"] = json.dumps(saveJSON)
     cacheLock.acquire()
 
     try:
@@ -2190,6 +2209,8 @@ def toUInt32(value):
         >>> toUInt32(-456)
         4294966840
     """
+    if value is None:
+        return None
     if value < 0:
         return abs(value) + 2147483647
     return value
@@ -2328,29 +2349,39 @@ def lengthLimit(dict, wid):
 
 
 def parseWeapon(name):
+    if name is None:
+        return None
     name = name[name.rindex(".DA_Weapon_") + 11 :]
     return spaceBeforeUpper(name)
 
 
 def parseWeaponMod(name):
+    if name is None:
+        return None
     rarity = name[name.index("Mod/") + 4 : name.index("/", name.index("Mod/") + 4)]
     name = name[name.rindex(".DA_WeaponMod_") + 14 :]
     return [spaceBeforeUpper(name), rarity]
 
 
 def parseGrenadeMod(name):
+    if name is None:
+        return None
     rarity = name[name.index("Mod/") + 4 : name.index("/", name.index("Mod/") + 4)]
     name = name[name.rindex(".DA_GrenadeMod_") + 15 :]
     return [spaceBeforeUpper(name), rarity]
 
 
 def parsePerk(name):
+    if name is None:
+        return None
     rarity = name[name.index("Perk/") + 5 : name.index("/", name.index("Perk/") + 5)]
     name = name[name.rindex(".DA_Perk_") + 9 :]
     return [spaceBeforeUpper(name), rarity]
 
 
 def parseWeaponRank(rank):
+    if rank is None:
+        return None
     return rank[rank.index("ECrabRank::") + 11 :]
 
 
@@ -2369,10 +2400,14 @@ def formatNumber(num=0, decimal_places=0):
 
 
 def parseSkin(skin):
+    if skin is None:
+        return None
     return skin[skin.rindex("MI_") + 3 :]
 
 
 def parseChallenageName(name):
+    if name is None:
+        return None
     name = name[4:]
     name = name.split("_")
     tname = ""
@@ -2653,6 +2688,7 @@ def manageBackups():
         ["Edit Save-Edit your current save or any of your backups using uesave", 0, 2],
         ["Backup Save-Backup up your current save with a name of your choice", 0, 2],
         ["Update Backup-Choose a backup to update using your current save", 0, 2],
+        ["Convert Backup-Choose a backup to convert to a preset", 0, 2],
         ["Restore Save-Set your current save using a backup", 0, 2],
         ["Delete Backup-Delete a backup", 0, 2],
         [
@@ -2672,11 +2708,37 @@ def manageBackups():
         elif choice == 3:
             updateBackup()
         elif choice == 4:
-            restoreBackup()
+            convertBackupMenu()
         elif choice == 5:
-            deleteBackup()
+            restoreBackup()
         elif choice == 6:
+            deleteBackup()
+        elif choice == 7:
             listBackups()
+
+
+def convertBackupMenu():
+    cur_dir = os.getcwd()
+
+    prompt = "What backup would you like to convert to a preset?"
+    choice = selectBackupMenu(prompt, currentSave=True)
+
+    if choice == 0:
+        return
+    elif choice == 1:
+        name = presetNameMenu(
+            "What would you like the preset to be named?\nThe backup selected is Current Save"
+        )
+        f = open("CrabChampionSaveManager/Presets/" + name + ".ccsm", "w")
+        f.write(
+            json.dumps(backup2Preset(cacheJSON["BackupData"]["Current Save"]), indent=4)
+        )
+        f.close()
+    else:
+        name = presetNameMenu(
+            "What would you like the preset to be named?\nThe backup selected is "
+            + choice
+        )
 
 
 def managePresets():
@@ -3570,7 +3632,10 @@ def editPreset(preset, name, overriade=False, cancel=True, backup=False):
             + ensureLength("Perk Slots:", leng)
             + str(presetJSON["Inventory"]["Perks"]["Slots"])
         )
-        info += "\n" + ensureLength("Key Totem:", leng) + str(presetJSON["keyTotemItem"])
+        if not backup:
+            info += (
+                "\n" + ensureLength("Key Totem:", leng) + str(presetJSON["keyTotemItem"])
+            )
         info += "\nItems:"
         maxName = 6
         maxRarity = 8
@@ -5070,6 +5135,127 @@ def backup2Preset(backupJSON):
     return PresetJSON
 
 
+def getJSON(path):
+    """
+    get json using path to .sav file
+    """
+    return sav_to_json(read_sav(path))
+
+
+def setValue(JSON, path, value):
+    return update_property_by_path(JSON, path, value)
+
+
+def getValue(JSON, path):
+    return get_object_by_path(JSON, path)
+
+
+class Paths:
+    Autosave = [{"name": "AutoSave"}, "value"]
+    Difficulty = [{"name": "Difficulty"}, "value"]
+    DifficultyModifiers = [{"name": "DifficultyModifiers"}, "value"]
+    Biome = [{"name": "NextIslandInfo"}, "value", {"name": "Biome"}, "value"]
+    CurrentIsland = [
+        {"name": "NextIslandInfo"},
+        "value",
+        {"name": "CurrentIsland"},
+        "value",
+    ]
+    IslandName = [{"name": "NextIslandInfo"}, "value", {"name": "IslandName"}, "value"]
+    IslandType = [{"name": "NextIslandInfo"}, "value", {"name": "IslandType"}, "value"]
+    RewardLootPool = [
+        {"name": "NextIslandInfo"},
+        "value",
+        {"name": "RewardLootPool"},
+        "value",
+    ]
+    Blessings = [{"name": "NextIslandInfo"}, "value", {"name": "Blessing"}, "value"]
+    ChallengeModifiers = [
+        {"name": "NextIslandInfo"},
+        "value",
+        {"name": "ChallengeModifiers"},
+        "value",
+    ]
+    RewardLootPool = [
+        {"name": "NextIslandInfo"},
+        "value",
+        {"name": "RewardLootPool"},
+        "value",
+    ]
+    CurrentArmorPlates = [
+        {"name": "HealthInfo"},
+        "value",
+        {"name": "CurrentArmorPlates"},
+        "value",
+    ]
+    CurrentArmorPlateHealth = [
+        {"name": "HealthInfo"},
+        "value",
+        {"name": "CurrentArmorPlateHealth"},
+        "value",
+    ]
+    CurrentHealth = [{"name": "HealthInfo"}, "value", {"name": "CurrentHealth"}, "value"]
+    CurrentMaxHealth = [
+        {"name": "HealthInfo"},
+        "value",
+        {"name": "CurrentMaxHealth"},
+        "value",
+    ]
+    PreviousArmorPlateHealth = [
+        {"name": "HealthInfo"},
+        "value",
+        {"name": "PreviousArmorPlateHealth"},
+        "value",
+    ]
+    PreviousHealth = [
+        {"name": "HealthInfo"},
+        "value",
+        {"name": "PreviousHealth"},
+        "value",
+    ]
+    PreviousMaxHealth = [
+        {"name": "HealthInfo"},
+        "value",
+        {"name": "PreviousMaxHealth"},
+        "value",
+    ]
+    HealthMultiplier = [{"name": "HealthMultiplier"}, "value"]
+    DamageMultiplier = [{"name": "DamageMultiplier"}, "value"]
+    WeaponDA = [{"name": "WeaponDA"}, "value"]
+    HealthMultiplier = [{"name": "HealthMultiplier"}, "value"]
+    NumWeaponModSlots = [{"name": "NumWeaponModSlots"}, "value"]
+    WeaponMods = [{"name": "WeaponMods"}, "value"]
+    WeaponModName = [{"name": "WeaponModDA"}, "value"]
+    WeaponModLevel = [{"name": "Level"}, "value"]
+
+    NumGrenadeModSlots = [{"name": "NumGrenadeModSlots"}, "value"]
+    GrenadeMods = [{"name": "GrenadeMods"}, "value"]
+    GrenadeModName = [{"name": "GrenadeModDA"}, "value"]
+    GrenadeModLevel = [{"name": "Level"}, "value"]
+
+    NumPerkSlots = [{"name": "NumPerkSlots"}, "value"]
+    Perks = [{"name": "Perks"}, "value"]
+    PerkName = [{"name": "PerkDA"}, "value"]
+    PerkLevel = [{"name": "Level"}, "value"]
+
+    Crystals = [{"name": "Crystals"}, "value"]
+    CurrentTime = [{"name": "CurrentTime"}, "value"]
+    Points = [{"name": "Points"}, "value"]
+    ComboCounter = [{"name": "ComboCounter"}, "value"]
+    Combo = [{"name": "Combo"}, "value"]
+    Eliminations = [{"name": "Eliminations"}, "value"]
+    ShotsFired = [{"name": "ShotsFired"}, "value"]
+    DamageDealt = [{"name": "DamageDealt"}, "value"]
+    HighestDamageDealt = [{"name": "HighestDamageDealt"}, "value"]
+    DamageTaken = [{"name": "DamageTaken"}, "value"]
+    NumFlawlessIslands = [{"name": "NumFlawlessIslands"}, "value"]
+    NumTimesSalvaged = [{"name": "NumTimesSalvaged"}, "value"]
+    NumShopPurchases = [{"name": "NumShopPurchases"}, "value"]
+    NumShopRerolls = [{"name": "NumShopRerolls"}, "value"]
+    NumTotemsDestroyed = [{"name": "NumTotemsDestroyed"}, "value"]
+    TotalTimeTaken = [{"name": "TotalTimeTaken"}, "value"]
+
+
 global DIFFMODS
 global DIFFMODSDETAILS
 global ISLANDTYPE
@@ -5231,7 +5417,7 @@ updatePrompt = True
 
 
 # time.sleep(20)
-
+lastSel = 0
 while True:
     mainMenuPrompt = makeMainMenuPrompt(
         Version, LatestVersion, VersionValue, LatestValue, updatePrompt
@@ -5240,7 +5426,10 @@ while True:
     options = "Manage Backups\nManage Presets\nInfo/How to use\nSettings\nExit"
     # options = "Manage Backups\nInfo/How to use\nSettings\nExit"
     # options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
-    choice = scrollSelectMenu(mainMenuPrompt, options, -1, 1, returnAnything=True) + 1
+    choice, lastSel = scrollSelectMenu(
+        mainMenuPrompt, options, -1, 1, returnAnything=True, startChoice=lastSel
+    )
+    choice += 1
 
     # if(choice == 1):
     #     editBackup() # turned to curse
