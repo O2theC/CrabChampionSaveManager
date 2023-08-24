@@ -2038,122 +2038,131 @@ def genBackupData(backupName):
     if backupJSON[backupName]["DamageMultiplier"] is None:
         backupJSON[backupName]["DamageMultiplier"] = 0
 
-    backupJSON[backupName]["Blessings"] = getValue(saveJSON, Paths.Blessing)
-    if backupJSON[backupName]["Blessings"] is None:
+    bles = getValue(saveJSON, Paths.Blessing)
+    if bles is None:
         backupJSON[backupName]["Blessings"] = []
     else:
-        backupJSON[backupName]["Blessings"] = backupJSON[backupName]["Blessings"][
-            len("ECrabBlessing::") :
-        ]
+        backupJSON[backupName]["Blessings"] = bles[len("ECrabBlessing::") :]
 
-    try:
-        array = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"][
-            "ChallengeModifiers"
-        ]["Array"]["value"]["Base"]["Enum"]
+    array = getValue(saveJSON, Paths.ChallengeModifiers)
+    if array is None:
+        backupJSON[backupName]["Challenges"] = []
+    else:
         for i in range(len(array)):
             array[i] = spaceBeforeUpper(array[i][len("ECrabChallengeModifier") + 2 :])
         backupJSON[backupName]["Challenges"] = array
-    except BaseException:
-        backupJSON[backupName]["Challenges"] = []
 
-    try:
-        backupJSON[backupName]["Crystals"] = saveJSON["Crystals"]["UInt32"]["value"]
-    except BaseException:
+    backupJSON[backupName]["Crystals"] = getValue(saveJSON, Paths.Crystals)
+    if backupJSON[backupName]["Crystals"] is None:
         backupJSON[backupName]["Crystals"] = 0
 
-    diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["Biome"]["Enum"][
-        "value"
-    ]
-    diff = diff[diff.index("::") + 2 :]
-    backupJSON[backupName]["Biome"] = diff
+    biom = getValue(saveJSON, Paths.Biome)
+    if biom is None:
+        backupJSON[backupName]["Biome"] = "Tropical"
+    else:
+        backupJSON[backupName]["Biome"] = biom[biom.index("::") + 2 :]
 
-    try:
-        diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["RewardLootPool"][
-            "Enum"
-        ]["value"]
-        diff = diff[diff.index("::") + 2 :]
-    except BaseException:
-        diff = "Damage"
-    backupJSON[backupName]["LootType"] = diff
-    backupJSON[backupName]["IslandName"] = saveJSON["NextIslandInfo"]["Struct"]["value"][
-        "Struct"
-    ]["IslandName"]["Name"]["value"]
-    diff = saveJSON["NextIslandInfo"]["Struct"]["value"]["Struct"]["IslandType"]["Enum"][
-        "value"
-    ]
-    diff = diff[diff.index("::") + 2 :]
-    backupJSON[backupName]["IslandType"] = diff
+    lootType = getValue(saveJSON, Paths.RewardLootPool)
+    if lootType is None:
+        backupJSON[backupName]["LootType"] = "Damage"
+    else:
+        backupJSON[backupName]["LootType"] = lootType[biom.index("::") + 2 :]
 
-    backupJSON[backupName]["Health"] = saveJSON["HealthInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentHealth"]["Float"]["value"]
-    backupJSON[backupName]["MaxHealth"] = saveJSON["HealthInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentMaxHealth"]["Float"]["value"]
-    try:
-        backupJSON[backupName]["ArmorPlates"] = saveJSON["HealthInfo"]["Struct"]["value"][
-            "Struct"
-        ]["CurrentArmorPlates"]["Int"]["value"]
-        backupJSON[backupName]["ArmorPlatesHealth"] = saveJSON["HealthInfo"]["Struct"][
-            "value"
-        ]["Struct"]["CurrentArmorPlateHealth"]["Float"]["value"]
-    except BaseException:
+    name = getValue(saveJSON, Paths.IslandName)
+    if name is None:
+        backupJSON[backupName]["IslandName"] = "Tropical_Arena_01"
+    else:
+        backupJSON[backupName]["IslandName"] = name
+
+    islandtype = getValue(saveJSON, Paths.IslandType)
+    if islandtype is None:
+        backupJSON[backupName]["IslandType"] = "Damage"
+    else:
+        backupJSON[backupName]["IslandType"] = islandtype[islandtype.index("::") + 2 :]
+
+    backupJSON[backupName]["Health"] = getValue(saveJSON, Paths.CurrentHealth)
+    if backupJSON[backupName]["Health"] is None:
+        backupJSON[backupName]["Health"] = 0
+
+    backupJSON[backupName]["MaxHealth"] = getValue(saveJSON, Paths.CurrentMaxHealth)
+    if backupJSON[backupName]["MaxHealth"] is None:
+        backupJSON[backupName]["MaxHealth"] = 0
+
+    backupJSON[backupName]["ArmorPlates"] = getValue(saveJSON, Paths.CurrentArmorPlates)
+    if backupJSON[backupName]["ArmorPlates"] is None:
         backupJSON[backupName]["ArmorPlates"] = 0
+
+    backupJSON[backupName]["ArmorPlatesHealth"] = getValue(
+        saveJSON, Paths.CurrentArmorPlateHealth
+    )
+    if backupJSON[backupName]["ArmorPlatesHealth"] is None:
         backupJSON[backupName]["ArmorPlatesHealth"] = 0
 
     backupJSON[backupName]["Inventory"] = {}
-    try:
-        backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(
-            saveJSON["WeaponDA"]["Object"]["value"]
-        )
-    except BaseException:
+
+    backupJSON[backupName]["Inventory"]["Weapon"] = parseWeapon(
+        getValue(saveJSON, Paths.WeaponDA)
+    )
+    if backupJSON[backupName]["Inventory"]["Weapon"] is None:
         backupJSON[backupName]["Inventory"]["Weapon"] = "Lobby Dependant"
 
     backupJSON[backupName]["Inventory"]["WeaponMods"] = {}
-    backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] = saveJSON[
-        "NumWeaponModSlots"
-    ]["Byte"]["value"]["Byte"]
+
+    backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] = getValue(
+        saveJSON, Paths.NumWeaponModSlots
+    )
+    if backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] is None:
+        backupJSON[backupName]["Inventory"]["WeaponMods"]["Slots"] = 0
+
     backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = {}
-    try:
-        WeaponMods = saveJSON["WeaponMods"]["Array"]["value"]["Struct"]["value"]
+
+    WeaponMods = getValue(saveJSON, Paths.WeaponMods)
+    if WeaponMods is not None and WeaponMods != []:
         WeaponModArray = []
         while len(WeaponModArray) < len(WeaponMods):
             WeaponModArray.append("")
-        for i, name in enumerate(WeaponMods):
+        for i in range(len(WeaponMods)):
             WeaponModArray[i] = json.loads("{}")
             WeaponModArray[i]["Name"] = parseWeaponMod(
-                name["Struct"]["WeaponModDA"]["Object"]["value"]
+                getValue(WeaponMods[i], Paths.WeaponModName)
             )[0]
             WeaponModArray[i]["Rarity"] = parseWeaponMod(
-                name["Struct"]["WeaponModDA"]["Object"]["value"]
+                getValue(WeaponMods[i], Paths.WeaponModName)
             )[1]
-            WeaponModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+            WeaponModArray[i]["Level"] = getValue(WeaponMods[i], Paths.WeaponModLevel)
         backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = WeaponModArray
-    except BaseException:
+    else:
         backupJSON[backupName]["Inventory"]["WeaponMods"]["Mods"] = []
 
     backupJSON[backupName]["Inventory"]["GrenadeMods"] = {}
-    backupJSON[backupName]["Inventory"]["GrenadeMods"]["Slots"] = saveJSON[
-        "NumGrenadeModSlots"
-    ]["Byte"]["value"]["Byte"]
+
+    backupJSON[backupName]["Inventory"]["GrenadeMods"]["Slots"] = getValue(
+        saveJSON, Paths.NumGrenadeModSlots
+    )
+    if backupJSON[backupName]["Inventory"]["GrenadeMods"]["Slots"] is None:
+        backupJSON[backupName]["Inventory"]["GrenadeMods"]["Slots"] = 0
+
     backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = {}
-    try:
-        GrenadeMods = saveJSON["GrenadeMods"]["Array"]["value"]["Struct"]["value"]
+
+    GrenadeMods = getValue(saveJSON, Paths.GrenadeMods)
+    if GrenadeMods is not None and GrenadeMods != []:
         GrenadeModArray = []
         while len(GrenadeModArray) < len(GrenadeMods):
             GrenadeModArray.append("")
-        for i, name in enumerate(GrenadeMods):
+        for i in range(len(GrenadeMods)):
             GrenadeModArray[i] = json.loads("{}")
             GrenadeModArray[i]["Name"] = parseGrenadeMod(
-                name["Struct"]["GrenadeModDA"]["Object"]["value"]
+                getValue(GrenadeMods[i], Paths.GrenadeModName)
             )[0]
             GrenadeModArray[i]["Rarity"] = parseGrenadeMod(
-                name["Struct"]["GrenadeModDA"]["Object"]["value"]
+                getValue(GrenadeMods[i], Paths.GrenadeModName)
             )[1]
-            GrenadeModArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
+            GrenadeModArray[i]["Level"] = getValue(GrenadeMods[i], Paths.GrenadeModLevel)
         backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = GrenadeModArray
-    except BaseException:
+    else:
         backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = []
+
+    # ===========================================================================
 
     backupJSON[backupName]["Inventory"]["Perks"] = {}
     backupJSON[backupName]["Inventory"]["Perks"]["Slots"] = saveJSON["NumPerkSlots"][
