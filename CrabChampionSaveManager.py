@@ -2038,7 +2038,7 @@ def genBackupData(backupName):
     if backupJSON[backupName]["DamageMultiplier"] is None:
         backupJSON[backupName]["DamageMultiplier"] = 0
 
-    bles = getValue(saveJSON, Paths.Blessing)
+    bles = getValue(saveJSON, Paths.Blessings)
     if bles is None:
         backupJSON[backupName]["Blessings"] = []
     else:
@@ -2066,7 +2066,7 @@ def genBackupData(backupName):
     if lootType is None:
         backupJSON[backupName]["LootType"] = "Damage"
     else:
-        backupJSON[backupName]["LootType"] = lootType[biom.index("::") + 2 :]
+        backupJSON[backupName]["LootType"] = lootType[lootType.index("::") + 2 :]
 
     name = getValue(saveJSON, Paths.IslandName)
     if name is None:
@@ -2162,30 +2162,29 @@ def genBackupData(backupName):
     else:
         backupJSON[backupName]["Inventory"]["GrenadeMods"]["Mods"] = []
 
-    # ===========================================================================
-
     backupJSON[backupName]["Inventory"]["Perks"] = {}
-    backupJSON[backupName]["Inventory"]["Perks"]["Slots"] = saveJSON["NumPerkSlots"][
-        "Byte"
-    ]["value"]["Byte"]
-    backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = {}
-    try:
-        WeaponMods = saveJSON["Perks"]["Array"]["value"]["Struct"]["value"]
-        PerkArray = []
-        while len(PerkArray) < len(WeaponMods):
-            PerkArray.append("")
-        for i, name in enumerate(WeaponMods):
-            PerkArray[i] = json.loads("{}")
-            PerkArray[i]["Name"] = parsePerk(name["Struct"]["PerkDA"]["Object"]["value"])[
-                0
-            ]
-            PerkArray[i]["Rarity"] = parsePerk(
-                name["Struct"]["PerkDA"]["Object"]["value"]
-            )[1]
-            PerkArray[i]["Level"] = name["Struct"]["Level"]["Byte"]["value"]["Byte"]
-        backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = PerkArray
-    except BaseException:
-        backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = []
+
+    backupJSON[backupName]["Inventory"]["Perks"]["Slots"] = getValue(
+        saveJSON, Paths.NumPerkSlots
+    )
+    if backupJSON[backupName]["Inventory"]["Perks"]["Slots"] is None:
+        backupJSON[backupName]["Inventory"]["Perks"]["Slots"] = 0
+
+    backupJSON[backupName]["Inventory"]["Perks"]["Mods"] = {}
+
+    Perks = getValue(saveJSON, Paths.Perks)
+    if Perks is not None and Perks != []:
+        PerksArray = []
+        while len(PerksArray) < len(Perks):
+            PerksArray.append("")
+        for i in range(len(Perks)):
+            PerksArray[i] = json.loads("{}")
+            PerksArray[i]["Name"] = parsePerk(getValue(Perks[i], Paths.PerkName))[0]
+            PerksArray[i]["Rarity"] = parsePerk(getValue(Perks[i], Paths.PerkName))[1]
+            PerksArray[i]["Level"] = getValue(Perks[i], Paths.PerkLevel)
+        backupJSON[backupName]["Inventory"]["Perks"]["Mods"] = PerksArray
+    else:
+        backupJSON[backupName]["Inventory"]["Perks"]["Mods"] = []
 
     backupJSON[backupName]["CheckSum"] = checksum
     backupJSON[backupName]["NoSave"] = False
@@ -2931,14 +2930,8 @@ def genPlayerData(saveJSON, checksum):
     start = time.time()
     global cacheLock
     global cacheJSON
-    try:
-        cacheJSON["PlayerData"] = {}
-        saveJSON = saveJSON["root"]["properties"]
-    except BaseException:
-        cacheLock.acquire()
-        cacheJSON["PlayerData"] = {}
-        cacheLock.release()
-        return
+
+    cacheJSON["PlayerData"] = {}
     PlayerDataJSON = json.loads("{}")
     # in .sav to json
     # XP to next level up           - ["XPToNextLevelUp"]["Int"]["value"]
@@ -3012,74 +3005,67 @@ def genPlayerData(saveJSON, checksum):
     # Nightmare Winstreak           - ["NightmareWinStreak"]
     # Nightmare Highest Island      - ["NightmareHighestIslandReached"]
 
-    try:
-        PlayerDataJSON["XPToNextLevelUp"] = saveJSON["XPToNextLevelUp"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["XPToNextLevelUp"] = getValue(saveJSON, Paths.XPToNextLevelUp)
+    if PlayerDataJSON["XPToNextLevelUp"] is None:
         PlayerDataJSON["XPToNextLevelUp"] = 0
+
     PlayerDataJSON["RankedWeapons"] = []
     RWArray = []
-    RWArrayRaw = saveJSON["RankedWeapons"]["Array"]["value"]["Struct"]["value"]
+    RWArrayRaw = getValue(saveJSON, Paths.WeaponRankArray)
     for RWArrayObject in RWArrayRaw:
         RankedWeapon = json.loads("{}")
-        RankedWeapon["Name"] = parseWeapon(
-            RWArrayObject["Struct"]["Weapon"]["Object"]["value"]
-        )
-        RankedWeapon["Rank"] = parseWeaponRank(
-            RWArrayObject["Struct"]["Rank"]["Enum"]["value"]
-        )
+        RankedWeapon["Name"] = parseWeapon(getValue(RWArrayObject, Paths.WeaponName))
+        RankedWeapon["Rank"] = parseWeaponRank(getValue(RWArrayObject, Paths.WeaponRank))
         RWArray.append(RankedWeapon)
     PlayerDataJSON["RankedWeapons"] = RWArray
-    try:
-        PlayerDataJSON["AccountLevel"] = saveJSON["AccountLevel"]["Int"]["value"]
-    except BaseException:
+
+    PlayerDataJSON["AccountLevel"] = getValue(saveJSON, Paths.AccountLevel)
+    if PlayerDataJSON["AccountLevel"] is None:
         PlayerDataJSON["AccountLevel"] = 0
-    try:
-        PlayerDataJSON["Keys"] = saveJSON["Keys"]["Int"]["value"]
-    except BaseException:
+
+    PlayerDataJSON["Keys"] = getValue(saveJSON, Paths.Keys)
+    if PlayerDataJSON["Keys"] is None:
         PlayerDataJSON["Keys"] = 0
-    PlayerDataJSON["Skin"] = parseSkin(saveJSON["CrabSkin"]["Object"]["value"])
-    PlayerDataJSON["CurrentWeapon"] = parseWeapon(saveJSON["WeaponDA"]["Object"]["value"])
+
+    PlayerDataJSON["Skin"] = parseSkin(getValue(saveJSON, Paths.CurrentCrabSkin))
+    if PlayerDataJSON["Skin"] is None:
+        PlayerDataJSON["Skin"] = "Default"
+
+    PlayerDataJSON["CurrentWeapon"] = parseWeapon(getValue(saveJSON, Paths.CurrentWeapon))
+    if PlayerDataJSON["CurrentWeapon"] is None:
+        PlayerDataJSON["CurrentWeapon"] = "Auto Rifle"
+
     PlayerDataJSON["Challenges"] = []
     ChallengeArray = []
-    ChallengeArrayRaw = saveJSON["Challenges"]["Array"]["value"]["Struct"]["value"]
+    ChallengeArrayRaw = getValue(saveJSON, Paths.ChallengesArray)
     for ChallengeArrayObject in ChallengeArrayRaw:
         Challenge = json.loads("{}")
         # infoScreen(str(ChallengeArrayObject["Struct"].keys()))
         Challenge["Name"] = parseChallenageName(
-            ChallengeArrayObject["Struct"]["ChallengeID"]["Name"]["value"]
+            getValue(ChallengeArrayObject, Paths.ChallengeName)
         )
-        Challenge["Description"] = ChallengeArrayObject["Struct"]["ChallengeDescription"][
-            "Str"
-        ]["value"]
-        Challenge["Progress"] = ChallengeArrayObject["Struct"]["ChallengeProgress"][
-            "Int"
-        ]["value"]
-        Challenge["Goal"] = ChallengeArrayObject["Struct"]["ChallengeGoal"]["Int"][
-            "value"
-        ]
-        Challenge["Completed"] = ChallengeArrayObject["Struct"]["bChallengeCompleted"][
-            "Bool"
-        ]["value"]
-        Challenge["SkinRewardName"] = ChallengeArrayObject["Struct"]["CosmeticReward"][
-            "Struct"
-        ]["value"]["Struct"]["CosmeticName"]["Str"]["value"]
+        Challenge["Description"] = getValue(
+            ChallengeArrayObject, Paths.ChallengeDescription
+        )
+        Challenge["Progress"] = getValue(ChallengeArrayObject, Paths.ChallengeProgress)
+        Challenge["Goal"] = getValue(ChallengeArrayObject, Paths.ChallengeGoal)
+        Challenge["Completed"] = getValue(ChallengeArrayObject, Paths.ChallengeCompleted)
+        Challenge["SkinRewardName"] = getValue(
+            ChallengeArrayObject, Paths.ChallengeReward
+        )
         ChallengeArray.append(Challenge)
     PlayerDataJSON["Challenges"] = ChallengeArray
 
     PlayerDataJSON["UnlockedWeapons"] = []
     UnlockedWeaponsArray = []
-    UnlockedWeaponsArrayRaw = saveJSON["UnlockedWeapons"]["Array"]["value"]["Base"][
-        "Object"
-    ]
+    UnlockedWeaponsArrayRaw = getValue(saveJSON, Paths.UnlockedWeaponsArray)
     for UnlockedWeapon in UnlockedWeaponsArrayRaw:
         UnlockedWeaponsArray.append(parseWeapon(UnlockedWeapon))
     PlayerDataJSON["UnlockedWeapons"] = UnlockedWeaponsArray
 
     PlayerDataJSON["UnlockedWeaponMods"] = []
     UnlockedWeaponModsArray = []
-    UnlockedWeaponModsArrayRaw = saveJSON["UnlockedWeaponMods"]["Array"]["value"]["Base"][
-        "Object"
-    ]
+    UnlockedWeaponModsArrayRaw = getValue(saveJSON, Paths.UnlockedWeaponModsArray)
     for UnlockedWeaponMod in UnlockedWeaponModsArrayRaw:
         WeaponMod = json.loads("{}")
         WeaponMod["Name"] = parseWeaponMod(UnlockedWeaponMod)[0]
@@ -3089,9 +3075,7 @@ def genPlayerData(saveJSON, checksum):
 
     PlayerDataJSON["UnlockedGrenadeMods"] = []
     UnlockedGrenadeModsArray = []
-    UnlockedGrenadeModsArrayRaw = saveJSON["UnlockedGrenadeMods"]["Array"]["value"][
-        "Base"
-    ]["Object"]
+    UnlockedGrenadeModsArrayRaw = getValue(saveJSON, Paths.UnlockedGrenadeModsArray)
     for UnlockedGrenadeMod in UnlockedGrenadeModsArrayRaw:
         GrenadeMod = json.loads("{}")
         GrenadeMod["Name"] = parseGrenadeMod(UnlockedGrenadeMod)[0]
@@ -3101,7 +3085,7 @@ def genPlayerData(saveJSON, checksum):
 
     PlayerDataJSON["UnlockedPerks"] = []
     UnlockedPerksArray = []
-    UnlockedPerksArrayRaw = saveJSON["UnlockedPerks"]["Array"]["value"]["Base"]["Object"]
+    UnlockedPerksArrayRaw = getValue(saveJSON, Paths.UnlockedPerksArray)
     for UnlockedPerk in UnlockedPerksArrayRaw:
         Perk = json.loads("{}")
         Perk["Name"] = parsePerk(UnlockedPerk)[0]
@@ -3109,91 +3093,70 @@ def genPlayerData(saveJSON, checksum):
         UnlockedPerksArray.append(Perk)
     PlayerDataJSON["UnlockedPerks"] = UnlockedPerksArray
 
-    try:
-        PlayerDataJSON["EasyAttempts"] = saveJSON["EasyAttempts"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["EasyAttempts"] = getValue(saveJSON, Paths.EasyAttempts)
+    if PlayerDataJSON["EasyAttempts"] is None:
         PlayerDataJSON["EasyAttempts"] = 0
 
-    try:
-        PlayerDataJSON["EasyWins"] = saveJSON["EasyWins"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["EasyWins"] = getValue(saveJSON, Paths.EasyWins)
+    if PlayerDataJSON["EasyWins"] is None:
         PlayerDataJSON["EasyWins"] = 0
 
-    try:
-        PlayerDataJSON["EasyHighScore"] = saveJSON["EasyHighScore"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["EasyHighScore"] = getValue(saveJSON, Paths.EasyHighScore)
+    if PlayerDataJSON["EasyHighScore"] is None:
         PlayerDataJSON["EasyHighScore"] = 0
 
-    try:
-        PlayerDataJSON["EasyWinStreak"] = saveJSON["EasyWinStreak"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["EasyWinStreak"] = getValue(saveJSON, Paths.EasyWinStreak)
+    if PlayerDataJSON["EasyWinStreak"] is None:
         PlayerDataJSON["EasyWinStreak"] = 0
 
-    try:
-        PlayerDataJSON["EasyHighestIslandReached"] = saveJSON["EasyHighestIslandReached"][
-            "Int"
-        ]["value"]
-    except BaseException:
+    PlayerDataJSON["EasyHighestIslandReached"] = getValue(
+        saveJSON, Paths.EasyHighestIsland
+    )
+    if PlayerDataJSON["EasyHighestIslandReached"] is None:
         PlayerDataJSON["EasyHighestIslandReached"] = 0
 
-    try:
-        PlayerDataJSON["NormalAttempts"] = saveJSON["NormalAttempts"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NormalAttempts"] = getValue(saveJSON, Paths.NormalAttempts)
+    if PlayerDataJSON["NormalAttempts"] is None:
         PlayerDataJSON["NormalAttempts"] = 0
 
-    try:
-        PlayerDataJSON["NormalWins"] = saveJSON["NormalWins"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NormalWins"] = getValue(saveJSON, Paths.NormalWins)
+    if PlayerDataJSON["NormalWins"] is None:
         PlayerDataJSON["NormalWins"] = 0
 
-    try:
-        PlayerDataJSON["NormalHighScore"] = saveJSON["NormalHighScore"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NormalHighScore"] = getValue(saveJSON, Paths.NormalHighScore)
+    if PlayerDataJSON["NormalHighScore"] is None:
         PlayerDataJSON["NormalHighScore"] = 0
 
-    try:
-        PlayerDataJSON["NormalWinStreak"] = saveJSON["NormalWinStreak"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NormalWinStreak"] = getValue(saveJSON, Paths.NormalWinStreak)
+    if PlayerDataJSON["NormalWinStreak"] is None:
         PlayerDataJSON["NormalWinStreak"] = 0
 
-    try:
-        PlayerDataJSON["NormalHighestIslandReached"] = saveJSON[
-            "NormalHighestIslandReached"
-        ]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NormalHighestIslandReached"] = getValue(
+        saveJSON, Paths.NormalHighestIsland
+    )
+    if PlayerDataJSON["NormalHighestIslandReached"] is None:
         PlayerDataJSON["NormalHighestIslandReached"] = 0
 
-    try:
-        PlayerDataJSON["NightmareAttempts"] = saveJSON["NightmareAttempts"]["Int"][
-            "value"
-        ]
-    except BaseException:
+    PlayerDataJSON["NightmareAttempts"] = getValue(saveJSON, Paths.NightmareAttempts)
+    if PlayerDataJSON["NightmareAttempts"] is None:
         PlayerDataJSON["NightmareAttempts"] = 0
 
-    try:
-        PlayerDataJSON["NightmareWins"] = saveJSON["NightmareWins"]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NightmareWins"] = getValue(saveJSON, Paths.NightmareWins)
+    if PlayerDataJSON["NightmareWins"] is None:
         PlayerDataJSON["NightmareWins"] = 0
 
-    try:
-        PlayerDataJSON["NightmareHighScore"] = saveJSON["NightmareHighScore"]["Int"][
-            "value"
-        ]
-    except BaseException:
+    PlayerDataJSON["NightmareHighScore"] = getValue(saveJSON, Paths.NightmareHighScore)
+    if PlayerDataJSON["NightmareHighScore"] is None:
         PlayerDataJSON["NightmareHighScore"] = 0
 
-    try:
-        PlayerDataJSON["NightmareWinStreak"] = saveJSON["NightmareWinStreak"]["Int"][
-            "value"
-        ]
-    except BaseException:
+    PlayerDataJSON["NightmareWinStreak"] = getValue(saveJSON, Paths.NightmareWinStreak)
+    if PlayerDataJSON["NightmareWinStreak"] is None:
         PlayerDataJSON["NightmareWinStreak"] = 0
 
-    try:
-        PlayerDataJSON["NightmareHighestIslandReached"] = saveJSON[
-            "NightmareHighestIslandReached"
-        ]["Int"]["value"]
-    except BaseException:
+    PlayerDataJSON["NightmareHighestIslandReached"] = getValue(
+        saveJSON, Paths.NightmareHighestIsland
+    )
+    if PlayerDataJSON["NightmareHighestIslandReached"] is None:
         PlayerDataJSON["NightmareHighestIslandReached"] = 0
 
     cacheLock.acquire()
@@ -5263,6 +5226,48 @@ class Paths:
     NumShopRerolls = [{"name": "NumShopRerolls"}, "value"]
     NumTotemsDestroyed = [{"name": "NumTotemsDestroyed"}, "value"]
     TotalTimeTaken = [{"name": "TotalTimeTaken"}, "value"]
+
+    XPToNextLevelUp = [{"name": "XPToNextLevelUp"}, "value"]
+    WeaponRankArray = [{"name": "RankedWeapons"}, "value"]
+    WeaponName = [{"name": "Weapon"}, "value"]
+    WeaponRank = [{"name": "Rank"}, "value"]
+    AccountLevel = [{"name": "AccountLevel"}, "value"]
+    Keys = [{"name": "Keys"}, "value"]
+    CurrentCrabSkin = [{"name": "CrabSkin"}, "value"]
+    CurrentWeapon = [{"name": "WeaponDA"}, "value"]
+    ChallengesArray = [{"name": "Challenges"}, "value"]
+    ChallengeName = [{"name": "ChallengeID"}, "value"]
+    ChallengeDescription = [{"name": "ChallengeDescription"}, "value"]
+    ChallengeProgress = [{"name": "ChallengeProgress"}, "value"]
+    ChallengeGoal = [{"name": "ChallengeGoal"}, "value"]
+    ChallengeCompleted = [{"name": "bChallengeCompleted"}, "value"]
+    ChallengeReward = [
+        {"name": "CosmeticReward"},
+        "value",
+        {"name": "CosmeticName"},
+        "value",
+    ]
+    UnlockedWeaponsArray = [{"name": "UnlockedWeapons"}, "value"]
+    UnlockedWeaponModsArray = [{"name": "UnlockedWeaponMods"}, "value"]
+    UnlockedGrenadeModsArray = [{"name": "UnlockedGrenadeMods"}, "value"]
+    UnlockedPerksArray = [{"name": "UnlockedPerks"}, "value"]
+    EasyAttempts = [{"name": "EasyAttempts"}, "value"]
+    EasyWins = [{"name": "EasyWins"}, "value"]
+    EasyHighScore = [{"name": "EasyHighScore"}, "value"]
+    EasyWinStreak = [{"name": "EasyWinStreak"}, "value"]
+    EasyHighestIsland = [{"name": "EasyHighestIslandReached"}, "value"]
+
+    NormalAttempts = [{"name": "NormalAttempts"}, "value"]
+    NormalWins = [{"name": "NormalWins"}, "value"]
+    NormalHighScore = [{"name": "NormalHighScore"}, "value"]
+    NormalWinStreak = [{"name": "NormalWinStreak"}, "value"]
+    NormalHighestIsland = [{"name": "NormalHighestIslandReached"}, "value"]
+
+    NightmareAttempts = [{"name": "NightmareAttempts"}, "value"]
+    NightmareWins = [{"name": "NightmareWins"}, "value"]
+    NightmareHighScore = [{"name": "NightmareHighScore"}, "value"]
+    NightmareWinStreak = [{"name": "NightmareWinStreak"}, "value"]
+    NightmareHighestIsland = [{"name": "NightmareHighestIslandReached"}, "value"]
 
 
 global DIFFMODS
