@@ -347,134 +347,49 @@ def restoreBackup():
     start = time.time()
     saveGame = os.path.join(current_directory, "SaveGames")
     backupName = os.path.join(current_directory, folders[parseInt(choice) - 1])
-    uesavePath = getUesavePath()
-    if uesavePath == "":
-        scrollInfoMenu(
-            "No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu"
-        )
-        return
+
     saveGame += "/SaveSlot.sav"
     backupName += "/SaveSlot.sav"
     saveGame = saveGame.replace("\\", "/")
     backupName = backupName.replace("\\", "/")
-    saveGame = '"' + saveGame + '"'
-    backupName = '"' + backupName + '"'
-    infoScreen("0/8")
-    proc1 = subprocess.Popen(
-        uesavePath + " to-json -i " + saveGame + " -o currentSave.json", shell=True
-    )
-    infoScreen("1/8")
-    proc1.wait()
-    with open("currentSave.json") as JSON_File:
-        saveJSON = json.load(JSON_File)
-    os.remove("currentSave.json")
-    infoScreen("2/8")
-    proc2 = subprocess.Popen(
-        uesavePath + " to-json -i " + backupName + " -o backupSave.json", shell=True
-    )
-    proc2.wait()
-    with open("backupSave.json") as JSON_File:
-        backupJSON = json.load(JSON_File)
-    os.remove("backupSave.json")
-    infoScreen("3/8")
-    try:
-        autoSaveJson = copy.deepcopy(backupJSON["root"]["properties"]["AutoSave"])
-    except BaseException:
+
+    saveGameJson = getJSON(saveGame)
+    backupJson = getJSON(backupName)
+
+    if getValue(backupJson, Paths.Autosave) is None:
         scrollInfoMenu("Selected backup has no save\nPress Enter to return to main menu")
         return
-    infoScreen("4/8")
-    try:
-        saveJSON["root"]["properties"]["AutoSave"] = autoSaveJson
-    except Exception as error:
-        scrollInfoMenu(
-            "Error when replacing autosave on current save, Error below\n"
-            + str(error)
-            + "\nPress Enter to return to main menu"
-        )
-        input("Press Enter to continue . . .")
-        return
-    infoScreen("5/8")
-    with open("restoredSave.json", "w") as JSON_File:
-        JSON_File.write(json.dumps(saveJSON, indent=4))
-    infoScreen("6/8")
-    # print(uesavePath+" from-json -i restoredSave.json -o SaveGames/SaveSlot.sav")
-    proc1 = subprocess.Popen(
-        uesavePath + " from-json -i restoredSave.json -o SaveGames/SaveSlot.sav",
-        shell=True,
+
+    saveGameJson = ensureAutoSave(saveGameJson)
+
+    update_property_by_path(
+        saveGameJson, Paths.Autosave, getValue(backupJson, Paths.Autosave)
     )
-    # proc2 = subprocess.Popen(uesavePath+" from-json -i restoredSave.json -o test/SaveSlot.sav")
-    proc1.wait()
-    os.remove("restoredSave.json")
-    infoScreen("7/8")
-    # proc2.wait()
+
+    saveSavJson(saveGame, saveGameJson)
+
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupA.sav")
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupB.sav")
-    infoScreen("8/8")
     infoScreen("Backup Restored - " + str(folders[parseInt(choice) - 1]))
     stop = time.time()
-    # print("it took",round(stop-start,3)," seconds")
+    print("it took", round(stop - start, 3), " seconds")
     return
 
 
-def editBackupRaw():
-    global isExe
-    """Edits a backup of the save game.
-
-    Displays the available backups and prompts the user to choose one.
-    If a backup is selected, it opens the SaveSlot.sav file for editing
-    using the uesave tool. Two backup copies (SaveSlotBackupA.sav and SaveSlotBackupB.sav)
-    are created before editing.
-    """
-
-    current_directory = os.getcwd()
-    foldersInfo = getBackups(moreInfo=1)
-    folders = getBackups()
-    prompt = "Choose Backup to edit\n"
-    options = "Go back to main menu\nEdit current save"
-    for i in range(len(foldersInfo)):
-        options += "\n" + str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt, options, -1, 1)
-    if choice == 0:
-        return
-    saveFile = ""
-    if choice == 1:
-        saveFile = os.path.join(current_directory, "SaveGames")
-    else:
-        saveFile = os.path.join(current_directory, str(folders[parseInt(choice) - 2]))
-    saveFile = os.path.join(saveFile, "SaveSlot.sav")
-    saveBackA = saveFile.replace("SaveSlot.sav", "SaveSlotBackupA.sav")
-    saveBackB = saveFile.replace("SaveSlot.sav", "SaveSlotBackupB.sav")
-    sf = saveFile
-    saveFile = saveFile.replace("\\", "/")
-    infoScreen(
-        "close window opened by uesave to continue\nBackup Opened : "
-        + saveFile[
-            saveFile.rindex("/", 0, saveFile.rindex("/")) + 1 : saveFile.rindex("/")
-        ].replace("SaveGames", "Current Save")
+def ensureAutoSave(JSON):
+    defaultSaveJson = json.loads(
+        '{"type": "StructProperty","name": "AutoSave","subtype": "CrabAutoSave","value": []}'
     )
-    saveFile = '"' + saveFile + '"'
-    uesavePath = getUesavePath()
-    if uesavePath == "":
-        scrollInfoMenu(
-            "No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu"
+    save = getValue(JSON, Paths.Autosave)
+    if save is None:
+        insert_object_by_path(
+            JSON, [{"type": "FileEndProperty"}], defaultSaveJson, "before"
         )
-        return
-    else:
-        subprocess.run(uesavePath + " edit " + str(saveFile), shell=True)
 
-    try:
-        os.remove(saveBackA)
-        os.remove(saveBackB)
-    except BaseException:
-        None
-    shutil.copy(sf, saveBackA)
-    shutil.copy(sf, saveBackB)
 
-    # fix for terminal text editors like nano and vim
-    curses.noecho()  # Don't display user input
-    curses.cbreak()  # React to keys immediately without Enter
-    screen.keypad(True)  # Enable special keys (e.g., arrow keys)
-    # time.sleep(10)
+def saveSavJson(path, JSON):
+    with open(path, "wb") as f:
+        f.write(json_to_sav(obj_to_json(JSON)))
 
 
 def deleteBackup():
@@ -1176,6 +1091,7 @@ def yornMenu(prompt: str, defaultY=True):
 def infoScreen(info):
     curstate = curses.curs_set(0)
     screen.clear()
+
     screen.addstr(1, 0, info)
     screen.refresh()
     curses.curs_set(curstate)
@@ -1959,10 +1875,10 @@ def genBackupData(backupName):
 
     diff = getValue(saveJSON, Paths.Difficulty)
     if diff is None:
-        backupJSON[backupName]["Difficulty"] = "Normal"
+        backupJSON[backupName]["Diff"] = "Normal"
     else:
         diff = diff[diff.index("::") + 2 :]
-        backupJSON[backupName]["Difficulty"] = diff
+        backupJSON[backupName]["Diff"] = diff
 
     backupJSON[backupName]["IslandNum"] = getValue(saveJSON, Paths.CurrentIsland)
     if backupJSON[backupName]["IslandNum"] is None:
@@ -2170,7 +2086,7 @@ def genBackupData(backupName):
     if backupJSON[backupName]["Inventory"]["Perks"]["Slots"] is None:
         backupJSON[backupName]["Inventory"]["Perks"]["Slots"] = 0
 
-    backupJSON[backupName]["Inventory"]["Perks"]["Mods"] = {}
+    backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = {}
 
     Perks = getValue(saveJSON, Paths.Perks)
     if Perks is not None and Perks != []:
@@ -2182,9 +2098,9 @@ def genBackupData(backupName):
             PerksArray[i]["Name"] = parsePerk(getValue(Perks[i], Paths.PerkName))[0]
             PerksArray[i]["Rarity"] = parsePerk(getValue(Perks[i], Paths.PerkName))[1]
             PerksArray[i]["Level"] = getValue(Perks[i], Paths.PerkLevel)
-        backupJSON[backupName]["Inventory"]["Perks"]["Mods"] = PerksArray
+        backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = PerksArray
     else:
-        backupJSON[backupName]["Inventory"]["Perks"]["Mods"] = []
+        backupJSON[backupName]["Inventory"]["Perks"]["Perks"] = []
 
     backupJSON[backupName]["CheckSum"] = checksum
     backupJSON[backupName]["NoSave"] = False
@@ -2198,7 +2114,13 @@ def genBackupData(backupName):
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     cacheLock.release()
     stop = time.time()
-    # print(backupName+str("  -  ")+str(round(stop-start,2))+str("  -ue  ")+str(round(ueStop-ueStart,2)))
+    print(
+        backupName
+        + str("  -  ")
+        + str(round(stop - start, 5))
+        + str("  -ue  ")
+        + str(round(stop - start, 5))
+    )
 
 
 def toUInt32(value):
@@ -2287,48 +2209,6 @@ def backupListInfo(backupName, maxLength):
     except BaseException:
         None
     return ""
-
-
-def getUesavePath():
-    global isExe
-    global isLinux
-    global owd
-    programDir = owd
-    programDir = programDir.replace("\\", "/")
-    if isLinux:
-        uesavePath = programDir + "/uesave"
-        if os.path.exists(uesavePath):
-            return '"' + str(uesavePath) + '"'
-    elif isExe:
-        return (
-            '"'
-            + os.path.join(os.path.abspath(os.path.dirname(__file__)), "uesave.exe")
-            + '"'
-        )
-    else:
-        uesavePath = programDir + "/uesave.exe"
-        uesavePath = uesavePath.replace("\\", "/")
-        if os.path.exists(uesavePath):
-            return '"' + str(uesavePath) + '"'
-
-    if isLinux:
-        uesaveDownloadlink = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave"
-        uesave = "uesave"
-    else:
-        uesaveDownloadlink = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/uesave.exe"
-        uesave = "uesave.exe"
-    perm = yornMenu("uesave could not be found, permission to download?")
-
-    if perm:
-        infoScreen(
-            "Downloading uesave\nThis might take a few min\nGoing to main menu when done"
-        )
-        response = requests.get(uesaveDownloadlink)
-        with open(programDir + "/" + uesave, "wb") as file:
-            file.write(response.content)
-        return getUesavePath()
-    else:
-        return ""
 
 
 def lengthLimit(dict, wid):
@@ -2781,7 +2661,8 @@ def managePresets():
 
 def manageBackupEdit():
     # config stuff will be here soon
-
+    editBackupUI()
+    return
     while True:
         prompt = "Would you like to edit a backup using pure raw JSON or using an UI?\n"
         options = [
@@ -2826,19 +2707,9 @@ def editBackupUI():
         saveFile = os.path.join(curDir, backupName)
         folderName = backupName
     saveFolder = saveFile.replace("\\", "/")
-    uePath = getUesavePath()
     saveFile = os.path.join(saveFile, "SaveSlot.sav")
     saveFile = saveFile.replace("\\", "/")
-    # print(uePath+" to-json -i "+saveFile+" -o "+os.path.join(saveFolder,"SaveSlot.json").replace("\\","/"))
-    # print(uePath+" to-json -i \""+saveFile+"\" -o \""+os.path.join(saveFolder,"SaveSlot.json").replace("\\","/")+"\"")
-    proc = subprocess.Popen(
-        uePath
-        + ' to-json -i "'
-        + saveFile
-        + '" -o "'
-        + os.path.join(saveFolder, "SaveSlot.json").replace("\\", "/")
-        + '"'
-    )
+
     saveBackA = saveFile.replace("SaveSlot.sav", "SaveSlotBackupA.sav")
     saveBackB = saveFile.replace("SaveSlot.sav", "SaveSlotBackupB.sav")
     sf = saveFile
@@ -2848,31 +2719,19 @@ def editBackupUI():
     rawGameJSON = json.loads(backupJSON["Raw"])
     presetJSON = backup2Preset(backupJSON)
     presetJSON = editPreset(presetJSON, backupName, backup=True)
-    if presetJSON is None:
-        proc.wait()
-        os.remove(os.path.join(saveFolder, "SaveSlot.json").replace("\\", "/"))
-        return
     gameJSON = convertPresetToGameSave(presetJSON, rawGameJSON)
-    proc.wait()
-    GameJSONFile = open(os.path.join(saveFolder, "SaveSlot.json"), "r+")
-    GameJSON = json.loads(GameJSONFile.read())
-    GameJSON["root"]["properties"]["AutoSave"] = gameJSON["AutoSave"]
-    GameJSONFile.seek(0)
-    GameJSONFile.write(json.dumps(GameJSON, indent=4))
-    GameJSONFile.close()
+
+    saveJSON = getJSON(folderName + "/SaveSlot.sav")
+    setValue(saveJSON, Paths.Autosave, gameJSON)
+
+    with open(folderName + "/SaveSlot.sav", "wb") as file:
+        # Write the binary data to the file
+        file.write(json_to_sav(obj_to_json(saveJSON)))
+
     # os.remove(saveFile)
     # print(uePath+" from-json -i "+folderName+"/SaveSlot.json -o "+folderName+"/SaveSlot.sav")
     # exiting(0)
-    proc2 = subprocess.Popen(
-        uePath
-        + " from-json -i "
-        + folderName
-        + "/SaveSlot.json -o "
-        + folderName
-        + "/SaveSlot.sav"
-    )
-    proc2.wait()
-    os.remove(os.path.join(saveFolder, "SaveSlot.json").replace("\\", "/"))
+
     try:
         os.remove(saveBackA)
         os.remove(saveBackB)
@@ -3741,6 +3600,8 @@ def editPreset(preset, name, overriade=False, cancel=True, backup=False):
                 "Select Difficulty\nCurrent Difficulty is " + presetJSON["Diff"] + "\n"
             )
             diff = ["Easy", "Normal", "Nightmare"]
+            if hasAllDiamond():
+                diff.append("Ultra Chaos")
 
             presetJSON["Diff"] = diff[
                 scrollSelectMenu(prompt, diff, startChoice=diff.index(presetJSON["Diff"]))
@@ -3780,6 +3641,9 @@ def editPreset(preset, name, overriade=False, cancel=True, backup=False):
                 "Tropical_Arena_06",
                 "Tropical_Arena_07",
                 "Tropical_Arena_08",
+                "Tropical_Arena_09",
+                "Tropical_Arena_10",
+                "Tropical_Arena_11",
                 "Tropical_Horde_01",
                 "Tropical_Horde_02",
                 "Tropical_Horde_03",
@@ -4263,6 +4127,15 @@ def ChallengesDetails(chall):
     return None
 
 
+def hasAllDiamond():
+    global cacheJSON
+    weapons = cacheJSON["PlayerData"]["RankedWeapons"]
+    for wep in weapons:
+        if wep["Rank"] != "Diamond":
+            return False
+    return True
+
+
 def BlessingsDetails(chall):
     for ch in BLESSINGS:
         if chall in ch:
@@ -4293,51 +4166,20 @@ def usePreset():
     GameJSON = convertPresetToGameSave(presetJSON)
 
     saveGame = os.path.join(os.getcwd(), "SaveGames")
-    uesavePath = getUesavePath()
-    if uesavePath == "":
-        scrollInfoMenu(
-            "No copy of uesave could be found and no permission was given to download a copy\nPress Enter to return to main menu"
-        )
-        return
     saveGame += "/SaveSlot.sav"
     saveGame = saveGame.replace("\\", "/")
-    saveGame = '"' + saveGame + '"'
-    infoScreen("0/8")
-    proc1 = subprocess.Popen(
-        uesavePath + " to-json -i " + saveGame + " -o currentSave.json", shell=True
-    )
-    infoScreen("1/8")
-    proc1.wait()
-    with open("currentSave.json") as JSON_File:
-        saveJSON = json.load(JSON_File)
-    os.remove("currentSave.json")
-    infoScreen("2/8")
-    backupJSON = GameJSON
-    infoScreen("4/8")
-    try:
-        saveJSON["root"]["properties"]["AutoSave"] = GameJSON["AutoSave"]
-    except Exception as error:
-        scrollInfoMenu(
-            "Error when replacing autosave on current save, Error below\n"
-            + str(error)
-            + "\nPress Enter to return to main menu"
-        )
-        input("Press Enter to continue . . .")
-        return
-    infoScreen("5/8")
-    with open("usedPreset.json", "w") as JSON_File:
-        JSON_File.write(json.dumps(saveJSON, indent=4))
-    infoScreen("6/8")
-    proc1 = subprocess.Popen(
-        uesavePath + " from-json -i usedPreset.json -o SaveGames/SaveSlot.sav", shell=True
-    )
-    proc1.wait()
-    os.remove("usedPreset.json")
-    infoScreen("7/8")
-    # proc2.wait()
+    saveJSON = getJSON(saveGame)
+
+    ensureAutoSave(saveJSON)
+    setValue(saveJSON, Paths.Autosave, GameJSON)
+    with open("SaveGames/SaveSlot.sav", "wb") as file:
+        # Write the binary data to the file
+        file.write(json_to_sav(obj_to_json(saveJSON)))
+    with open("deubpreset.json", "w") as file:
+        # Write the binary data to the file
+        file.write((obj_to_json(saveJSON)))
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupA.sav")
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupB.sav")
-    infoScreen("8/8")
     stop = time.time()
     # print("it took",round(stop-start,3)," seconds")
     return
@@ -4575,9 +4417,9 @@ def containsPerk(string):
 
 
 def convertMyItemtoGameItem(MyItemJson):
-    WeaponModJSON = '{"Struct":{"WeaponModDA":{"Object":{"value":""}},"Level":{"Byte":{"value":{"Byte":0},"enum_type":"None"}}}}'
-    GrenadeModJSON = '{"Struct":{"GrenadeModDA":{"Object":{"value":""}},"Level":{"Byte":{"value":{"Byte":0},"enum_type":"None"}}}}'
-    PerkJSON = '{"Struct":{"PerkDA":{"Object":{"value":""}},"Level":{"Byte":{"value":{"Byte":0},"enum_type":"None"}}}}'
+    WeaponModJSON = '[{"type":"ObjectProperty","name":"WeaponModDA","value":""},{"type":"ByteProperty","name":"Level","subtype":"None","value":0},{"type":"NoneProperty"}]'
+    GrenadeModJSON = '[{"type":"ObjectProperty","name":"GrenadeModDA","value":""},{"type":"ByteProperty","name":"Level","subtype":"None","value":0},{"type":"NoneProperty"}]'
+    PerkJSON = '[{"type":"ObjectProperty","name":"PerkDA","value":""},{"type":"ByteProperty","name":"Level","subtype":"None","value":0},{"type":"NoneProperty"}]'
 
     # /Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_AuraShot.DA_WeaponMod_AuraShot
 
@@ -4586,42 +4428,78 @@ def convertMyItemtoGameItem(MyItemJson):
     if MyItemJson["Name"] in WEAPONMODS["Names"]:
         GameItemJson = json.loads(WeaponModJSON)
         name = f"/Game/Blueprint/Pickup/WeaponMod/{MyItemJson['Rarity']}/DA_WeaponMod_{MyItemJson['Name'].replace(' ','')}.DA_WeaponMod_{MyItemJson['Name'].replace(' ','')}"
-        GameItemJson["Struct"]["WeaponModDA"]["Object"]["value"] = name
-        GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
+        GameItemJson[0]["value"] = name
+        GameItemJson[1]["value"] = MyItemJson["Level"]
         return GameItemJson
     elif MyItemJson["Name"] in GRENADEMODS["Names"]:
         GameItemJson = json.loads(GrenadeModJSON)
         name = f"/Game/Blueprint/Pickup/GrenadeMod/{MyItemJson['Rarity']}/DA_GrenadeMod_{MyItemJson['Name'].replace(' ','')}.DA_GrenadeMod_{MyItemJson['Name'].replace(' ','')}"
-        GameItemJson["Struct"]["GrenadeModDA"]["Object"]["value"] = name
-        GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
+        GameItemJson[0]["value"] = name
+        GameItemJson[1]["value"] = MyItemJson["Level"]
         return GameItemJson
     elif MyItemJson["Name"] in PERKS["Names"]:
         GameItemJson = json.loads(PerkJSON)
         name = f"/Game/Blueprint/Pickup/Perk/{MyItemJson['Rarity']}/DA_Perk_{MyItemJson['Name'].replace(' ','')}.DA_Perk_{MyItemJson['Name'].replace(' ','')}"
-        GameItemJson["Struct"]["PerkDA"]["Object"]["value"] = name
-        GameItemJson["Struct"]["Level"]["Byte"]["value"]["Byte"] = MyItemJson["Level"]
+        GameItemJson[0]["value"] = name
+        GameItemJson[1]["value"] = MyItemJson["Level"]
         return GameItemJson
 
 
+def getKeys(Json):
+    if not isinstance(Json, type(list())):
+        return list()
+    keys = list()
+    for i in range(len(Json)):
+        try:
+            keys.append(Json[i]["name"])
+        except BaseException:
+            None
+    return keys
+
+
 def mergeJSON(dict1, dict2):
-    for key, value in dict2.items():
-        if isinstance(value, dict) and key in dict1:
-            mergeJSON(dict1[key], value)
-        else:
-            dict1[key] = value
+    finalDict = dict1.copy()
+    dict1Keys = getKeys(dict1)
+    dict2Keys = getKeys(dict2)
+    keys = list()
+    keys.extend(dict1Keys)
+    keys.extend(dict2Keys)
+    keys = list(set(keys))
+    for i in keys:
+        dict1Value = getValue(dict1, [{"name": i}, "value"])
+        dict2Value = getValue(dict2, [{"name": i}, "value"])
+        if dict2Value is not None:
+            if dict1Value is None:
+                insert_object_by_path(
+                    finalDict,
+                    [{"name": dict1Keys[0]}],
+                    getValue(dict2, [{"name": i}]),
+                    "before",
+                )
+            else:
+                if isinstance(dict2Value, type(list())):
+                    setValue(
+                        finalDict,
+                        [{"name": i}, "value"],
+                        mergeJSON(dict1Value, dict2Value),
+                    )
+                else:
+                    setValue(finalDict, [{"name": i}, "value"], dict2Value)
 
     return dict1
 
 
 def convertPresetToGameSave(preset, defaultJSONOverride=""):
-    GameJSON = '{"AutoSave":{"Struct":{"value":{"Struct":{"Difficulty":{"Enum":{"value":"ECrabDifficulty::Normal","enum_type":"ECrabDifficulty"}},"DifficultyModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"NextIslandInfo":{"Struct":{"value":{"Struct":{"Biome":{"Enum":{"value":"ECrabBiome::Tropical","enum_type":"ECrabBiome"}},"CurrentIsland":{"Int":{"value":1}},"IslandName":{"Name":{"value":"Tropical_Arena_01"}},"IslandType":{"Enum":{"value":"ECrabIslandType::Arena","enum_type":"ECrabIslandType"}},"Blessing":{"Enum":{"value":"","enum_type":"ECrabBlessing"}},"ChallengeModifiers":{"Array":{"array_type":"EnumProperty","value":{"Base":{"Enum":[]}}}},"RewardLootPool":{"Enum":{"value":"ECrabLootPool::Random","enum_type":"ECrabLootPool"}}}},"struct_type":{"Struct":"CrabNextIslandInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthInfo":{"Struct":{"value":{"Struct":{"CurrentArmorPlates":{"Int":{"value":0}},"CurrentArmorPlateHealth":{"Float":{"value":0}},"CurrentHealth":{"Float":{"value":100}},"CurrentMaxHealth":{"Float":{"value":100}}}},"struct_type":{"Struct":"CrabHealthInfo"},"struct_id":"00000000-0000-0000-0000-000000000000"}},"HealthMultiplier":{"Float":{"value":1}},"DamageMultiplier":{"Float":{"value":1}},"WeaponDA":{"Object":{"value":""}},"NumWeaponModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"WeaponMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"WeaponMods","name":"StructProperty","struct_type":{"Struct":"CrabWeaponMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumGrenadeModSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"GrenadeMods":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"GrenadeMods","name":"StructProperty","struct_type":{"Struct":"CrabGrenadeMod"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"NumPerkSlots":{"Byte":{"value":{"Byte":24},"enum_type":"None"}},"Perks":{"Array":{"array_type":"StructProperty","value":{"Struct":{"_type":"Perks","name":"StructProperty","struct_type":{"Struct":"CrabPerk"},"id":"00000000-0000-0000-0000-000000000000","value":[]}}}},"Crystals":{"UInt32":{"value":0}}}},"struct_type":{"Struct":"CrabAutoSave"},"struct_id":"00000000-0000-0000-0000-000000000000"}}}'
+    GameJSON = '[{"type":"EnumProperty","name":"Difficulty","enum":"ECrabDifficulty","value":"ECrabDifficulty::Normal"},{"type":"ArrayProperty","name":"DifficultyModifiers","subtype":"EnumProperty","value":[]},{"type":"StructProperty","name":"NextIslandInfo","subtype":"CrabNextIslandInfo","value":[{"type":"EnumProperty","name":"Biome","enum":"ECrabBiome","value":"ECrabBiome::Tropical"},{"type":"IntProperty","name":"CurrentIsland","value":1},{"type":"NameProperty","name":"IslandName","unknown":"16","value":"Tropical_Arena_01"},{"type":"EnumProperty","name":"IslandType","enum":"ECrabIslandType","value":"ECrabIslandType::Arena"},{"type":"EnumProperty","name":"Blessing","enum":"ECrabBlessing","value":""},{"type":"ArrayProperty","name":"ChallengeModifiers","subtype":"EnumProperty","value":[]},{"type":"EnumProperty","name":"RewardLootPool","enum":"ECrabLootPool","value":"ECrabLootPool::Random"},{"type":"NoneProperty"}]},{"type":"StructProperty","name":"HealthInfo","subtype":"CrabHealthInfo","value":[{"type":"IntProperty","name":"CurrentArmorPlates","value":0},{"type":"FloatProperty","name":"CurrentArmorPlateHealth","value":0},{"type":"FloatProperty","name":"CurrentHealth","value":100},{"type":"FloatProperty","name":"CurrentMaxHealth","value":100},{"type":"FloatProperty","name":"PreviousHealth","value":100},{"type":"FloatProperty","name":"PreviousMaxHealth","value":100},{"type":"NoneProperty"}]},{"type":"FloatProperty","name":"HealthMultiplier","value":1},{"type":"FloatProperty","name":"DamageMultiplier","value":1},{"type":"ObjectProperty","name":"WeaponDA","value":""},{"type":"ByteProperty","name":"NumWeaponModSlots","subtype":"None","value":24},{"type":"ArrayProperty","name":"WeaponMods","subtype":"StructProperty","generic_type":"CrabWeaponMod","value":[]},{"type":"ByteProperty","name":"NumGrenadeModSlots","subtype":"None","value":24},{"type":"ArrayProperty","name":"GrenadeMods","subtype":"StructProperty","generic_type":"CrabGrenadeMod","value":[]},{"type":"ByteProperty","name":"NumPerkSlots","subtype":"None","value":24},{"type":"ArrayProperty","name":"Perks","subtype":"StructProperty","generic_type":"CrabPerk","value":[]},{"type":"UInt32Property","name":"Crystals","value":0},{"type":"NoneProperty"}]'
     if defaultJSONOverride != "":
-        if not isinstance(defaultJSONOverride, type(dict())):
+        if not isinstance(defaultJSONOverride, type(list())):
             defaultJSONOverride = json.loads(defaultJSONOverride)
         GameJSON = json.loads(GameJSON)
         GameJSON = mergeJSON(GameJSON, defaultJSONOverride)
     else:
         GameJSON = json.loads(GameJSON)
+    with open("test.json", "w") as f:
+        json.dump(GameJSON, f, indent=4)
 
     # saveJSON = saveJSON["AutoSave"]
     # difficulty                ["Difficulty"]["Enum"]["value"] , vaild values are ECrabDifficulty::Easy and ECrabDifficulty::Nightmare , it seems that for normal, the value is not there, this suggests the games uses normal as a default and this value in the .sav file is an override
@@ -4657,56 +4535,34 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
     # Perk in array item   ["Struct"]["PerkDA"]["Object"]["value"] - use parsePerk() to get parsed and formated name
     # Perk in array Level  ["Struct"]["Level"]["Byte"]["value"]["Byte"]
     # print(GameJSON.keys())
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-        "value"
-    ]["Struct"]["CurrentIsland"]["Int"]["value"] = preset["IslandNum"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Crystals"]["UInt32"][
-        "value"
-    ] = preset["Crystals"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Difficulty"]["Enum"]["value"] = (
-        "ECrabDifficulty::" + preset["Diff"]
+
+    setValue(GameJSON, Paths.CurrentIsland, preset["IslandNum"])
+    setValue(GameJSON, Paths.Crystals, preset["Crystals"])
+    setValue(GameJSON, Paths.Difficulty, "ECrabDifficulty::" + preset["Diff"])
+    setValue(GameJSON, Paths.Biome, "ECrabBiome::" + preset["Biome"])
+    setValue(GameJSON, Paths.IslandName, dynamicIslandName(preset["IslandName"]))
+    setValue(
+        GameJSON,
+        Paths.RewardLootPool,
+        "ECrabLootPool::" + dynamicLootType(preset["LootType"]),
     )
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-        "value"
-    ]["Struct"]["Biome"]["Enum"]["value"] = ("ECrabBiome::" + preset["Biome"])
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-        "value"
-    ]["Struct"]["IslandName"]["Name"]["value"] = dynamicIslandName(preset["IslandName"])
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-        "value"
-    ]["Struct"]["RewardLootPool"]["Enum"]["value"] = "ECrabLootPool::" + dynamicLootType(
-        preset["LootType"]
+    setValue(
+        GameJSON,
+        Paths.IslandType,
+        "ECrabIslandType::"
+        + dynamicIslandType(preset["IslandType"], preset["IslandName"]),
     )
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-        "value"
-    ]["Struct"]["IslandType"]["Enum"]["value"] = "ECrabIslandType::" + dynamicIslandType(
-        preset["IslandType"], preset["IslandName"]
-    )
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentHealth"]["Float"]["value"] = preset["Health"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentMaxHealth"]["Float"]["value"] = preset["MaxHealth"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentArmorPlates"]["Int"]["value"] = preset["ArmorPlates"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthInfo"]["Struct"]["value"][
-        "Struct"
-    ]["CurrentArmorPlateHealth"]["Float"]["value"] = preset["ArmorPlatesHealth"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["HealthMultiplier"]["Float"][
-        "value"
-    ] = preset["HealthMultiplier"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DamageMultiplier"]["Float"][
-        "value"
-    ] = preset["DamageMultiplier"]
+    setValue(GameJSON, Paths.CurrentHealth, preset["Health"])
+    setValue(GameJSON, Paths.CurrentMaxHealth, preset["MaxHealth"])
+    setValue(GameJSON, Paths.CurrentArmorPlates, preset["ArmorPlates"])
+    setValue(GameJSON, Paths.CurrentArmorPlateHealth, preset["ArmorPlatesHealth"])
+    setValue(GameJSON, Paths.HealthMultiplier, preset["HealthMultiplier"])
+    setValue(GameJSON, Paths.DamageMultiplier, preset["DamageMultiplier"])
 
     array = []
     for dif in preset["DiffMods"]:
         array.append("ECrabDifficultyModifier::" + dif.replace(" ", ""))
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["DifficultyModifiers"]["Array"][
-        "value"
-    ]["Base"]["Enum"] = array
+    setValue(GameJSON, Paths.DifficultyModifiers, array)
 
     # array = []
     # for dif in preset["Blessing"]:
@@ -4715,38 +4571,36 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
 
     if preset["Blessings"] != []:
         if "Flawless" in preset["Blessings"]:
-            GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-                "value"
-            ]["Struct"]["Blessing"]["Enum"]["value"] = "ECrabBlessing::Flawless"
+            setValue(GameJSON, Paths.Blessings, "ECrabBlessing::Flawless")
         else:
-            GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-                "value"
-            ]["Struct"]["Blessing"]["Enum"]["value"] = (
-                "ECrabBlessing::" + preset["Blessings"][0]
+            setValue(
+                GameJSON, Paths.Blessings, "ECrabBlessing::" + preset["Blessings"][0]
             )
     else:
-        GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-            "value"
-        ]["Struct"].pop("Blessing", None)
+        val = getValue(GameJSON, Paths.NextIslandInfo)
+        val.remove(
+            getValue(
+                GameJSON, [{"name": "NextIslandInfo"}, "value", {"name": "Blessing"}]
+            )
+        )
+        setValue(GameJSON, Paths.NextIslandInfo, val)
+
     array = []
     for dif in preset["Challenges"]:
         array.append("ECrabChallengeModifier::" + dif.replace(" ", ""))
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NextIslandInfo"]["Struct"][
-        "value"
-    ]["Struct"]["ChallengeModifiers"]["Array"]["value"]["Base"]["Enum"] = array
+    setValue(GameJSON, Paths.ChallengeModifiers, array)
 
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponDA"]["Object"][
-        "value"
-    ] = dynamicWeapon(preset["Inventory"]["Weapon"])
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumWeaponModSlots"]["Byte"][
-        "value"
-    ]["Byte"] = preset["Inventory"]["WeaponMods"]["Slots"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumGrenadeModSlots"]["Byte"][
-        "value"
-    ]["Byte"] = preset["Inventory"]["GrenadeMods"]["Slots"]
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["NumPerkSlots"]["Byte"]["value"][
-        "Byte"
-    ] = preset["Inventory"]["Perks"]["Slots"]
+    if dynamicWeapon(preset["Inventory"]["Weapon"]) == "":
+        GameJSON.remove(getValue(GameJSON, [{"name": "WeaponDA"}]))
+    else:
+        setValue(GameJSON, Paths.WeaponDA, dynamicWeapon(preset["Inventory"]["Weapon"]))
+    setValue(
+        GameJSON, Paths.NumWeaponModSlots, preset["Inventory"]["WeaponMods"]["Slots"]
+    )
+    setValue(
+        GameJSON, Paths.NumGrenadeModSlots, preset["Inventory"]["GrenadeMods"]["Slots"]
+    )
+    setValue(GameJSON, Paths.NumPerkSlots, preset["Inventory"]["Perks"]["Slots"])
 
     keyItem = False
     if preset["keyTotemItem"]:
@@ -4761,9 +4615,7 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
         keyItemJSON["Name"] = keyItem
         keyItemJSON["Rarity"] = WEAPONMODS[keyItem]
         array.append(convertMyItemtoGameItem(keyItemJSON))
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["WeaponMods"]["Array"]["value"][
-        "Struct"
-    ]["value"] = array
+    setValue(GameJSON, Paths.WeaponMods, array)
 
     array = []
     for wepMod in preset["Inventory"]["GrenadeMods"]["Mods"]:
@@ -4774,9 +4626,7 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
         keyItemJSON["Name"] = keyItem
         keyItemJSON["Rarity"] = GRENADEMODS[keyItem]
         array.append(convertMyItemtoGameItem(keyItemJSON))
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["GrenadeMods"]["Array"]["value"][
-        "Struct"
-    ]["value"] = array
+    setValue(GameJSON, Paths.GrenadeMods, array)
 
     array = []
     for wepMod in preset["Inventory"]["Perks"]["Perks"]:
@@ -4787,9 +4637,7 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
         keyItemJSON["Name"] = keyItem
         keyItemJSON["Rarity"] = PERKS[keyItem]
         array.append(convertMyItemtoGameItem(keyItemJSON))
-    GameJSON["AutoSave"]["Struct"]["value"]["Struct"]["Perks"]["Array"]["value"][
-        "Struct"
-    ]["value"] = array
+    setValue(GameJSON, Paths.Perks, array)
 
     return GameJSON
 
@@ -4839,6 +4687,9 @@ def setUpIslands():
         "Tropical_Arena_06",
         "Tropical_Arena_07",
         "Tropical_Arena_08",
+        "Tropical_Arena_09",
+        "Tropical_Arena_10",
+        "Tropical_Arena_11",
         "Tropical_Horde_01",
         "Tropical_Horde_02",
         "Tropical_Horde_03",
@@ -4901,6 +4752,9 @@ def setUpIslands():
         "Tropical_Arena_06",
         "Tropical_Arena_07",
         "Tropical_Arena_08",
+        "Tropical_Arena_09",
+        "Tropical_Arena_10",
+        "Tropical_Arena_11",
     ]
     ISLANDS["Tropical Horde Island"] = [
         "Tropical_Horde_01",
@@ -5111,6 +4965,10 @@ def getJSON(path):
     """
     get json using path to .sav file
     """
+    try:
+        return sav_to_json(read_sav(path))
+    except BaseException:
+        print(path)
     return sav_to_json(read_sav(path))
 
 
@@ -5126,6 +4984,7 @@ class Paths:
     Autosave = [{"name": "AutoSave"}, "value"]
     Difficulty = [{"name": "Difficulty"}, "value"]
     DifficultyModifiers = [{"name": "DifficultyModifiers"}, "value"]
+    NextIslandInfo = [{"name": "NextIslandInfo"}, "value"]
     Biome = [{"name": "NextIslandInfo"}, "value", {"name": "Biome"}, "value"]
     CurrentIsland = [
         {"name": "NextIslandInfo"},
@@ -5387,18 +5246,6 @@ if currentDirCheck():
         os.chdir(SaveGamePath)
 
 
-uepath = getUesavePath()
-if uepath == "":
-    scrollInfoMenu(
-        "This script uses uesave a lot,it is highly reccomended to download it\nyou can still use this program but i can not guarantee that it will fully work\nPress Enter to continue"
-    )
-else:
-    start = time.time()
-    loadCache()
-    stop = time.time()
-    start2 = time.time()
-    loadPresets()
-    stop2 = time.time()
 # print(round(stop2-start,2),"\n","Cache - ",round(stop-start,2),"\n","presets - ",round(stop2-start2,2))
 # exiting(0)
 start = time.time()
