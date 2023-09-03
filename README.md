@@ -6,14 +6,14 @@ feel free to use it yourself
 
 Main Credits:<br>
 Pyinstaller - used to make .exe versions of the script so that it can be run without having to get python or uesave<br>
-uesave - https://github.com/trumank/uesave-rs, all credit for this goes to trumank, this is a program made in rust but compiled to .exe , allows translating Unreal Engine .sav files to json and back again<br>
-ChatGPT - used for some comments and code snippets , i am still learning about python after all<br>
+afkaf - made a sav converter in python, this reduces overhead and makes the program much faster when converting sav files, it also means the program won't make any temp json files like it did with uesave, he made it into pypi, you can find it here https://pypi.org/project/SavConverter/<br>
+ChatGPT - used for some comments and code snippets, i am still learning about python after all<br>
 
 # Install:  
 download the program and then run it
 ### Windows: 
 [Executable download (.exe)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe) - do this if you don't know what to do  
-[Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.exe)  
+[Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py)  
 ### Linux
 [Python script download (.py)](https://github.com/O2theC/CrabChampionSaveManager/releases/latest/download/CrabChampionSaveManager.py)  
 # Use:
@@ -50,5 +50,5 @@ A: this is not malware or a virus , check it on virustotal (it has been known to
 <br>
 <br>
 Some other projects that are kind of similar to this one, in no particular order<br><br>
-a web-based save converter to turn your .sav to JSON and back - https://afkaf.github.io/Crab-Champion-Save-Manager/ - https://github.com/afkaf/Crab-Champion-Save-Manager<br>
+a web-based save converter to turn your .sav to JSON and back - https://afkaf.github.io/Crab-Champion-Save-Manager/ - https://github.com/afkaf/Crab-Champion-Save-Manager - credit to afkaf for making a python sav converter for CCSM<br>
 item wiki for the game - https://crabchampions.info
