@@ -22,7 +22,7 @@ global Version
 isExe = False
 isLinux = False
 
-Version = "4.0.0"
+VERSION = "4.0.1"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -37,14 +37,6 @@ def unhandledExeceptionHandle(exc_type, exc_value, exc_traceback):
     for i in ar:
         trace += i
 
-    infoScreen(
-        "An Execption/Error happened, contact dev to report or check wiki\n\nType : "
-        + str(exc_type)
-        + "\nValue : "
-        + str(exc_value)
-        + "\nTraceback : \n"
-        + trace
-    )
     f = open("traceback.log", "w")
     f.write(
         "An Execption/Error happened, contact dev to report or check wiki\n\nType : "
@@ -55,6 +47,14 @@ def unhandledExeceptionHandle(exc_type, exc_value, exc_traceback):
         + trace
     )
     f.close()
+    infoScreen(
+        "An Execption/Error happened, contact dev to report or check wiki\n\nType : "
+        + str(exc_type)
+        + "\nValue : "
+        + str(exc_value)
+        + "\nTraceback : \n"
+        + trace
+    )
     time.sleep(10)
     pass
 
@@ -1567,7 +1567,7 @@ def loadCache():
     start = time.time()
     infoScreen("Loading Cache\nThis might take a few seconds")
     global cacheLock
-    global Version
+    global VERSION
     global owd
     cacheLock = threading.Lock()
     global cacheJSON
@@ -1602,7 +1602,7 @@ def loadCache():
     try:
         cacheVersion = cacheJSON["Version"]
     except BaseException:
-        cacheJSON["Version"] = Version
+        cacheJSON["Version"] = VERSION
         cacheVersion = "0.0.0"
     for backup in backups:
         currentCS = getChecksum(backup + "/SaveSlot.sav")
@@ -1610,7 +1610,7 @@ def loadCache():
             cacheCS = cacheJSON["BackupData"][backup]["CheckSum"]
         except BaseException:
             cacheCS = ""
-        if currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(Version):
+        if currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(VERSION):
             t = threading.Thread(target=genBackupData, args=(backup,))
             t.start()
             threads.append(t)
@@ -1623,13 +1623,13 @@ def loadCache():
         CurrentSaveCacheCS = ""
     if CurrentSaveCS != CurrentSaveCacheCS or versionToValue(
         cacheVersion
-    ) < versionToValue(Version):
+    ) < versionToValue(VERSION):
         t = threading.Thread(target=genBackupData, args=("SaveGames",))
         t.start()
         threads.append(t)
     for t in threads:
         t.join()
-    cacheJSON["Version"] = Version
+    cacheJSON["Version"] = VERSION
     file.seek(0)
     file.truncate()
     file.write(json.dumps(cacheJSON, indent=4))
@@ -5196,18 +5196,24 @@ CHALLENGES = [
     "Homing Barrels - Enemies spawn homing explosive barrels when eliminated",
 ]
 DIFFMODS = [
-    "Random Islands",
-    "Regenerating Enemies",
-    "Locked Slots",
-    "Buffed Enemies",
-    "Manual Collection",
-    "Double Challenge",
-    "Resurrecting Enemies",
-    "Evolved Enemies",
-    "Unfair Bosses",
-    "Eternal Punishment",
-    "Volatile Explosions",
-    "No Safety Net",
+    ["Random Islands", "Island types are chosen randomly instead of in a set order"],
+    [
+        "Regenerating Enemies",
+        "Enemies regenarate health a short time after taking damage",
+    ],
+    ["Locked Slots", "Some inventory slot are locked and must be unlocked with crystals"],
+    ["Buffed Enemies", "Enemies have a chance to spawn with a powerful buff"],
+    [
+        "Resurrecting Enemies",
+        "Enemies have a chance to spawn copies of themselves when eliminated",
+    ],
+    ["Double Challenge", "Double challenge modifiers on challenge portals"],
+    ["Surging Enemies", "Enemies spawn in much faster"],
+    ["Evolved Enemies", "New enemies appear"],
+    ["Unfair Bosses", "All elite and boss islands have double the enmeies to fight"],
+    ["Eternal Punishment", "Taking damage lowers max health"],
+    ["Limited Heals", "All healing is reduced by 50%"],
+    ["No Safety Net", "No more death prevention when reaching 1 health"],
 ]
 ISLANDTYPE = [
     "Automatic",
@@ -5219,20 +5225,12 @@ ISLANDTYPE = [
     "Parkour",
     "CrabIsland",
 ]
-DIFFMODSDETAILS = [
-    "Island types are chosen randomly instead of in a set order",
-    "Enemies regenarate health a short time after taking damage",
-    "Some inventory slot are locked and must be unlocked with crystals",
-    "Enemies have a chance to spawn with a powerful buff",
-    "Crystals must be manually picked up by walking near them before they expire",
-    "Double challenge modifiers on challenge portals",
-    "Enemies have a chance to spawn copies of themselves when eliminated",
-    "New enemies appear",
-    "All elite and boss islands have double the enmeies to fight",
-    "Taking damage lowers max health",
-    "No damage immunity when eliminating exploding enemies at close range",
-    "No more death prevention when reaching 1 health",
-]
+DIFFMODSDETAILS = []
+for d in range(len(DIFFMODS)):
+    DIFFMODSDETAILS.append(DIFFMODS[d][1])
+    DIFFMODS[d] = DIFFMODS[d][0]
+
+
 setUpIslands()
 WEAPONMODS = json.loads("{}")
 GRENADEMODS = json.loads("{}")
@@ -5299,7 +5297,7 @@ curses.resize_term(TermHeight, TermWidth)
 
 # 30 x 120
 
-LatestVersion = Version
+LatestVersion = VERSION
 latestReleaseURL = "https://github.com/O2theC/CrabChampionSaveManager/releases/latest"
 try:
     response = requests.get(latestReleaseURL)
@@ -5311,7 +5309,7 @@ try:
 except BaseException:
     None
 
-VersionValue = versionToValue(Version)
+VersionValue = versionToValue(VERSION)
 LatestValue = versionToValue(LatestVersion)
 
 
@@ -5322,7 +5320,7 @@ updatePrompt = True
 lastSel = 0
 while True:
     mainMenuPrompt = makeMainMenuPrompt(
-        Version, LatestVersion, VersionValue, LatestValue, updatePrompt
+        VERSION, LatestVersion, VersionValue, LatestValue, updatePrompt
     )
     updatePrompt = False
     options = "Manage Backups\nManage Presets\nInfo/How to use\nSettings\nExit"
