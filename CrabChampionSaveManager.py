@@ -22,7 +22,7 @@ global Version
 isExe = False
 isLinux = False
 
-VERSION = "4.0.1"
+VERSION = "4.0.2"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -436,7 +436,7 @@ def deleteBackup():
         scrollInfoMenu("Could not delete backup. Error below:\n" + str(error), -1)
 
 
-def listBackups():
+def listBackups(lastChoice=0):
     global screen
     """Lists all the available backups of the save game.
 
@@ -461,12 +461,12 @@ def listBackups():
         else:
             backups += "\n" + str(name)
 
-    choice = scrollSelectMenu(prompt, backups, wrapMode=2)
+    choice = scrollSelectMenu(prompt, backups, wrapMode=2, startChoice=lastChoice)
     if choice == 0:
         return
     choice -= 1
     backupDetailsScreen(folders[choice])
-    listBackups()
+    listBackups(choice + 1)
 
 
 def getBackups(moreInfo=0, currentSave=False, updateCache=True):
@@ -2598,8 +2598,10 @@ def manageBackups():
             2,
         ],
     ]
+    lastChoice = 0
     while True:
-        choice = scrollSelectMenu(prompt, options)
+        choice = scrollSelectMenu(prompt, options, startChoice=lastChoice, loop=True)
+        lastChoice = choice
         if choice == 0:
             return
         elif choice == 1:
@@ -2656,8 +2658,10 @@ def managePresets():
             2,
         ],
     ]
+    lastChoice = 0
     while True:
-        choice = scrollSelectMenu(prompt, options)
+        choice = scrollSelectMenu(prompt, options, startChoice=lastChoice, loop=True)
+        lastChoice = choice
         if choice == 0:
             return
         elif choice == 1:
@@ -2732,6 +2736,8 @@ def editBackupUI():
     rawGameJSON = json.loads(backupJSON["Raw"])
     presetJSON = backup2Preset(backupJSON)
     presetJSON = editPreset(presetJSON, backupName, backup=True)
+    if presetJSON is None:
+        return
     gameJSON = convertPresetToGameSave(presetJSON, rawGameJSON)
 
     saveJSON = getJSON(folderName + "/SaveSlot.sav")
@@ -3064,7 +3070,7 @@ def genPlayerData(saveJSON, checksum):
 
 
 def createPreset():
-    defaultPreset = '{"Diff":"Normal","IslandNum":1,"DiffMods":[],"Blessings":[],"Challenges":[],"Crystals":0,"Biome":"Tropical","LootType":"Random Loot Type","IslandName":"Tropical Arena Island","IslandType":"Automatic","Health":100,"MaxHealth":100,"ArmorPlates":0,"ArmorPlatesHealth":0,"HealthMultiplier":1,"DamageMultiplier":1,"keyTotemItem":false,"Inventory":{"Weapon":"Lobby Dependant","WeaponMods":{"Slots":24,"Mods":[]},"GrenadeMods":{"Slots":24,"Mods":[]},"Perks":{"Slots":24,"Perks":[]}}}'
+    defaultPreset = '{"Diff":"Normal","IslandNum":1,"DiffMods":[],"Blessings":[],"Challenges":[],"Crystals":0,"Biome":"Tropical","LootType":"Random Loot Type","IslandName":"Tropical Arena Island","IslandType":"Automatic","Health":200,"MaxHealth":200,"ArmorPlates":0,"ArmorPlatesHealth":0,"HealthMultiplier":1,"DamageMultiplier":1,"keyTotemItem":false,"Inventory":{"Weapon":"Lobby Dependant","WeaponMods":{"Slots":24,"Mods":[]},"GrenadeMods":{"Slots":24,"Mods":[]},"Perks":{"Slots":24,"Perks":[]}}}'
     preset = json.loads(defaultPreset)
     prompt = "What should the preset be named?\nEnter nothing to go back"
     name = backupNameMenu(prompt, escape="", escapeReturn="")
@@ -3073,7 +3079,7 @@ def createPreset():
     preset = editPreset(preset, name, cancel=False)
 
 
-def listPresets():
+def listPresets(lastChoice=0):
     loadPresets()
     foldersInfo = getPresets(moreInfo=1)
     presetss = getPresets()
@@ -3088,12 +3094,14 @@ def listPresets():
         else:
             presets += "\n" + str(name)
 
-    choice = scrollSelectMenu(prompt, presets, wrapMode=2)
+    choice = scrollSelectMenu(
+        prompt, presets, wrapMode=2, loop=True, startChoice=lastChoice
+    )
     if choice == 0:
         return
     choice -= 1
     presetDetailsScreen(presetss[choice])
-    listPresets()
+    listPresets(choice + 1)
 
 
 def getPresets(moreInfo=False):
@@ -3220,6 +3228,9 @@ def presetDetailsScreen(preset):
     )
     info += "\n" + str(ensureLength("Difficulty: ", leng)) + str(presetJSON["Diff"])
     info += "\n" + str(ensureLength("Biome: ", leng)) + str(presetJSON["Biome"])
+    info += (
+        "\n" + str(ensureLength("Island Name: ", leng)) + str(presetJSON["IslandName"])
+    )
     info += "\n" + ensureLength("Loot Type: ", leng) + str(presetJSON["LootType"])
     info += "\n" + ensureLength("Island Type: ", leng) + str(presetJSON["IslandType"])
     info += (
@@ -3240,11 +3251,37 @@ def presetDetailsScreen(preset):
         + ensureLength("Armor Plate Health:", leng)
         + str(formatNumber(presetJSON["ArmorPlatesHealth"], 0))
     )
+    info += (
+        "\n"
+        + ensureLength("Health Multiplier:", leng)
+        + str(formatNumber(presetJSON["HealthMultiplier"], 0))
+    )
+    info += (
+        "\n"
+        + ensureLength("Damage Multiplier:", leng)
+        + str(formatNumber(presetJSON["DamageMultiplier"], 0))
+    )
+    bar = True
     if len(presetJSON["DiffMods"]) > 0:
         info += "\nDifficulty Modifiers: "
         for diffMod in presetJSON["DiffMods"]:
             info += "\n" + indent + str(diffMod)
-    info += "\n"
+        bar = False
+        info += "\n"
+    if len(presetJSON["Challenges"]) > 0:
+        info += "\nChallenges: "
+        for diffMod in presetJSON["Challenges"]:
+            info += "\n" + indent + str(diffMod)
+        bar = False
+        info += "\n"
+    if len(presetJSON["Blessings"]) > 0:
+        info += "Blessings: "
+        for diffMod in presetJSON["Blessings"]:
+            info += "\n" + indent + str(diffMod)
+        bar = False
+        info += "\n"
+    if bar:
+        info += "\n"
     info += "\n" + ensureLength("Weapon:", leng) + str(presetJSON["Inventory"]["Weapon"])
     info += (
         "\n"
@@ -3378,7 +3415,9 @@ def presetNameMenu(prompt):
             presetName += chr(key)
 
 
-def editPreset(preset, name, overriade=False, cancel=True, backup=False):
+def editPreset(
+    preset, name, overriade=False, cancel=True, backup=False, mustReturn=False
+):
     getUnlocked()
     global WEAPONS
     global WEAPONMODS
@@ -4151,7 +4190,7 @@ def editPreset(preset, name, overriade=False, cancel=True, backup=False):
 
         if oname != name:
             os.remove(owd + "/CrabChampionSaveManager/Presets/" + oname + ".ccsm")
-    elif backup and not can:
+    elif backup and not can or mustReturn:
         return presetJSON
 
 
@@ -4992,7 +5031,8 @@ def backup2Preset(backupJSON):
     for k in PresetJSON.copy().keys():
         if k not in presetStuff:
             PresetJSON.pop(k)
-
+    with open("deb.json", "w") as f:
+        f.write(json.dumps(PresetJSON, indent=4))
     return PresetJSON
 
 
@@ -5327,7 +5367,13 @@ while True:
     # options = "Manage Backups\nInfo/How to use\nSettings\nExit"
     # options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
     choice, lastSel = scrollSelectMenu(
-        mainMenuPrompt, options, -1, 1, returnAnything=True, startChoice=lastSel
+        mainMenuPrompt,
+        options,
+        -1,
+        1,
+        returnAnything=True,
+        startChoice=lastSel,
+        loop=True,
     )
     choice += 1
 
@@ -5354,48 +5400,10 @@ while True:
 Crab Champion Save Manager
 Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.
 Made By O2C, GitHub repo at https://github.com/O2theC/CrabChampionSaveManager
-This program provides the following options:\n
-
-\nManage Backups
-
-\n - Edit Save Game:
-       - Uses uesave to allow the user to edit the SaveSlot.sav file in a backup or your current save
-
-\n - Backup Save:
-       - backup up your current save with a custom name
-
-\n - Update backup:
-       - Update a already made backup with the current saved run
-
-\n - Restore Save from Backup:
-       - Restores a run from a backup
-
-\n - Delete Backup:
-       - Deletes a backup
-       - Note: Deleting a backup cannot be undone, so be careful when removing backups.
-
-\n - List Backups:
-       - Lists all backups and trys to list some info about the run
-       - Allows the user to select a backup at which more info about that run is displayed
-       - DPB - Damage Per Bullt
-       - SPS - Shots Per Second
-       - DPS - Damage Per Second
-
- \nInfo/How to use:
-    - provides info about the program and how to use it
-
- \nSettings:
-    - Change program settings
-
- \nExit:
-    - Exits the program.
-
- This script uses uesave from https://github.com/trumank/uesave-rs, all credit for this goes to trumank,their program is in my opinion very well made and works very well
- Report issues and suggestions to https://github.com/O2theC/CrabChampionSaveManager
- This script has some elements that require access to the internet, this includes:
- Version Checking
- Downloading an updater for the .exe version of the program
- Downloading uesave"""
+Credit to afkaf for the sav converter - https://github.com/afkaf/Python-GVAS-JSON-Converter
+This script has some elements that require access to the internet, this includes:
+Version Checking
+Downloading an updater for the .exe version of the program"""
         scrollInfoMenu(infoList, -1)
     elif choice == 4:
         settings()
