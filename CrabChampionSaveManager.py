@@ -22,7 +22,7 @@ global Version
 isExe = False
 isLinux = False
 
-VERSION = "4.0.2"
+VERSION = "4.0.3"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -354,7 +354,7 @@ def restoreBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options += "\n" + str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt, options, -1, 1)
+    choice = scrollSelectMenu(prompt, options, -1, 1, loop=True)
     if parseInt(choice) == 0:
         return
     start = time.time()
@@ -419,7 +419,7 @@ def deleteBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options += "\n" + str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt, options, -1, 1)
+    choice = scrollSelectMenu(prompt, options, -1, 1, loop=True)
     if parseInt(choice) == 0:
         return
 
@@ -461,7 +461,9 @@ def listBackups(lastChoice=0):
         else:
             backups += "\n" + str(name)
 
-    choice = scrollSelectMenu(prompt, backups, wrapMode=2, startChoice=lastChoice)
+    choice = scrollSelectMenu(
+        prompt, backups, wrapMode=2, startChoice=lastChoice, loop=True
+    )
     if choice == 0:
         return
     choice -= 1
@@ -610,7 +612,7 @@ def updateBackup():
     options = "Go back to main menu"
     for i in range(len(foldersInfo)):
         options += "\n" + str(foldersInfo[i])
-    choice = scrollSelectMenu(prompt, options, -1, 1)
+    choice = scrollSelectMenu(prompt, options, -1, 1, loop=True)
     if parseInt(choice) == 0:
         return
     saveGame = os.path.join(current_directory, "SaveGames")
@@ -707,7 +709,7 @@ def scrollSelectMenu(
     win_height=-1,
     buffer_size=1,
     wrapMode=1,
-    loop=False,
+    loop=True,
     skip=[],
     startChoice=0,
     returnMore=False,
@@ -1187,6 +1189,7 @@ def settings():
     global EPICCOLOR
     global LEGENDARYCOLOR
     global GREEDCOLOR
+    global ForceShowUC
     defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
     configPath = configPath.replace("\\", "/")
@@ -1203,25 +1206,34 @@ def settings():
 
     prompt = "Select setting to edit"
     options = "Back to main menu\nStart Up Settings\nUI\nCustom Paths"
+    lastChoice = 0
     while True:
-        choice = scrollSelectMenu(prompt, options)
+        choice = scrollSelectMenu(prompt, options, startChoice=lastChoice)
+        lastChoice = choice
         if choice == 0:
             break
         elif choice == 1:
             promptSUS = "Select setting to edit"
             optionsSUS = "Back\nTerminal Size"
+            lastChoiceSUS = 0
             while True:
-                choice = scrollSelectMenu(promptSUS, optionsSUS)
+                choice = scrollSelectMenu(
+                    promptSUS, optionsSUS, startChoice=lastChoiceSUS
+                )
+                lastChoiceSUS = choice
                 if choice == 0:
                     break
                 elif choice == 1:
                     promptTS = "Select setting to edit"
-
+                    lastChoiceTS = 0
                     while True:
                         height = configJSON["Start_Up"]["Terminal_Size"]["Height"]
                         width = configJSON["Start_Up"]["Terminal_Size"]["Width"]
                         optionsTS = f"Back\nHeight - {height}\nWidth - {width}\nManuel"
-                        choice = scrollSelectMenu(promptTS, optionsTS)
+                        choice = scrollSelectMenu(
+                            promptTS, optionsTS, startChoice=lastChoiceTS
+                        )
+                        lastChoiceTS = choice
                         if choice == 0:
                             break
                         elif choice == 1:
@@ -1286,14 +1298,19 @@ def settings():
                             saveSettings()
 
         elif choice == 2:
+            lastChoiceUI = 0
             while True:
                 promptUI = "Select setting to edit"
-                optionsUI = "Back\nRarity Colors"
-                choice = scrollSelectMenu(promptUI, optionsUI)
+                optionsUI = "Back\nRarity Colors\nForce Show Ultra Chaos - " + str(
+                    configJSON["UI"]["ForceShowUC"]
+                )
+                choice = scrollSelectMenu(promptUI, optionsUI, startChoice=lastChoiceUI)
+                lastChoiceUI = choice
                 if choice == 0:
                     break
                 elif choice == 1:
                     promptUI = "Select setting to edit"
+                    lastChoiceColors = 0
                     while True:
                         optionsUIColors = [
                             "Back",
@@ -1322,7 +1339,10 @@ def settings():
                                 1,
                             ],
                         ]
-                        choice = scrollSelectMenu(promptUI, optionsUIColors)
+                        choice = scrollSelectMenu(
+                            promptUI, optionsUIColors, startChoice=lastChoiceColors
+                        )
+                        lastChoiceColors = choice
                         if choice == 0:
                             break
                         elif choice == 1:
@@ -1348,22 +1368,35 @@ def settings():
                             GREEDCOLOR = col
                             saveSettings()
 
+                elif choice == 2:
+                    if configJSON["UI"]["ForceShowUC"]:
+                        configJSON["UI"]["ForceShowUC"] = False
+                    else:
+                        configJSON["UI"]["ForceShowUC"] = True
+                    saveSettings()
+
         elif choice == 3:
+            lastChoiceCP = 0
             while True:
                 promptUI = "Select setting to edit"
                 optionsUI = [
                     ["Back", 0, 0],
                     ["Save Game Path - Currently at " + str(SaveGamePath), 0, 2],
                 ]
-                choice = scrollSelectMenu(promptUI, optionsUI)
+                choice = scrollSelectMenu(promptUI, optionsUI, startChoice=lastChoiceCP)
+                lastChoiceCP = choice
                 if choice == 0:
                     break
                 if choice == 1:
+                    lastChoiceCP2 = 0
                     while True:
                         promptUI = "Select option - Currently at " + str(SaveGamePath)
                         custom = "Choose folder"
                         optionsUI = [["Back", 0, 0], ["Automatic", 0, 0]]  # [custom,0,0]
-                        choice = scrollSelectMenu(promptUI, optionsUI)
+                        choice = scrollSelectMenu(
+                            promptUI, optionsUI, startChoice=lastChoiceCP2
+                        )
+                        lastChoiceCP2 = choice
                         if choice == 0:
                             break
                         elif choice == 1:
@@ -1375,6 +1408,9 @@ def settings():
                             configJSON["CustomPaths"]["SaveGamePath"] = folder
                             SaveGamePath = folder
                             saveSettings()
+
+    saveSettings()
+    loadSettings()
 
 
 def folderSelect(startDir="Automatic"):
@@ -1443,8 +1479,9 @@ def loadSettings():
     global EPICCOLOR
     global LEGENDARYCOLOR
     global GREEDCOLOR
+    global ForceShowUC
     global SaveGamePath
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"ForceShowUC":false,"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
 
     configPath = configPath.replace("\\", "/")
@@ -1523,6 +1560,13 @@ def loadSettings():
         configJSON.setdefault("CustomPaths", {})
         configJSON["CustomPaths"]["SaveGamePath"] = "Automatic"
         SaveGamePath = "Automatic"
+
+    try:
+        ForceShowUC = configJSON["UI"]["ForceShowUC"]
+    except BaseException:
+        configJSON.setdefault("UI", {})
+        configJSON["UI"]["ForceShowUC"] = False
+        ForceShowUC = False
 
     file.seek(0)
     file.write(json.dumps(configJSON, indent=4))
@@ -3425,6 +3469,7 @@ def editPreset(
     global PERKS
     global DIFFMODS
     global DIFFMODSDETAILS
+    global ForceShowUC
     DiffModsWithDetails = []
     for i in range(len(DIFFMODS)):
         DiffModsWithDetails.append(DIFFMODS[i] + " - " + DIFFMODSDETAILS[i])
@@ -3674,7 +3719,7 @@ def editPreset(
                 "Select Difficulty\nCurrent Difficulty is " + presetJSON["Diff"] + "\n"
             )
             diff = ["Easy", "Normal", "Nightmare"]
-            if hasAllDiamond():
+            if hasAllDiamond() or ForceShowUC or presetJSON["Diff"] == "Ultra Chaos":
                 diff.append("Ultra Chaos")
 
             presetJSON["Diff"] = diff[
@@ -4275,7 +4320,7 @@ def editPresetMenu():
         else:
             presets += "\n" + str(name)
 
-    choice = scrollSelectMenu(prompt, presets, wrapMode=2)
+    choice = scrollSelectMenu(prompt, presets, wrapMode=2, loop=True)
     if choice == 0:
         return
     choice -= 1
