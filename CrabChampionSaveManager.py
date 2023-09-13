@@ -1,4 +1,4 @@
-import copy
+import datetime
 import hashlib
 import os
 import random
@@ -10,7 +10,6 @@ import sys
 import json
 import threading
 import re
-import tkinter as tk
 from tkinter import filedialog
 import tkinter
 import traceback
@@ -22,7 +21,7 @@ global Version
 isExe = False
 isLinux = False
 
-VERSION = "4.0.3"
+VERSION = "4.1.0"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -70,8 +69,16 @@ def closeScreen():
     curses.endwin()
 
 
-def exiting(var):
-    global screen
+StopBackupWatcherEvent = threading.Event()
+
+
+def exiting(var, force=False):
+    global infoScreen
+    StopBackupWatcherEvent.set()
+    try:
+        AccountStatsWatcherThread.join()
+    except BaseException:
+        None
     try:
         screen.clear()
         closeScreen()
@@ -79,9 +86,21 @@ def exiting(var):
     except BaseException:
         None
     if var == 0:
-        sys.exit(0)
+        if force:
+            os._exit(0)
+        else:
+            try:
+                sys.exit(0)
+            except SystemExit:
+                os._exit(0)
     elif var == 1:
-        sys.exit(1)
+        if force:
+            os._exit(1)
+        else:
+            try:
+                sys.exit(1)
+            except SystemExit:
+                os._exit(1)
 
 
 try:
@@ -369,12 +388,19 @@ def restoreBackup():
     saveGameJson = getJSON(saveGame)
     backupJson = getJSON(backupName)
 
+    # with open("debug1.json","w") as f:
+    #     json.dump(backupJson,f,indent=4)
+
+    # with open("debug2.json","w") as f:
+    #     json.dump(saveGameJson,f,indent=4)
+
     if getValue(backupJson, Paths.Autosave) is None:
         scrollInfoMenu("Selected backup has no save\nPress Enter to return to main menu")
         return
 
     saveGameJson = ensureAutoSave(saveGameJson)
 
+    # setValue(saveGameJson, Paths.Autosave, getValue(backupJson,Paths.Autosave))
     update_property_by_path(
         saveGameJson, Paths.Autosave, getValue(backupJson, Paths.Autosave)
     )
@@ -385,7 +411,7 @@ def restoreBackup():
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupB.sav")
     infoScreen("Backup Restored - " + str(folders[parseInt(choice) - 1]))
     stop = time.time()
-    print("it took", round(stop - start, 3), " seconds")
+    # print("it took",round(stop-start,3)," seconds")
     return
 
 
@@ -398,6 +424,7 @@ def ensureAutoSave(JSON):
         insert_object_by_path(
             JSON, [{"type": "FileEndProperty"}], defaultSaveJson, "before"
         )
+    return JSON
 
 
 def saveSavJson(path, JSON):
@@ -473,31 +500,24 @@ def listBackups(lastChoice=0):
 
 def getBackups(moreInfo=0, currentSave=False, updateCache=True):
     global cacheJSON
-    if updateCache:
-        loadCache()
+
     """Retrieves the list of backup folders.
 
     Searches the current directory for backup folders and returns a list of their names.
     """
 
     current_directory = os.getcwd()
-    items = os.listdir(current_directory)
-    try:
-        items.remove("SaveGames")
-        items.remove("Config")
-        items.remove("Logs")
-    except BaseException:
-        None
-    folders = [
-        item for item in items if os.path.isdir(os.path.join(current_directory, item))
-    ]
-    folders = [
-        item
-        for item in items
-        if os.path.isfile(
-            os.path.join(os.path.join(current_directory, item), "SaveSlot.sav")
-        )
-    ]
+    current_directory = current_directory.replace("\\", "/")
+    entries = os.scandir(current_directory)
+    folders = []
+    for entry in entries:
+        if entry.name in ["SaveGames", "Config", "Logs", "CrabChampionSaveManager"]:
+            None
+        elif entry.is_dir() and os.path.isfile(
+            entry.path.replace("\\", "/") + "/SaveSlot.sav"
+        ):
+            folders.append(entry.name)
+
     if currentSave:
         folders.insert(0, "Current Save")
 
@@ -511,6 +531,8 @@ def getBackups(moreInfo=0, currentSave=False, updateCache=True):
     if moreInfo == 0:
         return folders
     else:
+        if updateCache:
+            loadCache()
         # for the config json
         # run time seconds        - ["BackupData"][BackupName]["RunTime"]
         # score                   - ["BackupData"][BackupName]["Score"]
@@ -1157,11 +1179,21 @@ def userInputMenuNum(
                 if num == escape:
                     return default
         else:
-            if key in range(48, 58) or (key == 46 and decimal):
+            if (
+                key in range(48, 58)
+                or (key == 46 and decimal)
+                or (key == 45 and lowLimit + 1 < 0)
+            ):
                 if "." not in num:
-                    num += chr(key)
+                    if "-" not in num:
+                        num += chr(key)
+                    elif key != 45:
+                        num += chr(key)
                 elif key != 46:
-                    num += chr(key)
+                    if "-" not in num:
+                        num += chr(key)
+                    elif key != 45:
+                        num += chr(key)
         try:
             if decimal:
                 numint = float(num)
@@ -1190,7 +1222,7 @@ def settings():
     global LEGENDARYCOLOR
     global GREEDCOLOR
     global ForceShowUC
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"ForceShowUC":false,"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}},"AccountStats":{"Backups":{"MaxTotalBackups":1000,"MaxStorageKB":10000,"MaxAgeDays":1000,"MaxBackupsPerDay":10}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
     configPath = configPath.replace("\\", "/")
     # Create the directory if it doesn't exist
@@ -1205,13 +1237,14 @@ def settings():
         configJSON = json.loads(defaultJSON)
 
     prompt = "Select setting to edit"
-    options = "Back to main menu\nStart Up Settings\nUI\nCustom Paths"
+    options = "Back to main menu\nStart Up Settings\nUI\nCustom Paths\nAccount"
     lastChoice = 0
     while True:
         choice = scrollSelectMenu(prompt, options, startChoice=lastChoice)
         lastChoice = choice
         if choice == 0:
             break
+
         elif choice == 1:
             promptSUS = "Select setting to edit"
             optionsSUS = "Back\nTerminal Size"
@@ -1253,7 +1286,7 @@ def settings():
                                 configJSON["Start_Up"]["Terminal_Size"][
                                     "Width"
                                 ] = userInputMenuNum(
-                                    prompt, escape=0, lowLimit=-1, defailt=TermWidth
+                                    prompt, escape=0, lowLimit=-1, default=TermWidth
                                 )
                                 saveSettings()
                             except BaseException:
@@ -1409,6 +1442,102 @@ def settings():
                             SaveGamePath = folder
                             saveSettings()
 
+        elif choice == 4:
+            prompt = "Select setting to edit"
+            options = "Back\nBackups"
+            lastChoiceA = 0
+            while True:
+                choice = scrollSelectMenu(prompt, options, startChoice=lastChoiceA)
+                lastChoiceA = choice
+                if choice == 0:
+                    break
+                elif choice == 1:
+                    prompt = "Select setting to edit"
+                    options = f"Back\nMax Total Backups - {configJSON['AccountStats']['Backups']['MaxTotalBackups']}\nMax Storage in KB - {configJSON['AccountStats']['Backups']['MaxStorageKB']}\nMax Backup Age in Days - {configJSON['AccountStats']['Backups']['MaxAgeDays']}\nMax Backups Per Day - {configJSON['AccountStats']['Backups']['MaxBackupsPerDay']}"
+                    lastChoiceAB = 0
+                    while True:
+                        prompt = "Select setting to edit"
+                        choice = scrollSelectMenu(
+                            prompt, options, startChoice=lastChoiceAB
+                        )
+                        lastChoiceAB = choice
+                        if choice == 0:
+                            break
+                        elif choice == 1:
+                            currentValue = configJSON["AccountStats"]["Backups"][
+                                "MaxTotalBackups"
+                            ]
+                            prompt = (
+                                "Max Total Backups Currently at "
+                                + str(currentValue)
+                                + "\nEnter -1 to escape"
+                            )
+                            newValue = userInputMenuNum(
+                                prompt,
+                                escape=0,
+                                lowLimit=-2,
+                                default=currentValue,
+                                useDefaultAsPreset=True,
+                            )
+                            configJSON["AccountStats"]["Backups"][
+                                "MaxTotalBackups"
+                            ] = newValue
+                        elif choice == 1:
+                            currentValue = configJSON["AccountStats"]["Backups"][
+                                "MaxStorageKB"
+                            ]
+                            prompt = (
+                                "Max Storage in KB Currently at "
+                                + str(currentValue)
+                                + "\nEnter -1 to escape"
+                            )
+                            newValue = userInputMenuNum(
+                                prompt,
+                                escape=0,
+                                lowLimit=-2,
+                                default=currentValue,
+                                useDefaultAsPreset=True,
+                            )
+                            configJSON["AccountStats"]["Backups"][
+                                "MaxStorageKB"
+                            ] = newValue
+                        elif choice == 1:
+                            currentValue = configJSON["AccountStats"]["Backups"][
+                                "MaxAgeDays"
+                            ]
+                            prompt = (
+                                "Max Backup Age in Days Currently at "
+                                + str(currentValue)
+                                + "\nEnter -1 to escape"
+                            )
+                            newValue = userInputMenuNum(
+                                prompt,
+                                escape=0,
+                                lowLimit=-2,
+                                default=currentValue,
+                                useDefaultAsPreset=True,
+                            )
+                            configJSON["AccountStats"]["Backups"]["MaxAgeDays"] = newValue
+                        elif choice == 1:
+                            currentValue = configJSON["AccountStats"]["Backups"][
+                                "MaxBackupsPerDay"
+                            ]
+                            prompt = (
+                                "Max Backups Per Day Currently at "
+                                + str(currentValue)
+                                + "\nEnter -1 to escape"
+                            )
+                            newValue = userInputMenuNum(
+                                prompt,
+                                escape=0,
+                                lowLimit=-2,
+                                default=currentValue,
+                                useDefaultAsPreset=True,
+                            )
+                            configJSON["AccountStats"]["Backups"][
+                                "MaxBackupsPerDay"
+                            ] = newValue
+
     saveSettings()
     loadSettings()
 
@@ -1481,7 +1610,11 @@ def loadSettings():
     global GREEDCOLOR
     global ForceShowUC
     global SaveGamePath
-    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"ForceShowUC":false,"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}}}'
+    global MaxTotalBackups
+    global MaxStorageKB
+    global MaxAgeDays
+    global MaxBackupsPerDay
+    defaultJSON = '{"Start_Up":{"Terminal_Size":{"Height":30,"Width":120}},"UI":{"ForceShowUC":false,"Colors":{"RareColor":3,"EpicColor":13,"LegendaryColor":14,"GreedColor":12}},"AccountStats":{"Backups":{"MaxTotalBackups":1000,"MaxStorageKB":10000,"MaxAgeDays":1000,"MaxBackupsPerDay":10}}}'
     configPath = owd + "/CrabChampionSaveManager/config.json"
 
     configPath = configPath.replace("\\", "/")
@@ -1568,6 +1701,38 @@ def loadSettings():
         configJSON["UI"]["ForceShowUC"] = False
         ForceShowUC = False
 
+    try:
+        MaxTotalBackups = configJSON["AccountStats"]["Backups"]["MaxTotalBackups"]
+    except BaseException:
+        configJSON.setdefault("AccountStats", {})
+        configJSON["AccountStats"].setdefault("Backups", {})
+        configJSON["AccountStats"]["Backups"]["MaxTotalBackups"] = 1000
+        MaxTotalBackups = 1000
+
+    try:
+        MaxStorageKB = configJSON["AccountStats"]["Backups"]["MaxStorageKB"]
+    except BaseException:
+        configJSON.setdefault("AccountStats", {})
+        configJSON["AccountStats"].setdefault("Backups", {})
+        configJSON["AccountStats"]["Backups"]["MaxStorageKB"] = 10000
+        MaxStorageKB = 10000
+
+    try:
+        MaxAgeDays = configJSON["AccountStats"]["Backups"]["MaxAgeDays"]
+    except BaseException:
+        configJSON.setdefault("AccountStats", {})
+        configJSON["AccountStats"].setdefault("Backups", {})
+        configJSON["AccountStats"]["Backups"]["MaxAgeDays"] = 1000
+        MaxAgeDays = 1000
+
+    try:
+        MaxBackupsPerDay = configJSON["AccountStats"]["Backups"]["MaxBackupsPerDay"]
+    except BaseException:
+        configJSON.setdefault("AccountStats", {})
+        configJSON["AccountStats"].setdefault("Backups", {})
+        configJSON["AccountStats"]["Backups"]["MaxBackupsPerDay"] = 10
+        MaxBackupsPerDay = 10
+
     file.seek(0)
     file.write(json.dumps(configJSON, indent=4))
     file.truncate()
@@ -1588,6 +1753,8 @@ def saveSettings():
 
 
 def getChecksum(file_path):
+    # print(file_path,end=" - ")
+    start = time.time()
     # Get the absolute path of the file
     absolute_path = os.path.abspath(file_path)
     absolute_path = absolute_path.replace("\\", "/")
@@ -1596,14 +1763,12 @@ def getChecksum(file_path):
         # Create a SHA-512 hash object
         sha512_hash = hashlib.sha512()
 
-        # Read the file in chunks to avoid loading the entire file into memory
-        for chunk in iter(lambda: file.read(4096), b""):
-            # Update the hash object with the current chunk
-            sha512_hash.update(chunk)
+        sha512_hash.update(file.read())
 
     # Get the hexadecimal representation of the hash
     checksum = sha512_hash.hexdigest()
-
+    stop = time.time()
+    # print(round(stop-start,3))
     return checksum
 
 
@@ -1649,28 +1814,24 @@ def loadCache():
         cacheJSON["Version"] = VERSION
         cacheVersion = "0.0.0"
     for backup in backups:
-        currentCS = getChecksum(backup + "/SaveSlot.sav")
-        try:
-            cacheCS = cacheJSON["BackupData"][backup]["CheckSum"]
-        except BaseException:
-            cacheCS = ""
-        if currentCS != cacheCS or versionToValue(cacheVersion) < versionToValue(VERSION):
-            t = threading.Thread(target=genBackupData, args=(backup,))
-            t.start()
-            threads.append(t)
-    CurrentSaveCS = getChecksum(
-        os.getcwd().replace("\\", "/") + "/SaveGames/SaveSlot.sav"
-    )
-    try:
-        CurrentSaveCacheCS = cacheJSON["BackupData"]["Current Save"]["CheckSum"]
-    except BaseException:
-        CurrentSaveCacheCS = ""
-    if CurrentSaveCS != CurrentSaveCacheCS or versionToValue(
-        cacheVersion
-    ) < versionToValue(VERSION):
-        t = threading.Thread(target=genBackupData, args=("SaveGames",))
+        t = threading.Thread(
+            target=genBackupData,
+            args=(
+                backup,
+                cacheVersion,
+            ),
+        )
         t.start()
         threads.append(t)
+    t = threading.Thread(
+        target=genBackupData,
+        args=(
+            "SaveGames",
+            cacheVersion,
+        ),
+    )
+    t.start()
+    threads.append(t)
     for t in threads:
         t.join()
     cacheJSON["Version"] = VERSION
@@ -1705,7 +1866,7 @@ def parseDiffMods(mods):
     return mods
 
 
-def genBackupData(backupName):
+def genBackupData(backupName, cacheVersion):
     start = time.time()
     global cacheLock
     global cacheJSON
@@ -1713,6 +1874,17 @@ def genBackupData(backupName):
     savFilePath = savFilePath.replace("\\", "/")
     saveJSON = getJSON(savFilePath)
     checksum = getChecksum(savFilePath)
+    try:
+        if backupName == "SaveGames":
+            cacheCS = cacheJSON["BackupData"]["Current Save"]["CheckSum"]
+        else:
+            cacheCS = cacheJSON["BackupData"][backupName]["CheckSum"]
+    except BaseException:
+        cacheCS = ""
+    if not (
+        checksum != cacheCS or versionToValue(cacheVersion) < versionToValue(VERSION)
+    ):
+        return
     if backupName == "SaveGames":
         backupName = "Current Save"
         genPlayerData(saveJSON, checksum)
@@ -2171,13 +2343,7 @@ def genBackupData(backupName):
         cacheJSON["BackupData"][backupName] = backupJSON[backupName]
     cacheLock.release()
     stop = time.time()
-    print(
-        backupName
-        + str("  -  ")
-        + str(round(stop - start, 5))
-        + str("  -ue  ")
-        + str(round(stop - start, 5))
-    )
+    # print(backupName+str("  -  ")+str(round(stop-start,5))+str("  -ue  ")+str(round(stop-start,5)))
 
 
 def toUInt32(value):
@@ -3167,9 +3333,9 @@ def getPresets(moreInfo=False):
         except BaseException:
             pres.remove(pre)
     presets = pres.copy()
-    f = open("debug.txt", "w")
-    f.write(str(presets))
-    f.close()
+    # f = open("debug.txt",'w')
+    # f.write(str(presets))
+    # f.close()
     for i, pre in enumerate(presets):
         if ".json" in pre:
             f = open(
@@ -3539,14 +3705,23 @@ def editPreset(
         )
         info += "\nDifficulty Modifiers: "
         if len(presetJSON["DiffMods"]) > 0:
-            for diffMod in presetJSON["DiffMods"]:
-                info += (
-                    "\n"
-                    + indent
-                    + str(diffMod)
-                    + " - "
-                    + DIFFMODSDETAILS[DIFFMODS.index(diffMod)]
-                )
+            for diffMod in presetJSON["DiffMods"].copy():
+                try:
+                    info += (
+                        "\n"
+                        + indent
+                        + str(diffMod)
+                        + " - "
+                        + DIFFMODSDETAILS[DIFFMODS.index(diffMod)]
+                    )
+                except BaseException:
+                    info += (
+                        "\n"
+                        + indent
+                        + str(diffMod)
+                        + " - "
+                        + "Unkown Diff Mod, Please Remove"
+                    )
         if len(presetJSON["DiffMods"]) < len(DIFFMODS):
             info += "\n" + indent + str("Add Difficulty Modifer")
         info += "\n"
@@ -4294,9 +4469,9 @@ def usePreset():
     with open("SaveGames/SaveSlot.sav", "wb") as file:
         # Write the binary data to the file
         file.write(json_to_sav(obj_to_json(saveJSON)))
-    with open("deubpreset.json", "w") as file:
-        # Write the binary data to the file
-        file.write((obj_to_json(saveJSON)))
+    # with open("deubpreset.json", 'w') as file:
+    #     # Write the binary data to the file
+    #     file.write((obj_to_json(saveJSON)))
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupA.sav")
     shutil.copyfile("SaveGames/SaveSlot.sav", "SaveGames/SaveSlotBackupB.sav")
     stop = time.time()
@@ -4657,7 +4832,9 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
 
     setValue(GameJSON, Paths.CurrentIsland, preset["IslandNum"])
     setValue(GameJSON, Paths.Crystals, preset["Crystals"])
-    setValue(GameJSON, Paths.Difficulty, "ECrabDifficulty::" + preset["Diff"])
+    setValue(
+        GameJSON, Paths.Difficulty, "ECrabDifficulty::" + preset["Diff"].replace(" ", "")
+    )
     setValue(GameJSON, Paths.Biome, "ECrabBiome::" + preset["Biome"])
     setValue(GameJSON, Paths.IslandName, dynamicIslandName(preset["IslandName"]))
     setValue(
@@ -4669,8 +4846,19 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
         GameJSON,
         Paths.IslandType,
         "ECrabIslandType::"
-        + dynamicIslandType(preset["IslandType"], preset["IslandName"]),
+        + dynamicIslandType(
+            preset["IslandType"], dynamicIslandName(preset["IslandName"])
+        ),
     )
+    if (
+        dynamicIslandType(preset["IslandType"], dynamicIslandName(preset["IslandName"]))
+        == "Elite"
+    ):
+        setValue(
+            GameJSON,
+            [{"name": "NextIslandInfo"}, "value", {"name": "IslandName"}, "unknown"],
+            "15",
+        )  # WHY DO I HAVE TO DO THIS, WHY DOES IT NOT WORK UNLESS I DO THIS, WHYYYY
     setValue(GameJSON, Paths.CurrentHealth, preset["Health"])
     setValue(GameJSON, Paths.CurrentMaxHealth, preset["MaxHealth"])
     setValue(GameJSON, Paths.CurrentArmorPlates, preset["ArmorPlates"])
@@ -4681,7 +4869,10 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
     array = []
     for dif in preset["DiffMods"]:
         array.append("ECrabDifficultyModifier::" + dif.replace(" ", ""))
-    setValue(GameJSON, Paths.DifficultyModifiers, array)
+    if array != []:
+        setValue(GameJSON, Paths.DifficultyModifiers, array)
+    else:
+        GameJSON.remove(getValue(GameJSON, [Paths.DifficultyModifiers[0]]))
 
     # array = []
     # for dif in preset["Blessing"]:
@@ -4707,7 +4898,17 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
     array = []
     for dif in preset["Challenges"]:
         array.append("ECrabChallengeModifier::" + dif.replace(" ", ""))
-    setValue(GameJSON, Paths.ChallengeModifiers, array)
+    if array != []:
+        setValue(GameJSON, Paths.ChallengeModifiers, array)
+    else:
+        val = getValue(GameJSON, Paths.NextIslandInfo)
+        val.remove(
+            getValue(
+                GameJSON,
+                [{"name": "NextIslandInfo"}, "value", {"name": "ChallengeModifiers"}],
+            )
+        )
+        setValue(GameJSON, Paths.NextIslandInfo, val)
 
     if dynamicWeapon(preset["Inventory"]["Weapon"]) == "":
         GameJSON.remove(getValue(GameJSON, [{"name": "WeaponDA"}]))
@@ -5076,8 +5277,8 @@ def backup2Preset(backupJSON):
     for k in PresetJSON.copy().keys():
         if k not in presetStuff:
             PresetJSON.pop(k)
-    with open("deb.json", "w") as f:
-        f.write(json.dumps(PresetJSON, indent=4))
+    # with open("deb.json","w") as f:
+    #     f.write(json.dumps(PresetJSON,indent=4))
     return PresetJSON
 
 
@@ -5255,6 +5456,359 @@ class Paths:
     UltraChaosHighestIsland = [{"name": "UltraChaosHighestIslandReached"}, "value"]
 
 
+def is_process_running(process_name):
+    output = subprocess.check_output(
+        f'tasklist /FI "IMAGENAME eq {process_name}"',
+        shell=True,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    return "INFO: No tasks are running which match the specified criteria." not in output
+
+
+def AccountStatsWatcher():
+    global MaxTotalBackups
+    global MaxStorageKB
+    global MaxAgeDays
+    global MaxBackupsPerDay
+    global StopBackupWatcherEvent
+    global cacheJSON
+    global owd
+    time.sleep(1)
+    os.makedirs("CrabChampionSaveManager/AccountStats/Backups", exist_ok=True)
+    lastString = ""
+    lastAnswer = False
+    while True:
+        start = time.time()
+        answer = is_process_running("CrabChampions-Win64-Shipping.exe")
+        string = "CrabChampions-Win64-Shipping.exe"
+        if answer:
+            string += " is running."
+        else:
+            string += " is not running."
+        if lastString != string:
+            # with open("CrabChampionSaveManager/AccountStats/Backups/check.txt","w") as f:
+            #     f.write(string)
+            lastString = string
+        if not answer and lastAnswer:
+            backupAccount(
+                MaxTotalBackups,
+                MaxStorageKB,
+                MaxAgeDays,
+                MaxBackupsPerDay,
+                cacheJSON["PlayerData"].copy(),
+                owd,
+            )
+
+        if StopBackupWatcherEvent.is_set():
+            return
+        stop = time.time()
+        while (stop - start) < 1:
+            time.sleep(0.01)
+            stop = time.time()
+        lastAnswer = answer
+
+
+def ageFromName(name: str):
+    # Year-Month-Day-Hour-Minute-Second.crab
+    try:
+        # Parse the formatted time string using the specified format
+        time_struct = time.strptime(name, "%Y-%m-%d-%H-%M-%S.crab")
+
+        # Convert the struct_time object back to a timestamp
+        timestamp = time.mktime(time_struct)
+
+        return timestamp
+    except ValueError:
+        return None  # Handle invalid input format
+
+
+def nameFromAge(age):
+    age = int(age)
+    # Convert the timestamp to a struct_time object
+    time_struct = time.localtime(age)
+
+    # Format the struct_time object into the desired string format
+    formatted_time = time.strftime("%Y-%m-%d-%H-%M-%S.crab", time_struct)
+
+    return formatted_time
+
+
+def getAccountBackup(PlayerData):
+    ar = PlayerData["Challenges"]
+    string = []
+    for i in range(0, len(ar)):
+        chal = ar[i]
+        chalOb = [chal["Name"], chal["Progress"], chal["Goal"]]
+        string.append(chalOb)
+    PlayerData["Challenges"] = string
+
+    ar = PlayerData["RankedWeapons"]
+    string = []
+    for i in range(0, len(ar)):
+        chal = ar[i]
+        chalOb = [chal["Name"], chal["Rank"]]
+        string.append(chalOb)
+    PlayerData["RankedWeapons"] = string
+
+    ar = PlayerData["UnlockedWeaponMods"]
+    string = []
+    for i in range(0, len(ar)):
+        item = ar[i]
+        itemOb = [item["Name"], item["Rarity"]]
+        string.append(itemOb)
+    PlayerData["UnlockedWeaponMods"] = string
+
+    ar = PlayerData["UnlockedGrenadeMods"]
+    string = []
+    for i in range(0, len(ar)):
+        item = ar[i]
+        itemOb = [item["Name"], item["Rarity"]]
+        string.append(itemOb)
+    PlayerData["UnlockedGrenadeMods"] = string
+
+    ar = PlayerData["UnlockedPerks"]
+    string = []
+    for i in range(0, len(ar)):
+        item = ar[i]
+        itemOb = [item["Name"], item["Rarity"]]
+        string.append(itemOb)
+    PlayerData["UnlockedPerks"] = string
+
+    return PlayerData
+
+
+def ageInDays(backupAge):
+    days_difference = backupAge / (60 * 60 * 24)  # Convert seconds to days
+    return days_difference
+
+
+def backupAccount(
+    MaxTotalBackups, MaxStorageKB, MaxAgeDays, MaxBackupsPerDay, PlayerData, owd
+):
+    os.makedirs(str(owd) + "/CrabChampionSaveManager/AccountStats/Backups", exist_ok=True)
+    entries = os.scandir(str(owd) + "/CrabChampionSaveManager/AccountStats/Backups")
+    backups = []
+    todayBackups = []
+    CurrentDay = datetime.datetime.fromtimestamp(time.time()).day
+    latestBackup = json.loads('{"age":0}')
+    totalSize = 0
+    for entry in entries:
+        if entry.is_file() and ".crab" in entry.name:
+            backup = json.loads("{}")
+            backup["name"] = entry.name
+            backup["size"] = entry.stat().st_size / 1000
+            backup["age"] = time.time() - ageFromName(entry.name)
+            if backup["age"] > latestBackup["age"]:
+                latestBackup = backup.copy()
+            if datetime.datetime.fromtimestamp(backup["age"]).day == CurrentDay:
+                todayBackups.append(backup)
+            backups.append(backup)
+            totalSize += backup["size"]
+    CurrentBackup = getAccountBackup(PlayerData)
+    LatestBackup = ""
+    try:
+        with open(
+            str(owd)
+            + "/CrabChampionSaveManager/AccountStats/Backups/"
+            + latestBackup["name"],
+            "r",
+        ) as f:
+            LatestBackup = json.load(f)
+        if CurrentBackup == LatestBackup:
+            return
+    except BaseException:
+        None
+
+    with open(
+        str(owd)
+        + "/CrabChampionSaveManager/AccountStats/Backups/"
+        + nameFromAge(time.time()),
+        "w",
+    ) as f:
+        json.dump(CurrentBackup, f)
+    todayBackups.append(CurrentBackup)
+
+    while len(todayBackups) > MaxBackupsPerDay:
+        oldestBackup = CurrentBackup
+        for backup in todayBackups.copy():
+            if backup["age"] > oldestBackup["age"]:
+                oldestBackup = backup
+        os.remove(
+            str(owd)
+            + "/CrabChampionSaveManager/AccountStats/Backups/"
+            + oldestBackup["name"]
+        )
+        backups.remove(oldestBackup)
+        todayBackups.remove(oldestBackup)
+
+    while len(backups) > MaxTotalBackups or MaxStorageKB < totalSize:
+        oldestBackup = backups[0]
+        for backup in backups.copy():
+            if ageInDays(backup["age"]) > MaxAgeDays:
+                os.remove(
+                    str(owd)
+                    + "/CrabChampionSaveManager/AccountStats/Backups/"
+                    + backup["name"]
+                )
+                backups.remove(backup)
+                continue
+            if backup["age"] > oldestBackup["age"]:
+                oldestBackup = backup
+        try:
+            os.remove(
+                str(owd)
+                + "/CrabChampionSaveManager/AccountStats/Backups/"
+                + oldestBackup["name"]
+            )
+        except BaseException:
+            None
+        try:
+            backups.remove(oldestBackup)
+        except BaseException:
+            None
+
+
+def restoreAccountBackup(backup):
+    saveGame = getJSON("SaveGames/SaveSlot.sav")
+
+    setValue(saveGame, Paths.XPToNextLevelUp, backup["XPToNextLevelUp"])
+    setValue(saveGame, Paths.AccountLevel, backup["AccountLevel"])
+    setValue(saveGame, Paths.Keys, backup["Keys"])
+    setValue(saveGame, Paths.CurrentCrabSkin, backup["Skin"])
+    setValue(saveGame, Paths.CurrentWeapon, backup["CurrentWeapon"])
+
+    setValue(saveGame, Paths.EasyAttempts, backup["EasyAttempts"])
+    setValue(saveGame, Paths.EasyWins, backup["EasyWins"])
+    setValue(saveGame, Paths.EasyHighScore, backup["EasyHighScore"])
+    setValue(saveGame, Paths.EasyWinStreak, backup["EasyWinStreak"])
+    setValue(saveGame, Paths.EasyHighestIsland, backup["EasyHighestIslandReached"])
+
+    setValue(saveGame, Paths.NormalAttempts, backup["NormalAttempts"])
+    setValue(saveGame, Paths.NormalWins, backup["NormalWins"])
+    setValue(saveGame, Paths.NormalHighScore, backup["NormalHighScore"])
+    setValue(saveGame, Paths.NormalWinStreak, backup["NormalWinStreak"])
+    setValue(saveGame, Paths.NormalHighestIsland, backup["NormalHighestIslandReached"])
+
+    setValue(saveGame, Paths.NightmareAttempts, backup["NightmareAttempts"])
+    setValue(saveGame, Paths.NightmareWins, backup["NightmareWins"])
+    setValue(saveGame, Paths.NightmareHighScore, backup["NightmareHighScore"])
+    setValue(saveGame, Paths.NightmareWinStreak, backup["NightmareWinStreak"])
+    setValue(
+        saveGame, Paths.NightmareHighestIsland, backup["NightmareHighestIslandReached"]
+    )
+
+    setValue(saveGame, Paths.UltraChaosAttempts, backup["UltraChaosAttempts"])
+    setValue(saveGame, Paths.UltraChaosWins, backup["UltraChaosWins"])
+    setValue(saveGame, Paths.UltraChaosHighScore, backup["UltraChaosHighScore"])
+    setValue(saveGame, Paths.UltraChaosWinStreak, backup["UltraChaosWinStreak"])
+    setValue(
+        saveGame, Paths.UltraChaosHighestIsland, backup["UltraChaosHighestIslandReached"]
+    )
+
+    array = backup["RankedWeapons"]
+    value = []
+    for weapon in array:
+        rankedWeapon = [
+            {"type": "ObjectProperty", "name": "Weapon", "value": ""},
+            {"type": "EnumProperty", "name": "Rank", "enum": "ECrabRank", "value": ""},
+            {"type": "NoneProperty"},
+        ]
+        name = weapon[0].replace(" ", "")
+        rank = weapon[1]
+        setValue(
+            rankedWeapon,
+            [{"name": "Weapon"}, "value"],
+            f"/Game/Blueprint/Weapon/{name}/DA_Weapon_{name}.DA_Weapon_{name}",
+        )
+        setValue(rankedWeapon, [{"name": "Rank"}, "value"], f"ECrabRank::{rank}")
+        value.append(rankedWeapon)
+    setValue(saveGame, Paths.WeaponRankArray, value)
+
+    saveSavJson("SaveGames/SaveSlot.sav", saveGame)
+
+
+def restoreAccountBackupMenu():
+    global owd
+    os.makedirs(str(owd) + "/CrabChampionSaveManager/AccountStats/Backups", exist_ok=True)
+    entries = os.scandir(str(owd) + "/CrabChampionSaveManager/AccountStats/Backups")
+    backups = []
+    CurrentDay = datetime.datetime.fromtimestamp(time.time()).day
+    latestBackup = json.loads('{"age":0}')
+    totalSize = 0
+    for entry in entries:
+        if entry.is_file() and ".crab" in entry.name:
+            backup = json.loads("{}")
+            backup["name"] = entry.name
+            backup["size"] = entry.stat().st_size / 1000
+            backup["age"] = time.time() - ageFromName(entry.name)
+            backups.append(backup)
+            totalSize += backup["size"]
+
+    prompt = "Which account backup would you like to delete?\n"
+    options = "Back"
+    for backup in backups:
+        options += f"\n{backup['name'].replace('.crab','')} - {datetime.datetime.fromtimestamp(time.time()-backup['age']).day} days old  Rank : Sapphire"
+    choice = scrollSelectMenu(prompt, options)
+    if choice == 0:
+        return
+    backup = backups[choice - 1]
+
+
+def manageAccount():
+    infoScreen("This is not finished, and will be finished later")
+    time.sleep(3)
+
+    return
+    global cacheJSON
+    prompt = "Managing Account Stuff\n"
+    options = [
+        ["Back-Returns you to the main menu", 0, 2],
+        [
+            "Make Account Backup-Make a backup of account stats such as weapon ranks, keys, etc",
+            0,
+            2,
+        ],
+        ["Restore Account Backup-Set account stats according to a backup", 0, 2],
+        ["Delete Account Backup-Delete an account backup", 0, 2],
+        ["List and View Account Backups-list and view backups in more detail", 0, 2],
+    ]
+    lastChoice = 0
+    while True:
+        choice = scrollSelectMenu(prompt, options, startChoice=lastChoice, loop=True)
+        lastChoice = choice
+        if choice == 0:
+            return
+        elif choice == 1:
+            loadCache()
+            loadSettings()
+            backupAccount(
+                MaxTotalBackups,
+                MaxStorageKB,
+                MaxAgeDays,
+                MaxBackupsPerDay,
+                cacheJSON["PlayerData"],
+                owd,
+            )
+            infoScreen(
+                f"Account Backup Made\n{nameFromAge(time.time())}\nPress any key to continue"
+            )
+            screen.getch()
+        elif choice == 2:
+            restoreAccountBackupMenu()
+        elif choice == 3:
+            editPresetMenu()
+        elif choice == 4:
+            deletePreset()
+
+
+# # Create a cProfile object
+# profiler = cProfile.Profile()
+
+# # Start profiling
+# profiler.enable()
+
+
 global DIFFMODS
 global DIFFMODSDETAILS
 global ISLANDTYPE
@@ -5309,6 +5863,7 @@ ISLANDTYPE = [
     "Shop",
     "Parkour",
     "CrabIsland",
+    "Lobby",
 ]
 DIFFMODSDETAILS = []
 for d in range(len(DIFFMODS)):
@@ -5348,6 +5903,10 @@ for i in range(1, 256):
     curses.init_pair(i, i, -1)
 infoScreen("Starting Crab Champion Save Manager\nThis may take a few seconds")
 loadSettings()
+
+global AccountStatsWatcherThread
+AccountStatsWatcherThread = threading.Thread(target=AccountStatsWatcher)
+AccountStatsWatcherThread.start()
 
 
 if currentDirCheck():
@@ -5401,6 +5960,11 @@ LatestValue = versionToValue(LatestVersion)
 updatePrompt = True
 
 
+# profiler.disable()
+
+# # Print the profiling results
+# profiler.dump_stats("profile_results.prof")
+# exiting(0)
 # time.sleep(20)
 lastSel = 0
 while True:
@@ -5408,7 +5972,7 @@ while True:
         VERSION, LatestVersion, VersionValue, LatestValue, updatePrompt
     )
     updatePrompt = False
-    options = "Manage Backups\nManage Presets\nInfo/How to use\nSettings\nExit"
+    options = "Manage Backups\nManage Presets\nManage Account Stuff\nInfo/How to use\nSettings\nExit"
     # options = "Manage Backups\nInfo/How to use\nSettings\nExit"
     # options = "Edit save game\nBackup Save\nUpdate backup\nRestore Save from backup (Warning : Deletes current save)\nDelete backup\nList Backups\nInfo/How to use\nSettings\nExit"
     choice, lastSel = scrollSelectMenu(
@@ -5441,6 +6005,8 @@ while True:
     elif choice == 2:
         managePresets()
     elif choice == 3:
+        manageAccount()
+    elif choice == 4:
         infoList = """
 Crab Champion Save Manager
 Welcome to Crab Champion Save Manager, a script designed to help you manage your save files for the game Crab Champion.
@@ -5450,9 +6016,9 @@ This script has some elements that require access to the internet, this includes
 Version Checking
 Downloading an updater for the .exe version of the program"""
         scrollInfoMenu(infoList, -1)
-    elif choice == 4:
-        settings()
     elif choice == 5:
+        settings()
+    elif choice == 6:
         break
 
 exiting(0)
