@@ -21,7 +21,7 @@ global Version
 isExe = False
 isLinux = False
 
-VERSION = "4.1.0"
+VERSION = "4.1.1"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -4859,6 +4859,12 @@ def convertPresetToGameSave(preset, defaultJSONOverride=""):
             [{"name": "NextIslandInfo"}, "value", {"name": "IslandName"}, "unknown"],
             "15",
         )  # WHY DO I HAVE TO DO THIS, WHY DOES IT NOT WORK UNLESS I DO THIS, WHYYYY
+    elif dynamicIslandName(preset["IslandName"]) in ISLANDS["Tropical Parkour Island"]:
+        setValue(
+            GameJSON,
+            [{"name": "NextIslandInfo"}, "value", {"name": "IslandName"}, "unknown"],
+            "18",
+        )  # AGAIN, WHY I DO I HAVE TO DO THIS
     setValue(GameJSON, Paths.CurrentHealth, preset["Health"])
     setValue(GameJSON, Paths.CurrentMaxHealth, preset["MaxHealth"])
     setValue(GameJSON, Paths.CurrentArmorPlates, preset["ArmorPlates"])
@@ -5456,14 +5462,28 @@ class Paths:
     UltraChaosHighestIsland = [{"name": "UltraChaosHighestIslandReached"}, "value"]
 
 
-def is_process_running(process_name):
-    output = subprocess.check_output(
-        f'tasklist /FI "IMAGENAME eq {process_name}"',
-        shell=True,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-    return "INFO: No tasks are running which match the specified criteria." not in output
+def is_process_running(process_name, isLinux):
+    if isLinux:
+        output = subprocess.check_output(
+            f'ps aux | grep "{process_name}"',
+            shell=True,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        return (
+            not "INFO: No tasks are running which match the specified criteria." in output
+        )
+    else:
+        output = subprocess.check_output(
+            f'tasklist /FI "IMAGENAME eq {process_name}"',
+            shell=True,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        return (
+            "Crab Champions\\CrabChampions\\Binaries\\Win64\\CrabChampions-Win64-Shipping.exe"
+            in output
+        )
 
 
 def AccountStatsWatcher():
@@ -5474,13 +5494,14 @@ def AccountStatsWatcher():
     global StopBackupWatcherEvent
     global cacheJSON
     global owd
+    global isLinux
     time.sleep(1)
     os.makedirs("CrabChampionSaveManager/AccountStats/Backups", exist_ok=True)
     lastString = ""
     lastAnswer = False
     while True:
         start = time.time()
-        answer = is_process_running("CrabChampions-Win64-Shipping.exe")
+        answer = is_process_running("CrabChampions-Win64-Shipping.exe", isLinux)
         string = "CrabChampions-Win64-Shipping.exe"
         if answer:
             string += " is running."
@@ -5898,9 +5919,18 @@ owd = owd.replace("\\", "/")
 # os.remove("CrabChampionSaveManager/backupDataCache.json")
 # time.sleep(1)
 
+if True and isLinux:
+    os.system("export TERM=xterm-256color")
+
 makeScreen()
 for i in range(1, 256):
-    curses.init_pair(i, i, -1)
+    try:
+        curses.init_pair(i, i, -1)
+    #        infoScreen(str(i))
+    except BaseException:
+        None
+# time.sleep(30)
+# exiting(0)
 infoScreen("Starting Crab Champion Save Manager\nThis may take a few seconds")
 loadSettings()
 
