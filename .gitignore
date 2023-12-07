@@ -1,2 +1,3 @@
-view_loadout.py
-CrabChampionSaveManagerNoCurses.py
+.venv
+__pycache__
+test.py
