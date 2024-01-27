@@ -4,6 +4,7 @@ import sys
 import time
 import platform
 
+
 def EnsureExternalLibs():
     while True:
         print("Checking Librays")
@@ -41,7 +42,7 @@ def CheckLibrays():
 
         print("PySimpleGUi : Installed")
         libs["PySimpleGUI"] = True
-    except:
+    except BaseException:
         print("PySimpleGUi : Not Installed")
         libs["PySimpleGUI"] = False
         good = False
@@ -51,7 +52,7 @@ def CheckLibrays():
 
         print("requests : Installed")
         libs["requests"] = True
-    except:
+    except BaseException:
         print("requests : Not Installed")
         libs["requests"] = False
         good = False
@@ -61,7 +62,7 @@ def CheckLibrays():
 
         print("SavConverter : Installed")
         libs["SavConverter"] = True
-    except:
+    except BaseException:
         print("SavConverter : Not Installed")
         libs["SavConverter"] = False
         good = False
@@ -95,4 +96,3 @@ def getHash(file_path):
     checksum = sha512_hash.hexdigest()
 
     return checksum
-

@@ -41,11 +41,28 @@ def getLayout(currentVersion, latestVersion):
                     )
                 ],
                 [sg.Sizer(0, 30)],
-                [sg.Button("Manage Saves", key="ManageSaves", size=(28, 2)),sg.Text("Manage the saves of runs")],
-                [sg.Button("Manage Presets", key="ManagePresets", size=(28, 2)),sg.Text("Manage presets that can be used to create runs")],
-                [sg.Button("Manage Account Stuff", key="ManageAccount", size=(28, 2)),sg.Text("Manage account related stuff")],
-                [sg.Button("Settings", key="Settings", size=(28, 2)),sg.Text("Manage the settings of the save manager")],
-                [sg.Button("Exit", key="MainMenuExit", size=(28, 2)),sg.Text("Exit the save manager")],
+                [
+                    sg.Button("Manage Saves", key="ManageSaves", size=(28, 2)),
+                    sg.Text("Manage the saves of runs"),
+                ],
+                [
+                    sg.Button("Manage Presets", key="ManagePresets", size=(28, 2)),
+                    sg.Text("Manage presets that can be used to create runs"),
+                ],
+                [
+                    sg.Button(
+                        "Manage Account Stuff", key="ManageAccount", size=(28, 2)
+                    ),
+                    sg.Text("Manage account related stuff"),
+                ],
+                [
+                    sg.Button("Settings", key="Settings", size=(28, 2)),
+                    sg.Text("Manage the settings of the save manager"),
+                ],
+                [
+                    sg.Button("Exit", key="MainMenuExit", size=(28, 2)),
+                    sg.Text("Exit the save manager"),
+                ],
             ],
             key="MainMenu",
         )

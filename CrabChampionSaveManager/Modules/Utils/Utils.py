@@ -6,9 +6,13 @@ import PySimpleGUI as sg
 from CrabChampionSaveManager.Modules import ConfigManager
 
 
-def UnfinishedFeaturePopup(window:sg.Window):
-    sg.popup("This Feature is currently unfinished and can not be used",title="Unfinished Feature")
-    
+def UnfinishedFeaturePopup(window: sg.Window):
+    sg.popup(
+        "This Feature is currently unfinished and can not be used",
+        title="Unfinished Feature",
+    )
+
+
 def getOS():
     return platform.system()
 
@@ -38,24 +42,25 @@ def getHash(file_path):
 
 
 def getSaves():
-    savePath = getSaveGamePath()
+    savePath = getSavesPath()
     stuff = os.listdir(savePath)
     folders = []
     for thing in stuff:
-        if(os.path.isdir(os.path.join(savePath,thing))):
-            if(thing not in ("Config","Crashes","Logs","SaveGames")):
+        if os.path.isdir(os.path.join(savePath, thing)):
+            if thing not in ("Config", "Crashes", "Logs", "SaveGames"):
                 folders.append(thing)
-    
+
     saves = []
     for folder in folders:
-        if(os.path.isfile(os.path.join(savePath,folder,"SaveSlot.sav"))):
+        if os.path.isfile(os.path.join(savePath, folder, "SaveSlot.sav")):
             saves.append(folder)
     return saves
-    
-def getSaveGamePath():
-    sameGamePath = ConfigManager.get("SaveGamePath","Automatic")
-    if(sameGamePath == "Automatic"):
-        if(getOS() == "Windows"):
+
+
+def getSavesPath():
+    sameGamePath = ConfigManager.get("SaveGamePath", "Automatic")
+    if sameGamePath == "Automatic":
+        if getOS() == "Windows":
             return os.path.expandvars(ConfigManager.get("SaveGamePathWindows"))
         else:
             return os.path.expandvars(ConfigManager.get("SaveGamePathLinux"))

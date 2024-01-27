@@ -24,12 +24,12 @@ def get(key, default="Automatic"):
     if default == "Automatic":
         try:
             default = defaults[key]
-        except:
+        except BaseException:
             default = None
     return settings.get(key, default)
 
 
 def ensureConfig(key, default):
     config = get(key, None)
-    if config == None:
+    if config is None:
         set(key, default)

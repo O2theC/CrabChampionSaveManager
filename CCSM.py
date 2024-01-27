@@ -1,7 +1,7 @@
 import time
 from CrabChampionSaveManager.Modules.Utils import BaseUtils
 
-if(not BaseUtils.isEXE()):
+if not BaseUtils.isEXE():
     code = BaseUtils.EnsureExternalLibs()
     if code == 1:
         exit(1)
@@ -14,6 +14,7 @@ from CrabChampionSaveManager.Modules.Menus import ManageSaves
 from CrabChampionSaveManager.Modules.Utils import Utils
 from CrabChampionSaveManager.Modules import ExitHandler
 from CrabChampionSaveManager.Modules import ConfigManager
+
 ConfigManager.__init__()
 
 # sg.UserSettings("config1.json")
@@ -35,7 +36,8 @@ layout = [layout]
 window = sg.Window(
     "Crab Champion Save Manager", resizable=True, size=(1120, 600), layout=layout
 )
-
+# print(Utils.getSaveGamePath())
+# open(Utils.getSaveGamePath()+"/SaveGames/SaveSlot.sav","rb").close()
 ExitHandler.window = window
 while True:
     event, values = window.read()
@@ -49,9 +51,9 @@ while True:
         Utils.UnfinishedFeaturePopup(window)
 
     if event == sg.WIN_CLOSED:
-        ExitHandler.Exit(0,"User Closed Window")
+        ExitHandler.Exit(0, "User Closed Window")
     if event == "MainMenuExit":
-        ExitHandler.Exit(0,"Exit Main Menu")
+        ExitHandler.Exit(0, "Exit Main Menu")
 
 
 # time.sleep(123)
