@@ -1,16 +1,16 @@
 # CrabChampionSaveManager
 
-sorry for the inactivity but i got intrested in other games along with life getting in the way, schools give way too much homework IMO, but i am still interested in Crab Champions along with this program, i want to work on it more but i have come to realize a few things  
-1. The code is all in 1 file and is at around 6000 lines, while there is a lot of formating space, this is still a lot and it's getting harder to add new stuff
-2. I have learned more about making a program like this and would do things differently, i never thought it would be as feature rich as it is now and as such didn't plan the program well
-3. the TUI is ok but a GUI is better
+sorry for the inactivity but i got intrested in other games along with life getting in the way, schools give way too much homework IMO, but i am still interested in Crab Champions along with this program, i want to work on it more but i have come to realize a few things    
+1. The code is all in 1 file and is at around 6000 lines, while there is a lot of formating space, this is still a lot and it's getting harder to add new stuff  
+2. I have learned more about making a program like this and would do things differently, i never thought it would be as feature rich as it is now and as such didn't plan the program well  
+3. the TUI is ok but a GUI is better  
 
-as such along with other reasons, i have decided on a few things
-i need to remake the entire thing - while i will likely be copying a lot of code, i will be remaking a lot of the logic and flow of logic, this includes making it into more than 1 big file
-while the TUI works, a GUI is so much better - this will allow more people to use it , not everyone likes a TUI nor can understand it as much as they can a GUI, i have also learned about PySimpleGUI and intend to use that to create a GUI for the program
+as such along with other reasons, i have decided on a few things   
+i need to remake the entire thing - while i will likely be copying a lot of code, i will be remaking a lot of the logic and flow of logic, this includes making it into more than 1 big file   
+while the TUI works, a GUI is so much better - this will allow more people to use it , not everyone likes a TUI nor can understand it as much as they can a GUI, i have also learned about PySimpleGUI and intend to use that to create a GUI for the program    
 
-i have also noticed that the game is getting a biggish update soon and i am uncertain whether to wait till after, most likely since the program will not likely be done before then but we'll see
-i hope CCSM helps others with whatever they want to do on Crab Champions, whether that be content creation or build testing or something else 
+i have also noticed that the game is getting a biggish update soon and i am uncertain whether to wait till after, most likely since the program will not likely be done before then but we'll see   
+i hope CCSM helps others with whatever they want to do on Crab Champions, whether that be content creation or build testing or something else    
 
 
 
