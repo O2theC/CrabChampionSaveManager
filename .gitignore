@@ -1,3 +1,15 @@
 .venv
 __pycache__
 test.py
+OLD_CrabChampionSaveManager.py
+OLD_CrabChampionSaveManagerUpdater.py
+testing.py
+.vscode
+config.json
+CCSM.json
+dist
+build
+desktop.ini
+exeTest.py
+exeTest.spec
+backupDataCache.json
