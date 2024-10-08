@@ -1,0 +1,55 @@
+{
+    "biomes": [
+        "ECrabBiome::Arctic",
+        "ECrabBiome::Tropical",
+        "ECrabBiome::Volcanic"
+    ],
+    "islandNames": [
+        "Arctic_Arena_03",
+        "Arctic_Boss_01",
+        "Arctic_Horde_01",
+        "Arctic_Horde_04",
+        "Arctic_Horde_05",
+        "Tropical_Arena_01",
+        "Tropical_Arena_02",
+        "Tropical_Arena_05",
+        "Tropical_Arena_06",
+        "Tropical_Arena_07",
+        "Tropical_Arena_08",
+        "Tropical_Arena_TEST04",
+        "Tropical_Horde_02",
+        "Tropical_Horde_03",
+        "Tropical_Horde_05",
+        "Tropical_Horde_07",
+        "Tropical_Shop_01",
+        "Volcanic_Arena_02",
+        "Volcanic_Horde_04"
+    ],
+    "lootpools": [
+        "ECrabLootPool::Critical",
+        "ECrabLootPool::Damage",
+        "ECrabLootPool::Economy",
+        "ECrabLootPool::Elemental",
+        "ECrabLootPool::Greed",
+        "ECrabLootPool::Luck",
+        "ECrabLootPool::Random",
+        "ECrabLootPool::Skill",
+        "ECrabLootPool::Speed",
+        "ECrabLootPool::SpikedChest",
+        "ECrabLootPool::Upgrade"
+    ],
+    "challengeMods": [
+        "ECrabChallengeModifier::Shrapnel",
+        "ECrabChallengeModifier::XL"
+    ],
+    "islandTypes": [
+        "ECrabIslandType::Arena",
+        "ECrabIslandType::Elite",
+        "ECrabIslandType::Horde",
+        "ECrabIslandType::Shop",
+        "ECrabIslandType::Waves"
+    ],
+    "blessings": [
+        "ECrabBlessing::Rush"
+    ]
+}

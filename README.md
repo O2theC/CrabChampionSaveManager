@@ -17,6 +17,8 @@ i hope CCSM helps others with whatever they want to do on Crab Champions, whethe
 
 a save manager for Crab Champions, made in Python 
 
+currently going through refactor to make it easy to maintain and make it work with latest version of Crab Champions
+
 made this for a group of friends to manage saves easier 
 feel free to use it yourself
 
