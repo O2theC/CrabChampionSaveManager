@@ -497,6 +497,20 @@ def listBackups(lastChoice=0):
     backupDetailsScreen(folders[choice])
     listBackups(choice + 1)
 
+def getSavesNames():
+    
+    savesDir = os.getcwd()
+    savesDir = savesDir.replace("\\", "/")
+    entries = os.scandir(savesDir)
+    folders = []
+    for entry in entries:
+        if entry.name in ["SaveGames", "Config", "Logs", "CrabChampionSaveManager"]:
+            None
+        elif entry.is_dir() and os.path.isfile(
+            entry.path.replace("\\", "/") + "/SaveSlot.sav"
+        ):
+            folders.append(entry.name)
+    return folders
 
 def getBackups(moreInfo=0, currentSave=False, updateCache=True):
     global cacheJSON
@@ -608,7 +622,7 @@ def ensureLength(string, length):
     return str(string)
 
 
-def currentDirCheck(path=os.getcwd()):
+def isSavesDir(path=os.getcwd()):
     """Checks if the required folders are present in the current directory.
 
     Checks if the folders SaveGames, Logs, and Config exist in the current directory.
@@ -5501,17 +5515,17 @@ def AccountStatsWatcher():
     lastAnswer = False
     while True:
         start = time.time()
-        answer = is_process_running("CrabChampions-Win64-Shipping.exe", isLinux)
-        string = "CrabChampions-Win64-Shipping.exe"
-        if answer:
-            string += " is running."
+        isGameRunning = is_process_running("CrabChampions-Win64-Shipping.exe", isLinux)
+        gameEXEName = "CrabChampions-Win64-Shipping.exe"
+        if isGameRunning:
+            gameEXEName += " is running."
         else:
-            string += " is not running."
-        if lastString != string:
-            # with open("CrabChampionSaveManager/AccountStats/Backups/check.txt","w") as f:
-            #     f.write(string)
-            lastString = string
-        if not answer and lastAnswer:
+            gameEXEName += " is not running."
+        # if lastString != gameEXEName:
+        #     # with open("CrabChampionSaveManager/AccountStats/Backups/check.txt","w") as f:
+        #     #     f.write(string)
+        #     lastString = gameEXEName
+        if not isGameRunning and lastAnswer:
             backupAccount(
                 MaxTotalBackups,
                 MaxStorageKB,
@@ -5527,7 +5541,7 @@ def AccountStatsWatcher():
         while (stop - start) < 1:
             time.sleep(0.01)
             stop = time.time()
-        lastAnswer = answer
+        lastAnswer = isGameRunning
 
 
 def ageFromName(name: str):
@@ -5844,7 +5858,9 @@ global RARECOLOR
 global EPICCOLOR
 global LEGENDARYCOLOR
 global GREEDCOLOR
-BLESSINGS = ["Flawless - Get an extra reward chest if you don't take any damage"]
+global GameInfo
+# name , description , dev name
+BLESSINGS = [["Flawless","Don't take any damage to get an extra chest","Flawless"]]
 CHALLENGES = [
     "One Hit - Enemies can be eliminated in one hit but so can you",
     "Energy Rings - Enemies spawn energy rings when eliminated",
@@ -5937,21 +5953,23 @@ loadSettings()
 global AccountStatsWatcherThread
 AccountStatsWatcherThread = threading.Thread(target=AccountStatsWatcher)
 AccountStatsWatcherThread.start()
+# watches for when the game starts or stops and backups account data/stats
 
 
-if currentDirCheck():
-    if SaveGamePath == "Automatic" or currentDirCheck(SaveGamePath):
+
+if isSavesDir():
+    if SaveGamePath == "Automatic" or isSavesDir(SaveGamePath):
         try:
             if isLinux:
                 new_dir = os.path.expandvars(
                     "$HOME/.steam/steam/steamapps/compatdata/774801/pfx/drive_c/users/steamuser/AppData/Local/CrabChampions/Saved"
                 )
             else:
-                new_dir = os.path.expandvars("%APPDATA%\\..\\Local\\CrabChampions\\Saved")
+                new_dir = os.path.expandvars("%LocalAppData%\\CrabChampions\\Saved")
             os.chdir(new_dir)
         except BaseException:
             infoScreen(
-                "Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\\Saved\nPress any key to continue . . ."
+                "Could not find save game directory\nYou either don't have Crab Champions installed\n or you have it installed in a different spot than the default\n if it is installed in a different spot than the defualt then put this file in the equivalent of CrabChampions\\Saved or set the folder in the config \nPress any key to continue . . ."
             )
             screen.getch()
             exiting(0)
