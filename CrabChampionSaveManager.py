@@ -13,6 +13,8 @@ import re
 from tkinter import filedialog
 import tkinter
 import traceback
+import orjson
+import xxhash
 
 
 global isExe
@@ -21,7 +23,7 @@ global Version
 isExe = False
 isLinux = False
 
-VERSION = "4.1.1"
+VERSION = "5.0.0"
 
 if platform.system() == "Linux":
     isLinux = True
@@ -83,24 +85,16 @@ def exiting(var, force=False):
         screen.clear()
         closeScreen()
         saveSettings()
+        
     except BaseException:
         None
-    if var == 0:
-        if force:
-            os._exit(0)
-        else:
-            try:
-                sys.exit(0)
-            except SystemExit:
-                os._exit(0)
-    elif var == 1:
-        if force:
-            os._exit(1)
-        else:
-            try:
-                sys.exit(1)
-            except SystemExit:
-                os._exit(1)
+    if force:
+        os._exit(var)
+    else:
+        try:
+            sys.exit(var)
+        except SystemExit:
+            os._exit(var)
 
 
 try:
@@ -120,7 +114,7 @@ try:
     )
 except BaseException:
     print("Not all libraries are installed")
-    perm = input("Permission to download libraries? [y/N]\n")
+    perm = input("Permission to download libraries? (requests, SavConverter, windows-curses (windows only)) [y/N]\n")
     if "y" in perm.lower():
         if not isLinux:
             os.system("pip install windows-curses")
@@ -145,7 +139,15 @@ except BaseException:
         exiting(0)
 
 
-def isValidPresetName(name):
+def isValidPathName(name):
+    """tests the string to see if it's a valid folder or file name
+
+    Args:
+        name (str): the name of the file or folder to test
+
+    Returns:
+        bool: is it valid or not
+    """
     invalid_chars = r'[<>:"/\\|?*\x00-\x1F]'
     reserved_names = [
         "CON",
@@ -3626,7 +3628,7 @@ def presetNameMenu(prompt):
             curses.curs_set(curstate)
             if presetName == "":
                 return ""
-            elif isValidPresetName(presetName):
+            elif isValidPathName(presetName):
                 return presetName
             else:
                 infoScreen(
