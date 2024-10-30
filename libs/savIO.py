@@ -1,152 +1,313 @@
+import json
+import pathlib, SavConverter
+from textwrap import indent
+from SavConverter import get_object_by_path
+from SavConverter.SavReader import SavReader
+
+
 """ 
-
-.sav is a binary file
-
-has header property at begining
-
-first 4 bytes are just GVAS as bytes, intresting choice
-save game version - int 32
-package version - int 32
-engine version parts, 3 int 16, major.minor.patch
-engine build - uint 32
-engine branch - str
-custom version format int 32
-num of custom versions - int 32
-read that many custom versions
-- custom version 
-- some kind of id - 16 bytes
-- some kind of value - int 32
-
-save game class name - str
-
-rest of file is an array of propertys with no length number
+read file
+use sav converter to get json
+parse json to format to CCSM memory
 
 
-property
-can be
-bool
-int
-int64
-uint32
-float
-enum
-struct 
-byte
-str
-name
-set
-array
-object
-softobject
-multicast inline delegate
-map
 
-who knows what some of those even are, i'd imagine struct and stuff like object and array are gonna be recursive 
+
+there is
+Weapons
+Abilities
+Melee Weapons
+
+Weapon Mods
+Ability Mods
+Melee Mods
+Perks
+Relics
 """
+Biomes = ["Tropical", "Arctic", "Desert", "Volcanic"]
+Islands = dict()
 
-import datetime
-import io
-from struct import unpack, pack
+Islands["Tropical"] = [f"Tropical_Arena_{i:02}" for i in range(1, 12)]
+Islands["Tropical"].extend(["Tropical_Arena_TEST02", "Tropical_Arena_TEST04"])
+Islands["Tropical"].extend([f"Tropical_Boss_{i:02}" for i in range(1, 3)])
+Islands["Tropical"].extend([f"Tropical_Horde_{i:02}" for i in range(1, 9)])
+Islands["Tropical"].extend([f"Tropical_Parkour_{i:02}" for i in range(1, 2)])
+Islands["Tropical"].append("Tropical_Shop_01")
 
-# this part was annoying to do with so many data types, got some help from chatgpt
+Islands["Arctic"] = [f"Arctic_Arena_{i:02}" for i in range(1, 8)]
+Islands["Arctic"].extend([f"Arctic_Boss_{i:02}" for i in range(1, 4)])
+Islands["Arctic"].extend([f"Arctic_Horde_{i:02}" for i in range(1, 9)])
+Islands["Arctic"].extend([f"Arctic_Parkour_{i:02}" for i in range(1, 2)])
+Islands["Arctic"].append("Arctic_Shop_01")
 
+Islands["Desert"] = [f"Desert_Arena_{i:02}" for i in range(1, 13)]
+# Islands["Desert"].extend([f"Desert_Boss_{i:02}" for i in range(1,3)])
+# Islands["Desert"].extend([f"Desert_Horde_{i:02}" for i in range(1,9)])
+# Islands["Desert"].extend([f"Desert_Parkour_{i:02}" for i in range(1,2)])
+Islands["Desert"].append("Desert_Shop_01")
 
-# Function to read a boolean value (1 byte)
-def readBool(f: io.BufferedReader | io.BytesIO):
-    return unpack("<?", f.read(1))[0]
+Islands["Volcanic"] = [f"Volcanic_Arena_{i:02}" for i in range(1, 8)]
+# Islands["Volcanic"].extend(["Volcanic_Arena_TEST02","Volcanic_Arena_TEST04"])
+Islands["Volcanic"].extend([f"Volcanic_Boss_{i:02}" for i in range(1, 2)])
+Islands["Volcanic"].extend([f"Volcanic_Horde_{i:02}" for i in range(1, 6)])
+# Islands["Volcanic"].extend([f"Volcanic_Parkour_{i:02}" for i in range(1,2)])
+Islands["Volcanic"].append("Volcanic_Shop_01")
 
+Islands["Minigame"] = ["Arcade", "Duel", "Holdout"]
 
-# Function to read a signed 16-bit integer (2 bytes)
-def readInt16(f: io.BufferedReader | io.BytesIO):
-    return unpack("<h", f.read(2))[0]
+Islands["Other"] = [
+    "Animation",
+    "DebugPersistent",
+    "IconLightroom",
+    "IconLightroom_Neutral",
+    "IconLightroomEpicTest",
+    "IconLightroomLegendaryTest",
+    "IconLightroomRedTest",
+]
 
+IslandTypes = [
+    "Boss",
+    "Challenge",
+    "Defense",
+    "Elite",
+    "CrabIsland",
+    "Arena",
+    "Rush",
+    "Horde",
+    "Shop",
+    "Treasure",
+    "Parkour",
+    "Waves",
+    "Arcade",
+    "Demolition",
+    "Duel",
+    "Harvest",
+    "Holdout",
+]
 
-# Function to read an unsigned 16-bit integer (2 bytes)
-def readUInt16(f: io.BufferedReader | io.BytesIO):
-    return unpack("<H", f.read(2))[0]
+Blessings = ["Flawless", "Rush"]
 
-
-# Function to read a signed 32-bit integer (4 bytes)
-def readInt32(f: io.BufferedReader | io.BytesIO):
-    return unpack("<i", f.read(4))[0]
-
-
-# Function to read an unsigned 32-bit integer (4 bytes)
-def readUInt32(f: io.BufferedReader | io.BytesIO):
-    return unpack("<I", f.read(4))[0]
-
-
-# Function to read a signed 64-bit integer (8 bytes)
-def readInt64(f: io.BufferedReader | io.BytesIO):
-    return unpack("<q", f.read(8))[0]
-
-
-# Function to read an unsigned 64-bit integer (8 bytes)
-def readUInt64(f: io.BufferedReader | io.BytesIO):
-    return unpack("<Q", f.read(8))[0]
-
-
-# Function to read a 32-bit floating point number (4 bytes)
-def readFloat32(f: io.BufferedReader | io.BytesIO):
-    return unpack("<f", f.read(4))[0]
-
-
-# Function to read a 64-bit floating point number (double precision, 8 bytes)
-def readFloat64(f: io.BufferedReader | io.BytesIO):
-    return unpack("<d", f.read(8))[0]
-
-
-# Function to read a single character (1 byte)
-def readChar(f: io.BufferedReader | io.BytesIO):
-    return unpack("<c", f.read(1))[0].decode()
-
-
-# Function to read a signed char (1 byte)
-def readInt8(f: io.BufferedReader | io.BytesIO):
-    return unpack("<b", f.read(1))[0]
-
-
-# Function to read an unsigned char (1 byte)
-def readUInt8(f: io.BufferedReader | io.BytesIO):
-    return unpack("<B", f.read(1))[0]
-
-
-def readString(f: io.BufferedReader | io.BytesIO):
-    length = readInt32(f)
-    string = f.read(length - 1).decode("utf-8")
-    f.read(1)  # null term byte
-    return string
-
-
-def readSpecialString(f: io.BufferedReader | io.BytesIO):
-    length = readInt32(f)
-    if length < 0:  # dev choice to signal this uses utf-16-le rather than uft-8
-        # wide stuff coming in
-        string = f.read(abs(length) * 2 - 2).decode("utf-16-le")
-        f.read(2)  # null term
-    else:
-        string = f.read(length - 1).decode("utf-8")
-        f.read(1)  # null term
-
-    return string, length < 0  # if big thing
+LootPool = [
+    "Economy",
+    "Elemental",
+    "Skill",
+    "Health",
+    "Random",
+    "Upgrade",
+    "Critical",
+    "Greed",
+    "Speed",
+    "Damage",
+    "Luck",
+    "Relic",
+]
 
 
-def readDate(f: io.BufferedReader | io.BytesIO):
-    ticks = readInt8(f)
-    try:
-        calculated_time = datetime.utcfromtimestamp(
-            (ticks // 10000 - 62135596800000) / 1000.0
-        )
-    except:
-        calculated_time = ticks
-    return calculated_time
+def getValue(data, name):
+    return get_object_by_path(data, [{"name": name}, "value"])
 
 
-def readHeader(f: io.BufferedReader | io.BytesIO):
-    f.read(4)  # just bytes being GVAS
+def removePrefix(string):
+    return string[string.rindex(":") + 1 :]
 
 
-def readSav(f: io.BufferedReader | io.BytesIO):
-    sav = dict()
-    sav["header"] = readHeader(f)
-    sav["root"] = readProperty(f)
+def parsePath(path):
+    return path[path.rindex("_") + 1 :]
+
+
+def parseItem(itemObject, itemNameSpace):
+    # print(itemObject)
+    name: str = getValue(itemObject, itemNameSpace)
+    quality = name[name.rindex("/", 0, name.rindex("/")) + 1 : name.rindex("/")]
+    name = name[name.rindex("_") + 1 :]
+    level = getValue(getValue(itemObject, "InventoryInfo"), "Level")
+    enhancements = getValue(getValue(itemObject, "InventoryInfo"), "Enhancements")
+    enhancements = [removePrefix(enhance) for enhance in enhancements]
+    accumulatedBuff = getValue(getValue(itemObject, "InventoryInfo"), "AccumulatedBuff")
+    return {
+        "Name": name,
+        "Quality": quality,
+        "Enhancements": enhancements,
+        "AccumulatedBuff": accumulatedBuff,
+    }
+
+
+def readRun(path: pathlib.Path):
+    runRawJson: dict = SavConverter.sav_to_json(
+        SavReader(path.read_bytes()).read_whole_buffer()
+    )
+    runRawJson: dict = getValue(runRawJson, "AutoSave")
+    runJson = dict()
+
+    currentIsland = dict()
+
+    currentIsland["Biome"] = removePrefix(
+        getValue(getValue(runRawJson, "NextIslandInfo"), "Biome")
+    )
+    currentIsland["Number"] = getValue(
+        getValue(runRawJson, "NextIslandInfo"), "CurrentIsland"
+    )
+    currentIsland["Name"] = getValue(
+        getValue(runRawJson, "NextIslandInfo"), "IslandName"
+    )
+    currentIsland["Type"] = removePrefix(
+        getValue(getValue(runRawJson, "NextIslandInfo"), "IslandType")
+    )
+
+    stats = dict()
+    stats["RunLength"] = getValue(runRawJson, "CurrentTime")
+    stats["Points"] = getValue(runRawJson, "Points")
+    stats["ComboCounter"] = getValue(runRawJson, "ComboCounter")
+    stats["Combo"] = getValue(runRawJson, "Combo")
+    stats["Eliminations"] = getValue(runRawJson, "Eliminations")
+    stats["ShotsFired"] = getValue(runRawJson, "ShotsFired")
+    stats["DamageDealt"] = getValue(runRawJson, "DamageDealt")
+    stats["HighestDamageDealt"] = getValue(runRawJson, "HighestDamageDealt")
+    stats["DamageTaken"] = getValue(runRawJson, "DamageTaken")
+    stats["FlawlessIslandsCount"] = getValue(runRawJson, "NumFlawlessIslands")
+
+    runJson["Stats"] = stats
+
+    runJson["CurrentIsland"] = currentIsland
+
+    runJson["Health"] = getValue(getValue(runRawJson, "HealthInfo"), "CurrentHealth")
+    runJson["MaxHealth"] = getValue(
+        getValue(runRawJson, "HealthInfo"), "CurrentMaxHealth"
+    )
+    runJson["ArmorPlates"] = getValue(
+        getValue(runRawJson, "HealthInfo"), "CurrentArmorPlates"
+    )
+    runJson["ArmorPlateHealth"] = getValue(
+        getValue(runRawJson, "HealthInfo"), "CurrentArmorPlateHealth"
+    )
+    runJson["OldHealth"] = getValue(
+        getValue(runRawJson, "HealthInfo"), "PreviousHealth"
+    )
+    runJson["OldMaxHealth"] = getValue(
+        getValue(runRawJson, "HealthInfo"), "PreviousMaxHealth"
+    )
+    runJson["MaxHealthMultiplier"] = getValue(runRawJson, "MaxHealthMultiplier")
+    runJson["DamageMultiplier"] = getValue(runRawJson, "DamageMultiplier")
+    runJson["EquipedWeapon"] = parsePath(getValue(runRawJson, "WeaponDA"))
+    runJson["EquipedAbility"] = parsePath(getValue(runRawJson, "AbilityDA"))
+    runJson["EquipedMelee"] = parsePath(getValue(runRawJson, "MeleeDA"))
+    runJson["WeaponModSlotCount"] = getValue(runRawJson, "NumWeaponModSlots")
+    runJson["AbilityModSlotCount"] = getValue(runRawJson, "NumAbilityModSlots")
+    runJson["MeleeModSlotCount"] = getValue(runRawJson, "NumMeleeModSlots")
+    runJson["PerkSlotCount"] = getValue(runRawJson, "NumPerkSlots")
+    # runJson["RelicSlotCount"] = getValue(runRawJson, "NumFlawlessIslands")
+
+    items = []
+    for item in getValue(runRawJson, "WeaponMods"):
+        items.append(parseItem(item, "WeaponModDA"))
+    runJson["WeaponMods"] = items
+
+    items = []
+    for item in getValue(runRawJson, "AbilityMods"):
+        items.append(parseItem(item, "AbilityModDA"))
+    runJson["AbilityMods"] = items
+
+    items = []
+    for item in getValue(runRawJson, "MeleeMods"):
+        items.append(parseItem(item, "MeleeModDA"))
+    runJson["MeleeMods"] = items
+
+    items = []
+    for item in getValue(runRawJson, "Perks"):
+        items.append(parseItem(item, "PerkDA"))
+    runJson["Perks"] = items
+
+    items = []
+    for item in getValue(runRawJson, "Relics"):
+        items.append(parseItem(item, "RelicDA"))
+    runJson["Relics"] = items
+
+    """ Key/Legend
+
+
+    
+    RunLength - int - 
+    CurrentIsland - dict
+    - Biome - Enum
+    - Number - int
+    - Name - Enum
+    - Type - Enum
+    Stats - dict
+    - Points - int
+    - ComboCounter - int
+    - Combo - float
+    - Eliminations - int
+    - ShotsFired - int
+    - DamageDealt - int
+    - HighestDamageDealt - int
+    - DamageTaken - int
+    - FlawlessIslandsCount - int
+
+    Health - float
+    MaxHealth - float
+    ArmorPlates - int
+    ArmorPlateHealth - float
+    OldHealth - float
+    OldMaxHealth - float
+    MaxHealthMultiplier - float
+    DamageMultiplier - float
+    EquipedWeapon - Enum
+    EquipedAbility - Enum
+    EquipedMelee - Enum
+
+    WeaponModSlotCount - int
+    WeaponMods - array
+    WeaponModsItem
+    - Name - Enum
+    - Level - int
+    - Enchancements - array
+    - AccumlatedBuff - float
+
+    AbilityModSlotCount - int
+    AbilityMods - array
+    AbilityModsItem
+    - Name - Enum
+    - Level - int
+    - Enchancements - array
+    - AccumlatedBuff - float
+
+    MeleeModSlotCount - int
+    MeleeMods - array
+    MeleeModsItem
+    - Name - Enum
+    - Level - int
+    - Enchancements - array
+    - AccumlatedBuff - float
+
+    PerkSlotCount - int
+    Perks - array
+    PerksItem
+    - Name - Enum
+    - Level - int
+    - Enchancements - array
+    - AccumlatedBuff - float
+
+
+    Relics - array
+    RelicsItem
+    - Name - Enum
+    - Level - int
+    - Enchancements - array
+    - AccumlatedBuff - float
+
+
+    
+    
+    
+    """
+    return runJson
+
+
+if __name__ == "__main__":
+    print(json.dumps(readRun(pathlib.Path("./testing/SaveSlot.sav")), indent=2))
+    # print(parseItem([{
+    #           "type": "ObjectProperty",
+    #           "name": "WeaponModDA",
+    #           "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_MoneyShot.DA_WeaponMod_MoneyShot"
+    #         },]))
+    # print(json.dumps(Islands, indent=2))

@@ -213,11 +213,6 @@
     "value": 2079
   },
   {
-    "type": "BoolProperty",
-    "name": "bLastSavedBackupA",
-    "value": false
-  },
-  {
     "type": "IntProperty",
     "name": "XPToNextLevelUp",
     "value": 7351
@@ -686,7 +681,7 @@
   {
     "type": "IntProperty",
     "name": "Keys",
-    "value": 818
+    "value": 831
   },
   {
     "type": "ObjectProperty",
@@ -7623,7 +7618,7 @@
       {
         "type": "IntProperty",
         "name": "CurrentTime",
-        "value": 148
+        "value": 2671
       },
       {
         "type": "StructProperty",
@@ -7634,18 +7629,18 @@
             "type": "EnumProperty",
             "name": "Biome",
             "enum": "ECrabBiome",
-            "value": "ECrabBiome::Desert"
+            "value": "ECrabBiome::Tropical"
           },
           {
             "type": "IntProperty",
             "name": "CurrentIsland",
-            "value": 15
+            "value": 57
           },
           {
             "type": "NameProperty",
             "name": "IslandName",
-            "unknown": "14",
-            "value": "Desert_Arena_08"
+            "unknown": "16",
+            "value": "Tropical_Arena_06"
           },
           {
             "type": "EnumProperty",
@@ -7661,42 +7656,47 @@
       {
         "type": "IntProperty",
         "name": "Points",
-        "value": 618
+        "value": 34405
       },
       {
         "type": "IntProperty",
         "name": "ComboCounter",
-        "value": 25
+        "value": 2521
       },
       {
         "type": "FloatProperty",
         "name": "Combo",
-        "value": 2.0
+        "value": 5.0
       },
       {
         "type": "IntProperty",
         "name": "Eliminations",
-        "value": 24
+        "value": 2520
       },
       {
         "type": "IntProperty",
         "name": "ShotsFired",
-        "value": 468
+        "value": 15418
       },
       {
         "type": "UInt32Property",
         "name": "DamageDealt",
-        "value": 11985
+        "value": 9475269
       },
       {
         "type": "UInt32Property",
         "name": "HighestDamageDealt",
-        "value": 1925
+        "value": 114445
+      },
+      {
+        "type": "IntProperty",
+        "name": "DamageTaken",
+        "value": 1755
       },
       {
         "type": "IntProperty",
         "name": "NumFlawlessIslands",
-        "value": 4
+        "value": 29
       },
       {
         "type": "StructProperty",
@@ -7704,24 +7704,39 @@
         "subtype": "CrabHealthInfo",
         "value": [
           {
+            "type": "IntProperty",
+            "name": "CurrentArmorPlates",
+            "value": 6
+          },
+          {
+            "type": "FloatProperty",
+            "name": "CurrentArmorPlateHealth",
+            "value": 150259.21875
+          },
+          {
+            "type": "FloatProperty",
+            "name": "PreviousArmorPlateHealth",
+            "value": 150383.25
+          },
+          {
             "type": "FloatProperty",
             "name": "CurrentHealth",
-            "value": 1000100.0
+            "value": 1003276.5
           },
           {
             "type": "FloatProperty",
             "name": "CurrentMaxHealth",
-            "value": 1000100.0
+            "value": 1003276.5
           },
           {
             "type": "FloatProperty",
             "name": "PreviousHealth",
-            "value": 1000100.0
+            "value": 1003176.5
           },
           {
             "type": "FloatProperty",
             "name": "PreviousMaxHealth",
-            "value": 150.0
+            "value": 1003276.5
           },
           {
             "type": "NoneProperty"
@@ -7736,7 +7751,7 @@
       {
         "type": "FloatProperty",
         "name": "DamageMultiplier",
-        "value": 100.0
+        "value": 120.00007629394531
       },
       {
         "type": "ObjectProperty",
@@ -7801,6 +7816,877 @@
             {
               "type": "NoneProperty"
             }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_UltraShot.DA_WeaponMod_UltraShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": [
+                    "ECrabEnhancementType::Electrifying",
+                    "ECrabEnhancementType::Snaking",
+                    "ECrabEnhancementType::Targeting"
+                  ]
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_SplitShot.DA_WeaponMod_SplitShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_ArcaneShot.DA_WeaponMod_ArcaneShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_BouncingShot.DA_WeaponMod_BouncingShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_FireworkShot.DA_WeaponMod_FireworkShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": [
+                    "ECrabEnhancementType::Electrifying",
+                    "ECrabEnhancementType::Sticky",
+                    "ECrabEnhancementType::Damaging"
+                  ]
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_MoneyShot.DA_WeaponMod_MoneyShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 21
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 9742.9990234375
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_BubbleShot.DA_WeaponMod_BubbleShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 20
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": [
+                    "ECrabEnhancementType::Toxifying",
+                    "ECrabEnhancementType::Scattering",
+                    "ECrabEnhancementType::Snaking"
+                  ]
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_BigMag.DA_WeaponMod_BigMag"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_DrillShot.DA_WeaponMod_DrillShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": [
+                    "ECrabEnhancementType::Snaking",
+                    "ECrabEnhancementType::Arcanifying"
+                  ]
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_BigShot.DA_WeaponMod_BigShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_RandomShot.DA_WeaponMod_RandomShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_GlueShot.DA_WeaponMod_GlueShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 5
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Legendary/DA_WeaponMod_FireballShot.DA_WeaponMod_FireballShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 40
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_ArcShot.DA_WeaponMod_ArcShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_TargetingShot.DA_WeaponMod_TargetingShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 3
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_ShotgunBlast.DA_WeaponMod_ShotgunBlast"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": [
+                    "ECrabEnhancementType::Arcanifying",
+                    "ECrabEnhancementType::Damaging"
+                  ]
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_SharpShot.DA_WeaponMod_SharpShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 3
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_ReloadArc.DA_WeaponMod_ReloadArc"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": [
+                    "ECrabEnhancementType::Flaming"
+                  ]
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Rare/DA_WeaponMod_RapidFire.DA_WeaponMod_RapidFire"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_LinkShot.DA_WeaponMod_LinkShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Epic/DA_WeaponMod_PumpkinShot.DA_WeaponMod_PumpkinShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Legendary/DA_WeaponMod_XShot.DA_WeaponMod_XShot"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "WeaponModDA",
+              "value": "/Game/Blueprint/Pickup/WeaponMod/Legendary/DA_WeaponMod_HomingBlades.DA_WeaponMod_HomingBlades"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
           ]
         ]
       },
@@ -7809,6 +8695,199 @@
         "name": "NumAbilityModSlots",
         "subtype": "None",
         "value": 12
+      },
+      {
+        "type": "ArrayProperty",
+        "name": "AbilityMods",
+        "subtype": "StructProperty",
+        "generic_type": "CrabAbilityMod",
+        "value": [
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "AbilityModDA",
+              "value": "/Game/Blueprint/Pickup/AbilityMod/Legendary/DA_AbilityMod_MortarTurret.DA_AbilityMod_MortarTurret"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "AbilityModDA",
+              "value": "/Game/Blueprint/Pickup/AbilityMod/Epic/DA_AbilityMod_LandmineExplosion.DA_AbilityMod_LandmineExplosion"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "AbilityModDA",
+              "value": "/Game/Blueprint/Pickup/AbilityMod/Epic/DA_AbilityMod_BarrelExplosion.DA_AbilityMod_BarrelExplosion"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 10
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "AbilityModDA",
+              "value": "/Game/Blueprint/Pickup/AbilityMod/Epic/DA_AbilityMod_BubbleBlast.DA_AbilityMod_BubbleBlast"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "AbilityModDA",
+              "value": "/Game/Blueprint/Pickup/AbilityMod/Rare/DA_AbilityMod_HeatSink.DA_AbilityMod_HeatSink"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ]
+        ]
       },
       {
         "type": "ByteProperty",
@@ -7858,26 +8937,12 @@
             {
               "type": "NoneProperty"
             }
-          ]
-        ]
-      },
-      {
-        "type": "ByteProperty",
-        "name": "NumPerkSlots",
-        "subtype": "None",
-        "value": 24
-      },
-      {
-        "type": "ArrayProperty",
-        "name": "Perks",
-        "subtype": "StructProperty",
-        "generic_type": "CrabPerk",
-        "value": [
+          ],
           [
             {
               "type": "ObjectProperty",
-              "name": "PerkDA",
-              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_SonicBoom.DA_Perk_SonicBoom"
+              "name": "MeleeModDA",
+              "value": "/Game/Blueprint/Pickup/MeleeMod/Rare/DA_MeleeMod_Blender.DA_MeleeMod_Blender"
             },
             {
               "type": "StructProperty",
@@ -7888,7 +8953,7 @@
                   "type": "ByteProperty",
                   "name": "Level",
                   "subtype": "None",
-                  "value": 1
+                  "value": 8
                 },
                 {
                   "type": "ArrayProperty",
@@ -7913,6 +8978,131 @@
           [
             {
               "type": "ObjectProperty",
+              "name": "MeleeModDA",
+              "value": "/Game/Blueprint/Pickup/MeleeMod/Rare/DA_MeleeMod_BigClaws.DA_MeleeMod_BigClaws"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 3
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "MeleeModDA",
+              "value": "/Game/Blueprint/Pickup/MeleeMod/Epic/DA_MeleeMod_LightningClaws.DA_MeleeMod_LightningClaws"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 20
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "MeleeModDA",
+              "value": "/Game/Blueprint/Pickup/MeleeMod/Rare/DA_MeleeMod_SharpClaws.DA_MeleeMod_SharpClaws"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 18
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ]
+        ]
+      },
+      {
+        "type": "ByteProperty",
+        "name": "NumPerkSlots",
+        "subtype": "None",
+        "value": 24
+      },
+      {
+        "type": "ArrayProperty",
+        "name": "Perks",
+        "subtype": "StructProperty",
+        "generic_type": "CrabPerk",
+        "value": [
+          [
+            {
+              "type": "ObjectProperty",
               "name": "PerkDA",
               "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_ElementalExpert.DA_Perk_ElementalExpert"
             },
@@ -7925,7 +9115,7 @@
                   "type": "ByteProperty",
                   "name": "Level",
                   "subtype": "None",
-                  "value": 1
+                  "value": 2
                 },
                 {
                   "type": "ArrayProperty",
@@ -7962,7 +9152,7 @@
                   "type": "ByteProperty",
                   "name": "Level",
                   "subtype": "None",
-                  "value": 1
+                  "value": 3
                 },
                 {
                   "type": "ArrayProperty",
@@ -8000,6 +9190,783 @@
                   "name": "Level",
                   "subtype": "None",
                   "value": 20
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_Paycheck.DA_Perk_Paycheck"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 51
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 160839.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_Autoloader.DA_Perk_Autoloader"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_Fortitude.DA_Perk_Fortitude"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 3
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 1925.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_PotentMagic.DA_Perk_PotentMagic"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 7
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_Sharpshooter.DA_Perk_Sharpshooter"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_Collector.DA_Perk_Collector"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_Stamina.DA_Perk_Stamina"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_HardTarget.DA_Perk_HardTarget"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 6
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_Gemstone.DA_Perk_Gemstone"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 20
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 19.999998092651367
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_CrystalFertilizer.DA_Perk_CrystalFertilizer"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 51
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_SpeedDemon.DA_Perk_SpeedDemon"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 2
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Legendary/DA_Perk_FlammableEnemies.DA_Perk_FlammableEnemies"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Rare/DA_Perk_SpecialDelivery.DA_Perk_SpecialDelivery"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 8
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_MoneyIsPower.DA_Perk_MoneyIsPower"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 5
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_GrimReaper.DA_Perk_GrimReaper"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 4
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_DoubleVision.DA_Perk_DoubleVision"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 12
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_CrimsonHaze.DA_Perk_CrimsonHaze"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_Shockwave.DA_Perk_Shockwave"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Epic/DA_Perk_CriticalBlast.DA_Perk_CriticalBlast"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Legendary/DA_Perk_CriticalLightning.DA_Perk_CriticalLightning"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 25
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "PerkDA",
+              "value": "/Game/Blueprint/Pickup/Perk/Legendary/DA_Perk_LevelUp.DA_Perk_LevelUp"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
                 },
                 {
                   "type": "ArrayProperty",
@@ -8213,28 +10180,149 @@
             {
               "type": "NoneProperty"
             }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "RelicDA",
+              "value": "/Game/Blueprint/Pickup/Relic/Rare/DA_Relic_RingOfDestruction.DA_Relic_RingOfDestruction"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "RelicDA",
+              "value": "/Game/Blueprint/Pickup/Relic/Rare/DA_Relic_CoralAmulet.DA_Relic_CoralAmulet"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
+          ],
+          [
+            {
+              "type": "ObjectProperty",
+              "name": "RelicDA",
+              "value": "/Game/Blueprint/Pickup/Relic/Rare/DA_Relic_TonysAmulet.DA_Relic_TonysAmulet"
+            },
+            {
+              "type": "StructProperty",
+              "name": "InventoryInfo",
+              "subtype": "CrabInventoryInfo",
+              "value": [
+                {
+                  "type": "ByteProperty",
+                  "name": "Level",
+                  "subtype": "None",
+                  "value": 1
+                },
+                {
+                  "type": "ArrayProperty",
+                  "name": "Enhancements",
+                  "subtype": "EnumProperty",
+                  "value": []
+                },
+                {
+                  "type": "FloatProperty",
+                  "name": "AccumulatedBuff",
+                  "value": 0.0
+                },
+                {
+                  "type": "NoneProperty"
+                }
+              ]
+            },
+            {
+              "type": "NoneProperty"
+            }
           ]
         ]
       },
       {
         "type": "IntProperty",
+        "name": "NumTimesSalvaged",
+        "value": 9
+      },
+      {
+        "type": "IntProperty",
         "name": "NumShopPurchases",
-        "value": 23
+        "value": 372
       },
       {
         "type": "IntProperty",
         "name": "NumShopRerolls",
-        "value": 12
+        "value": 28
+      },
+      {
+        "type": "IntProperty",
+        "name": "NumTotemsDestroyed",
+        "value": 14
       },
       {
         "type": "UInt32Property",
         "name": "Crystals",
-        "value": 161103109
+        "value": 160461170
       },
       {
         "type": "IntProperty",
         "name": "TotalTimeTaken",
-        "value": 137
+        "value": 2582
       },
       {
         "type": "NoneProperty"

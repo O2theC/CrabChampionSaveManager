@@ -146,3 +146,14 @@ Speed
 Damage  
 Luck  
 Relic  
+
+# Item Enhancements
+Electrifying
+Snaking
+Targeting
+Sticky
+Damaging
+Toxifying
+Scattering
+Arcanifying
+Flaming

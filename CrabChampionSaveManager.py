@@ -5511,6 +5511,7 @@ def AccountStatsWatcher():
     global cacheJSON
     global owd
     global isLinux
+    
     time.sleep(1)
     os.makedirs("CrabChampionSaveManager/AccountStats/Backups", exist_ok=True)
     lastString = ""
