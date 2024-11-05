@@ -4,7 +4,9 @@ a save manager for Crab Champions, made in Python
 
 currently going through refactor to make it easy to maintain and make it work with latest version of Crab Champions
 
-made this for a group of friends to manage saves easier 
+working on the rewrite with a friend and we decided to use a new repo for the rewrite, i did not do the best job on this one and we think it's best to start fresh, this repo will not be deleted but rather archived and have a link to the new repo when it's public
+
+~~made this for a group of friends to manage saves easier 
 feel free to use it yourself
 
 Main Credits:<br>
@@ -50,7 +52,7 @@ Q: my antivirus flags this as malware / virus
 
 A: this is not malware or a virus , check it on virustotal (it has been known to get hit by a few vendors but last i checked, it was at max 4 out of 70 vendors ), plus if you want then look through the source code / use the source code
 <br>
-<br>
+<br>~~
 <br>
 Some other projects that are kind of similar to this one, in no particular order<br><br>
 a web-based save converter to turn your .sav to JSON and back - https://afkaf.github.io/Crab-Champion-Save-Manager/ - https://github.com/afkaf/Crab-Champion-Save-Manager - credit to afkaf for making a python sav converter for CCSM<br>
